@@ -15,7 +15,6 @@ import { getRoadCompletions } from '../storage/roadStorage';
 import { getTrip } from '../storage/tripStorage';
 import { type } from '../theme';
 import { distanceParts, elevationParts, formatLongDate, formatShortDate } from '../utils/format';
-import { comingSoon } from '../utils/comingSoon';
 import { bendsLabel, completedLabel, getRoad } from '../utils/iconicRoads';
 import { dayNumberFor, groupIntoDays, tripTitle } from '../utils/tripSummary';
 
@@ -139,8 +138,10 @@ export default function RoadScreen() {
   );
 
   // Third stat: corners (the Ring), else steepest, else climb. Details then show
-  // what didn't fit: steepest when corners took its place, otherwise how twisty.
+  // what didn't fit: climb unless it's the third stat, steepest when corners
+  // took its place, otherwise how twisty.
   const steepest = road.steepestPct ? `${road.steepestPct}%` : null;
+  const climbIsStat = !road.corners && !steepest;
   // [icon, value, unit, label]
   const third = road.corners
     ? ['turn_sharp_right', String(road.corners), null, 'Corners']
@@ -153,15 +154,19 @@ export default function RoadScreen() {
     third,
   ];
   const details = [
-    ['trending_up', 'Climb', `${climb.value} ${climb.unit}`],
+    !climbIsStat && ['trending_up', 'Climb', `${climb.value} ${climb.unit}`],
     road.corners && steepest
       ? ['show_chart', 'Steepest', steepest]
       : ['turn_sharp_right', 'Bends', bendsLabel(road)],
     ['swap_horiz', 'Road type', road.roadType],
-  ];
+  ].filter(Boolean);
 
   return (
-    <DetailLayout map={map} mapHeight={360}>
+    <DetailLayout
+      map={map}
+      mapHeight={360}
+      actions={[{ icon: 'near_me', label: 'Navigate to start', onPress: navigate }]}
+    >
       <Text style={[type.kicker, styles.kicker]}>
         {`${road.region} · ${road.country}`.toUpperCase()}
       </Text>
@@ -204,25 +209,6 @@ export default function RoadScreen() {
         style={styles.stats}
         stats={stats.map(([icon, value, unit, label]) => ({ icon, value, unit, label }))}
       />
-
-      <View style={styles.buttons}>
-        <Pressable
-          onPress={navigate}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.navigate, pressed && styles.pressed]}
-        >
-          <Icon name="near_me" filled size={22} color={c.onAccent} />
-          <Text style={[type.bodyStrong, { color: c.onAccent }]}>Navigate to start</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => comingSoon('Sharing')}
-          accessibilityRole="button"
-          accessibilityLabel="Share"
-          style={({ pressed }) => [styles.share, pressed && styles.pressed]}
-        >
-          <Icon name="ios_share" size={24} color={c.onAccentContainer} />
-        </Pressable>
-      </View>
 
       <SectionHeader title="About" style={styles.aboutHeader} />
       <Text style={[type.bodyLarge, styles.muted, styles.blurb]}>{road.blurb}</Text>
@@ -298,25 +284,6 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
   },
   stats: { marginTop: 20 },
-  buttons: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  navigate: {
-    flex: 1,
-    height: 56,
-    borderRadius: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: c.accent,
-  },
-  share: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.accentContainer,
-  },
   blurb: { marginHorizontal: 4, lineHeight: 24 },
   group: {
     paddingHorizontal: 12,
