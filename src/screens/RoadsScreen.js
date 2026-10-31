@@ -16,6 +16,11 @@ import { distanceParts, formatShortDate } from '../utils/format';
 import { ICONIC_ROADS } from '../utils/iconicRoads';
 
 const COUNTRIES = ['All', ...new Set(ICONIC_ROADS.map((r) => r.country))];
+const BRITAIN = new Set(['England', 'Scotland', 'Wales']);
+
+/** "Peak District", or "Provence, France" for a road outside Britain. */
+const placeOf = (road) =>
+  BRITAIN.has(road.country) ? road.region : `${road.region}, ${road.country}`;
 
 /** "Last completed 5 Nov 2026" when done more than once, else "Completed 5 Nov 2026". */
 export const completedOn = ({ count, last }) =>
@@ -99,7 +104,7 @@ export default function RoadsScreen() {
                 key={road.id}
                 completed
                 name={road.name}
-                subtitle={`${road.region} · ${completedOn(totals.get(road.id))}`}
+                subtitle={`${placeOf(road)} · ${completedOn(totals.get(road.id))}`}
                 onPress={() => open(road)}
               />
             ))}
@@ -118,7 +123,7 @@ export default function RoadsScreen() {
               <RoadRow
                 key={road.id}
                 name={road.name}
-                subtitle={`${road.region}${road.country === 'Germany' ? ', Germany' : ''} · ${km(road)}`}
+                subtitle={`${placeOf(road)} · ${km(road)}`}
                 onPress={() => open(road)}
               />
             ))}

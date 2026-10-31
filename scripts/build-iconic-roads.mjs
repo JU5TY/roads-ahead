@@ -1,5 +1,7 @@
 // Builds src/data/iconicRoads.json, the bundled Iconic Roads list.
 // Run by hand when roads are added or changed: `node scripts/build-iconic-roads.mjs`
+// With `--new`, roads already in the file are kept as they are and only the
+// missing ones are built.
 //
 // Road lines come from OpenStreetMap data (© OpenStreetMap contributors, ODbL):
 //   - public roads: routed with the OSRM demo server between two anchors, then
@@ -7,10 +9,11 @@
 //   - the Nordschleife: the raceway ways from the Overpass API (cars can't be
 //     routed onto a raceway)
 // Heights come from the Open-Meteo elevation API (Copernicus DEM).
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 const UA = { 'User-Agent': 'road-trip-app-build/0.1 (justwoodford@gmail.com)' };
 const SPACING_M = 40; // distance between stored line points
+const CLIMB_HYSTERESIS_M = 5; // a rise must be this big to count, as for recorded trips
 const OUT = new URL('../src/data/iconicRoads.json', import.meta.url);
 
 /** anchors: [lng, lat] points to route through; match: which steps belong to the road. */
@@ -30,22 +33,6 @@ const ROADS = [
       [-1.7134, 53.3797],
     ],
     match: /Snake Road/,
-  },
-  {
-    id: 'winnats-pass',
-    name: 'Winnats Pass',
-    region: 'Peak District',
-    country: 'England',
-    roadType: 'Narrow lane',
-    from: 'Castleton',
-    to: 'Windy Knoll',
-    blurb:
-      'A steep, narrow limestone gorge above Castleton, climbing at up to 1 in 5 between grassy cliffs.',
-    anchors: [
-      [-1.779, 53.344],
-      [-1.82, 53.3405],
-    ],
-    match: /Winnats/,
   },
   {
     id: 'cat-and-fiddle',
@@ -129,22 +116,6 @@ const ROADS = [
     match: /A4069/,
   },
   {
-    id: 'horseshoe-pass',
-    name: 'Horseshoe Pass',
-    region: 'North Wales',
-    country: 'Wales',
-    roadType: 'A road',
-    from: 'Llangollen',
-    to: 'Ponderosa',
-    blurb:
-      'The A542 from Llangollen, curving round a horseshoe-shaped valley up to the Ponderosa café at the top.',
-    anchors: [
-      [-3.1915, 52.994],
-      [-3.216, 53.03],
-    ],
-    match: /A542/,
-  },
-  {
     id: 'cheddar-gorge',
     name: 'Cheddar Gorge',
     region: 'Somerset',
@@ -161,20 +132,374 @@ const ROADS = [
     match: /B3135/,
   },
   {
-    id: 'buttertubs-pass',
-    name: 'Buttertubs Pass',
-    region: 'Yorkshire Dales',
-    country: 'England',
-    roadType: 'Narrow road',
-    from: 'Thwaite',
-    to: 'Simonstone',
+    id: 'evo-triangle',
+    name: 'EVO Triangle',
+    region: 'Snowdonia',
+    country: 'Wales',
+    roadType: 'A and B roads',
+    from: 'Pentrefoelas',
+    to: 'Pentrefoelas',
     blurb:
-      'A high moorland road between Swaledale and Wensleydale, named after the limestone potholes beside it.',
+      'The A543, B4501 and A5 across the Denbigh Moors and past Llyn Brenig, named after the car magazine that tests on it.',
     anchors: [
-      [-2.164, 54.38],
-      [-2.201, 54.318],
+      [-3.687, 53.051],
+      [-3.533, 53.153],
+      [-3.564, 53.027],
+      [-3.687, 53.051],
     ],
-    match: /Cliff Gate/,
+    match: /A5 |A543|B4501/,
+  },
+  {
+    id: 'llanberis-pass',
+    name: 'Llanberis Pass',
+    region: 'Snowdonia',
+    country: 'Wales',
+    roadType: 'A road',
+    from: 'Nant Peris',
+    to: 'Pen-y-Pass',
+    blurb:
+      'The A4086 climbing between boulders and rock walls beneath Snowdon to Pen-y-Pass at 359 m.',
+    anchors: [
+      [-4.093, 53.109],
+      [-4.021, 53.0806],
+    ],
+    match: /A4086/,
+  },
+  {
+    id: 'snaefell-mountain-road',
+    name: 'Snaefell Mountain Road',
+    region: 'Mountain Course',
+    country: 'Isle of Man',
+    roadType: 'A road',
+    from: 'Ramsey',
+    to: 'Douglas',
+    blurb:
+      'The A18 over the shoulder of Snaefell, the mountain section of the TT course. Much of it has no speed limit, and it runs one way during the races.',
+    anchors: [
+      [-4.3945, 54.3165],
+      [-4.4818, 54.1646],
+    ],
+    match: /A18/,
+  },
+  {
+    id: 'stelvio-pass',
+    name: 'Stelvio Pass',
+    region: 'South Tyrol',
+    country: 'Italy',
+    roadType: 'Mountain pass',
+    from: 'Prato allo Stelvio',
+    to: 'Bormio',
+    blurb:
+      'The SS38 climbs 48 numbered hairpins to 2,757 m, the highest paved pass in the Eastern Alps, then drops to Bormio. Usually open June to October.',
+    anchors: [
+      [10.5916, 46.6197],
+      [10.453, 46.5286],
+      [10.37, 46.4684],
+    ],
+    match: /SS38/,
+  },
+  {
+    id: 'transfagarasan',
+    name: 'Transfăgărășan',
+    region: 'Făgăraș Mountains',
+    country: 'Romania',
+    roadType: 'Mountain pass',
+    from: 'Cârțișoara',
+    to: 'Lake Vidraru',
+    blurb:
+      'The DN7C over the Făgăraș Mountains past Bâlea Lake at over 2,000 m, built in the 1970s as a military route. Usually open July to October.',
+    anchors: [
+      [24.578, 45.716],
+      [24.617, 45.6036],
+      [24.6034, 45.4627],
+    ],
+    match: /DN7C/,
+  },
+  {
+    id: 'grossglockner',
+    name: 'Grossglockner High Alpine Road',
+    region: 'Hohe Tauern',
+    country: 'Austria',
+    roadType: 'Toll road',
+    from: 'Fusch',
+    to: 'Heiligenblut',
+    blurb:
+      "A toll road with 36 hairpins up to Hochtor at 2,504 m, beneath Austria's highest mountain. Usually open May to early November.",
+    anchors: [
+      [12.81, 47.207],
+      [12.842, 47.083],
+      [12.8434, 47.0398],
+    ],
+    match: /Großglockner/,
+  },
+  {
+    id: 'black-forest-high-road',
+    name: 'Black Forest High Road',
+    region: 'Black Forest',
+    country: 'Germany',
+    roadType: 'Main road',
+    from: 'Baden-Baden',
+    to: 'Kniebis',
+    blurb:
+      "The B500 along the ridge of the northern Black Forest past the Mummelsee, one of Germany's oldest scenic routes.",
+    anchors: [
+      [8.2396, 48.7616],
+      [8.201, 48.598],
+      [8.4111, 48.4636],
+    ],
+    match: /B 500|Schwarzwaldhochstraße/,
+  },
+  {
+    id: 'furka-pass',
+    name: 'Furka Pass',
+    region: 'Uri and Valais',
+    country: 'Switzerland',
+    roadType: 'Mountain pass',
+    from: 'Realp',
+    to: 'Gletsch',
+    blurb:
+      "Over 2,429 m past the Rhône Glacier and the Hotel Belvédère, where Goldfinger's car chase was filmed. Usually open June to October.",
+    anchors: [
+      [8.503, 46.598],
+      [8.415, 46.5727],
+      [8.3605, 46.5625],
+    ],
+    match: /Furka/,
+  },
+  {
+    id: 'grimsel-pass',
+    name: 'Grimsel Pass',
+    region: 'Bernese Oberland',
+    country: 'Switzerland',
+    roadType: 'Mountain pass',
+    from: 'Innertkirchen',
+    to: 'Gletsch',
+    blurb:
+      'Past granite slabs and dammed lakes up to 2,164 m, then hairpins down to Gletsch. Often driven with the Furka and Susten as a loop.',
+    anchors: [
+      [8.2305, 46.7065],
+      [8.3373, 46.5612],
+      [8.3605, 46.5625],
+    ],
+    match: /^6 /,
+  },
+  {
+    id: 'susten-pass',
+    name: 'Susten Pass',
+    region: 'Bernese Oberland',
+    country: 'Switzerland',
+    roadType: 'Mountain pass',
+    from: 'Innertkirchen',
+    to: 'Wassen',
+    blurb:
+      'A wide, well-surfaced pass built in the 1940s, climbing to 2,224 m past the Stein Glacier.',
+    anchors: [
+      [8.2305, 46.7065],
+      [8.447, 46.7297],
+      [8.5992, 46.7072],
+    ],
+    match: /Susten/,
+  },
+  {
+    id: 'tremola',
+    name: 'Tremola',
+    region: 'Ticino',
+    country: 'Switzerland',
+    roadType: 'Cobbled road',
+    from: 'Airolo',
+    to: 'Gotthard Pass',
+    blurb:
+      'The old cobbled road up the south side of the Gotthard, its hairpins stacked up the valley wall. Protected as a historic monument.',
+    anchors: [
+      [8.585, 46.5354],
+      [8.5698, 46.5465],
+      [8.5674, 46.5565],
+      [8.5575, 46.5703],
+    ],
+    match: /561|Tremola/,
+  },
+  {
+    id: 'san-bernardino-pass',
+    name: 'San Bernardino Pass',
+    region: 'Graubünden',
+    country: 'Switzerland',
+    roadType: 'Mountain pass',
+    from: 'Hinterrhein',
+    to: 'San Bernardino',
+    blurb:
+      'The old pass road over 2,066 m, quiet since the tunnel opened beneath it in 1967, with a lake at the top.',
+    anchors: [
+      [9.196, 46.532],
+      [9.172, 46.496],
+      [9.185, 46.463],
+    ],
+    match: /Passstrasse|Strada del Pass/,
+  },
+  {
+    id: 'route-napoleon',
+    name: 'Route Napoléon',
+    region: 'Provence',
+    country: 'France',
+    roadType: 'Main road',
+    from: 'Grasse',
+    to: 'Castellane',
+    blurb:
+      "The road Napoleon took north after escaping Elba in 1815. The stretch from Grasse to Castellane is its most famous, with long, fast bends through limestone hills.",
+    anchors: [
+      [6.9236, 43.6589],
+      [6.5131, 43.8473],
+    ],
+    match: /D 6085/,
+  },
+  {
+    id: 'col-de-turini',
+    name: 'Col de Turini',
+    region: 'Alpes-Maritimes',
+    country: 'France',
+    roadType: 'Mountain pass',
+    from: 'Sospel',
+    to: 'La Bollène-Vésubie',
+    blurb:
+      'Tight hairpins through the forest to 1,607 m, a famous night stage of the Monte Carlo Rally.',
+    anchors: [
+      [7.4475, 43.8775],
+      [7.3914, 43.9775],
+      [7.336, 43.9937],
+    ],
+    match: /Moulinet|D 2566|M 70/,
+  },
+  {
+    id: 'gorges-du-verdon',
+    name: 'Gorges du Verdon',
+    region: 'Provence',
+    country: 'France',
+    roadType: 'Partly one way',
+    from: 'La Palud-sur-Verdon',
+    to: 'La Palud-sur-Verdon',
+    blurb:
+      "The Route des Crêtes, a loop along the north rim of one of Europe's deepest canyons, with viewpoints over drops of up to 700 m.",
+    anchors: [
+      [6.342, 43.78],
+      [6.354, 43.7505],
+      [6.342, 43.78],
+    ],
+    match: /D 23/,
+  },
+  {
+    id: 'sa-calobra',
+    name: 'Sa Calobra',
+    region: 'Mallorca',
+    country: 'Spain',
+    roadType: 'Mountain road',
+    from: 'Ma-10',
+    to: 'Sa Calobra',
+    blurb:
+      "The Ma-2141 drops nearly 700 m to the sea in a ribbon of hairpins, including the Nus de sa Corbata, where the road loops under itself.",
+    anchors: [
+      [2.835, 39.8075],
+      [2.8055, 39.85],
+    ],
+    match: /Ma-2141/,
+  },
+  {
+    id: 'transalpina',
+    name: 'Transalpina',
+    region: 'Parâng Mountains',
+    country: 'Romania',
+    roadType: 'Mountain pass',
+    from: 'Novaci',
+    to: 'Obârșia Lotrului',
+    blurb:
+      "The DN67C, Romania's highest road, crossing the Parâng Mountains at 2,145 m. Usually open July to October.",
+    anchors: [
+      [23.6705, 45.1785],
+      [23.629, 45.444],
+    ],
+    match: /DN67C/,
+  },
+  {
+    id: 'trollstigen',
+    name: 'Trollstigen',
+    region: 'Møre og Romsdal',
+    country: 'Norway',
+    roadType: 'Mountain road',
+    from: 'Åndalsnes',
+    to: 'Valldal',
+    blurb:
+      'Eleven hairpins up a sheer valley wall beside the Stigfossen waterfall, then over the mountains to Valldal. Usually open late May to October.',
+    anchors: [
+      [7.719, 62.5205],
+      [7.664, 62.454],
+      [7.342, 62.3315],
+      [7.3029, 62.3191],
+      [7.265, 62.298],
+    ],
+    match: /^63 /,
+  },
+  {
+    id: 'atlantic-road',
+    name: 'Atlantic Road',
+    region: 'Møre og Romsdal',
+    country: 'Norway',
+    roadType: 'Coast road',
+    from: 'Vevang',
+    to: 'Kårvåg',
+    blurb:
+      'Eight bridges hopping between islets in the open sea, including the curving Storseisundet Bridge.',
+    anchors: [
+      [7.273, 63.02],
+      [7.355, 63.0175],
+      [7.419, 63.005],
+    ],
+    match: /Atlanterhavsvegen|Storseisundbrua/,
+  },
+  {
+    id: 'amalfi-coast',
+    name: 'Amalfi Coast',
+    region: 'Campania',
+    country: 'Italy',
+    roadType: 'Coast road',
+    from: 'Positano',
+    to: 'Vietri sul Mare',
+    blurb:
+      'The SS163 cut into the cliffs above the sea, through Amalfi and past lemon terraces. Narrow and busy in summer; best early in the morning.',
+    anchors: [
+      [14.485, 40.6281],
+      [14.728, 40.672],
+    ],
+    match: /SS163/,
+  },
+  {
+    id: 'kotor-serpentine',
+    name: 'Kotor Serpentine',
+    region: 'Bay of Kotor',
+    country: 'Montenegro',
+    roadType: 'Mountain road',
+    from: 'Kotor',
+    to: 'Krstac',
+    blurb:
+      'Twenty-five hairpins climbing almost 1,000 m from the Bay of Kotor towards Lovćen, with the bay below you at every turn.',
+    anchors: [
+      [18.7673, 42.4091],
+      [18.8001, 42.4255],
+    ],
+    match: /R-1(?!\d)/,
+  },
+  {
+    id: 'douro-valley',
+    name: 'Douro Valley',
+    region: 'Douro',
+    country: 'Portugal',
+    roadType: 'Main road',
+    from: 'Peso da Régua',
+    to: 'Pinhão',
+    blurb:
+      "The N222 along the south bank of the Douro, curving between terraced vineyards and the river. Often called one of the world's best driving roads.",
+    anchors: [
+      [-7.7887, 41.1556],
+      [-7.5527, 41.1746],
+    ],
+    match: /222/,
   },
 ];
 
@@ -336,6 +661,25 @@ async function elevations(points) {
   return out;
 }
 
+/**
+ * Total ascent: every rise of at least CLIMB_HYSTERESIS_M, like a recorded trip's
+ * climb. Each height is first averaged with its neighbours, as the elevation grid
+ * otherwise picks up the slopes beside a road in gorges and on hillsides.
+ */
+function climbOf(heights) {
+  const smooth = heights.map((_, i) => {
+    const near = heights.slice(Math.max(0, i - 1), i + 2);
+    return near.reduce((a, b) => a + b) / near.length;
+  });
+  let climb = 0;
+  let ref = smooth[0];
+  for (const h of smooth) {
+    if (h - ref >= CLIMB_HYSTERESIS_M) climb += h - ref;
+    if (Math.abs(h - ref) >= CLIMB_HYSTERESIS_M) ref = h;
+  }
+  return climb;
+}
+
 async function finish(meta, rawLine) {
   const line = resample(rawLine, SPACING_M);
   const heights = await elevations(resample(rawLine, 100));
@@ -344,7 +688,7 @@ async function finish(meta, rawLine) {
     ...meta,
     lengthM: Math.round(lengthOf(rawLine)),
     highestM: Math.round(Math.max(...heights)),
-    climbM: Math.round(Math.max(...heights) - Math.min(...heights)),
+    climbM: Math.round(climbOf(heights)),
     line: line.map(round5),
   };
   delete road.anchors;
@@ -355,15 +699,33 @@ async function finish(meta, rawLine) {
   return road;
 }
 
+const existing = new Map(
+  process.argv.includes('--new')
+    ? JSON.parse(await readFile(OUT, 'utf8')).roads.map((r) => [r.id, r])
+    : []
+);
+/** Writes the roads built so far plus any existing ones not reached yet. */
+async function save(roads) {
+  const built = new Set(roads.map((r) => r.id));
+  const all = [...roads, ...[...existing.values()].filter((r) => !built.has(r.id))];
+  await writeFile(
+    OUT,
+    `${JSON.stringify({ attribution: 'Road data © OpenStreetMap contributors (ODbL)', roads: all }, null, 0)}\n`
+  );
+  return all.length;
+}
+
 const roads = [];
 for (const meta of ROADS) {
+  if (existing.has(meta.id)) {
+    roads.push(existing.get(meta.id));
+    continue;
+  }
   roads.push(await finish(meta, await routedLine(meta)));
+  // Saved after each road, so a run stopped by a rate limit can carry on with --new.
+  if (existing.size) await save(roads);
   await sleep(1000);
 }
-roads.push(await finish(RING, await ringLine()));
+roads.push(existing.get(RING.id) ?? (await finish(RING, await ringLine())));
 
-await writeFile(
-  OUT,
-  `${JSON.stringify({ attribution: 'Road data © OpenStreetMap contributors (ODbL)', roads }, null, 0)}\n`
-);
-console.log(`wrote ${roads.length} roads to ${OUT.pathname}`);
+console.log(`wrote ${await save(roads)} roads to ${OUT.pathname}`);
