@@ -8,7 +8,7 @@ import Icon from '../ui/Icon';
 
 const SIZE = 36;
 const OVERLAP = 10;
-const MAX_SHOWN = 5; // more than this: the first 4 and a "+n" circle
+const MAX_SHOWN = 4; // more than this: the first 3 and a "+n" circle
 
 /** "England", "England and Wales", "England, Wales and France". */
 const listOf = (names) =>
@@ -16,13 +16,13 @@ const listOf = (names) =>
 
 /**
  * Round, overlapping flags for the countries driven, most distance first:
- * `countries` is [{ code, name, flag }] in that order. Nothing for one country;
- * up to five are shown, then four and a "+n" circle for the rest.
+ * `countries` is [{ code, name, flag }] in that order. Up to four are shown,
+ * then three and a "+n" circle for the rest.
  */
 export default function FlagStack({ countries }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  if (countries.length < 2) return null;
+  if (countries.length === 0) return null;
   const shown = countries.length > MAX_SHOWN ? countries.slice(0, MAX_SHOWN - 1) : countries;
   const rest = countries.length - shown.length;
   const names = listOf(shown.map((country) => country.name));
