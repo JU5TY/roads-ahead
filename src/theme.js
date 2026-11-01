@@ -16,6 +16,7 @@ const light = {
   accent: '#1A73E8',
   onAccent: '#FFFFFF',
   accentContainer: '#E8F0FE', // blue tint: icon wells, Recording row, Premium
+  halo: '#C6DAFC', // the ring round the logo, Location pin, No trips and Home's map
   onAccentContainer: '#174EA6',
   accentContainerMuted: '#3B5BA0',
   accentWell: '#D2E3FC', // icon circles on the blue Premium card
@@ -90,6 +91,7 @@ const dark = {
   accent: '#8AB4F8',
   onAccent: '#062E6F',
   accentContainer: '#283A55',
+  halo: '#33476A',
   onAccentContainer: '#D2E3FC',
   accentContainerMuted: '#A8C7FA',
   accentWell: '#2F4A73',
