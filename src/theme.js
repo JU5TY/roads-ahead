@@ -67,12 +67,18 @@ const light = {
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
-  dayColors: ['#F29900', '#E52592', '#9334E6'],
+  // A week of route colours: no greens or blues (parks, water, the accent),
+  // and no red (the finish pin). Neighbouring days are never close in hue.
+  dayColors: ['#F29900', '#E52592', '#9334E6', '#12B5CB', '#E8710A', '#3F51B5', '#795548'],
   // Number badges in the Drives list: [background, text] per day colour.
   dayBadges: [
     ['#FEEFC3', '#5F3B00'],
     ['#FDE7F3', '#7A0D4A'],
     ['#F3E8FD', '#3B0A6B'],
+    ['#E4F7FB', '#004A56'],
+    ['#FEEFE3', '#7A2E0E'],
+    ['#E8EAF6', '#1A237E'],
+    ['#EFEBE9', '#3E2723'],
   ],
 };
 
@@ -132,17 +138,21 @@ const dark = {
   onNavPill: '#8AB4F8',
   scrim: 'rgba(0,0,0,0.5)',
   cardShadow: null,
-  dayColors: ['#FDD663', '#FF8BCB', '#C58AF9'],
+  dayColors: ['#FDD663', '#FF8BCB', '#C58AF9', '#78D9EC', '#FCAD70', '#9FA8DA', '#D7A985'],
   dayBadges: [
     ['#3D3214', '#FDD663'],
     ['#4A1F35', '#FFB3DC'],
     ['#33204A', '#D7AEFB'],
+    ['#0F3A42', '#78D9EC'],
+    ['#4A2A10', '#FCAD70'],
+    ['#262B4A', '#C5CAE9'],
+    ['#3B2C22', '#D7A985'],
   ],
 };
 
 export const palettes = { light, dark };
 
-/** Route colour for day N of a trip; repeats after three days. */
+/** Route colour for day N of a trip; repeats after a week. */
 export const dayColorFor = (palette, dayNumber) =>
   palette.dayColors[(dayNumber - 1) % palette.dayColors.length];
 
