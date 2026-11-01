@@ -2,6 +2,7 @@
 // Days are not stored; they are derived from drive start dates (utils/tripSummary.js).
 import { getDb } from './db';
 import { rowToDrive } from './driveStorage';
+import { forgetExampleTrip, getExampleTripId } from './exampleTrip';
 
 function rowToTrip(row, drives) {
   return {
@@ -87,4 +88,12 @@ export async function deleteTrip(tripId) {
     await db.runAsync('DELETE FROM drives WHERE trip_id = ?', tripId);
     await db.runAsync('DELETE FROM trips WHERE id = ?', tripId);
   });
+}
+
+/** Remove the example trip, if it's still there: the first recorded drive replaces it. */
+export async function removeExampleTrip() {
+  const id = getExampleTripId();
+  if (id === null) return;
+  await deleteTrip(id);
+  await forgetExampleTrip();
 }

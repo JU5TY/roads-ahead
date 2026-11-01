@@ -17,6 +17,7 @@ import {
 import { checkDriveCountries } from '../storage/countryStorage';
 import { checkDriveCrossings } from '../storage/crossingStorage';
 import { checkDrive } from '../storage/roadStorage';
+import { removeExampleTrip } from '../storage/tripStorage';
 import {
   applyFixes,
   finalizeStats,
@@ -218,6 +219,10 @@ export async function stopDrive() {
     if (!drive) return null;
     const endedAt = Date.now();
     await completeDrive(drive.id, endedAt, finalizeStats(drive.stats));
+    // The first recorded drive replaces the example trip new installs start with.
+    await removeExampleTrip().catch((err) =>
+      console.warn('[locationService] removing the example trip failed', err)
+    );
     // Ferry and tunnel crossings first: they redo the stats the checks below build on.
     await checkDriveCrossings(drive.id).catch((err) =>
       console.warn('[locationService] crossings check failed', err)

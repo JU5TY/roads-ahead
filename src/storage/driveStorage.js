@@ -1,6 +1,7 @@
 // Drives: one START→STOP recording, with its stats, place names and GPS points.
 import { createTripStats } from '../utils/geoMath';
 import { getDb } from './db';
+import { getExampleTripId } from './exampleTrip';
 
 export function rowToDrive(row) {
   return {
@@ -192,8 +193,10 @@ export async function moveDrive(driveId, targetTripId = null) {
   return newTripId;
 }
 
-/** Whether any drive (recording or completed) has ever been saved. */
+/** Whether any drive (recording or completed) has ever been saved, the example trip's aside. */
 export async function hasAnyDrive() {
   const db = await getDb();
-  return Boolean(await db.getFirstAsync('SELECT 1 FROM drives LIMIT 1'));
+  return Boolean(
+    await db.getFirstAsync('SELECT 1 FROM drives WHERE trip_id IS NOT ? LIMIT 1', getExampleTripId())
+  );
 }

@@ -13,6 +13,8 @@
 //   drives.sea_crossings                                  ferry and tunnel crossings (JSON, utils/crossings.js)
 import * as SQLite from 'expo-sqlite';
 
+import { seedExampleTrip } from './exampleTrip';
+
 // The original (version 0) schema. Later versions are reached via MIGRATIONS.
 const BASE_SCHEMA = `
   CREATE TABLE IF NOT EXISTS trips (
@@ -114,6 +116,7 @@ const MIGRATIONS = [
   `,
 ];
 
+/** Bring the schema up to date. Resolves to true when the database was just created. */
 async function migrate(db) {
   const { user_version: version } = await db.getFirstAsync('PRAGMA user_version');
   if (version === 0) await db.execAsync(BASE_SCHEMA);
@@ -122,6 +125,7 @@ async function migrate(db) {
       db.execAsync(`${MIGRATIONS[v]} PRAGMA user_version = ${v + 1};`)
     );
   }
+  return version === 0;
 }
 
 let dbPromise = null;
@@ -131,7 +135,10 @@ export function getDb() {
     dbPromise = (async () => {
       const db = await SQLite.openDatabaseAsync('roadtrip.db');
       await db.execAsync('PRAGMA journal_mode = WAL;');
-      await migrate(db);
+      // A new install starts with the example trip (never again, even once it's gone).
+      if (await migrate(db)) {
+        await seedExampleTrip(db).catch((err) => console.warn('[db] example trip failed', err));
+      }
       return db;
     })();
     // Let a failed open be retried on the next call.
