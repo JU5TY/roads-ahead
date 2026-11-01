@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import FlagStack from '../components/countries/FlagStack';
 import DotMarker from '../components/DotMarker';
 import IconButton from '../components/ui/IconButton';
 import { useSettings } from '../context/SettingsContext';
@@ -13,7 +14,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { getLocationAccess } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
 import { listTrips } from '../storage/tripStorage';
-import { type } from '../theme';
+import { fonts } from '../theme';
 import { summarizeCountries } from '../utils/countries';
 import { driveGaps, routeSegments } from '../utils/crossings';
 import { distanceParts } from '../utils/format';
@@ -21,7 +22,7 @@ import { getRoad } from '../utils/iconicRoads';
 import { computeTotals, firstDriveMonth } from '../utils/tripSummary';
 
 const MAX_MAP_POINTS = 6000; // across every drive, so a long history stays quick to draw
-const SHEET_HEIGHT = 130; // the totals panel (above the nav inset), kept clear when fitting
+const SHEET_HEIGHT = 110; // the totals panel (above the nav inset), kept clear when fitting
 const POSITION_DELTA = 0.05;
 
 /** Every drive's route (all trips), thinned: [{ drive, points }]. Null while loading. */
@@ -125,19 +126,11 @@ export default function YourMapScreen() {
   };
 
   const trips = data?.trips ?? [];
-  const totals = computeTotals(trips);
-  const distance = distanceParts(totals.distanceM, units, { whole: true });
-  const countryCount = summarizeCountries(
-    trips
-      .flatMap((t) => t.drives)
-      .sort((a, b) => a.startedAt - b.startedAt)
-      .flatMap((d) => d.countries ?? [])
-  ).length;
-  const stats = [
-    [distance.value, distance.unit],
-    [String(totals.tripCount), totals.tripCount === 1 ? 'trip' : 'trips'],
-    [String(countryCount), countryCount === 1 ? 'country' : 'countries'],
-  ];
+  const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
+  // Most distance first, for the flags.
+  const countries = summarizeCountries(
+    trips.flatMap((t) => t.drives).flatMap((d) => d.countries ?? [])
+  ).sort((a, b) => b.distanceM - a.distanceM);
 
   return (
     <View style={styles.screen}>
@@ -188,18 +181,20 @@ export default function YourMapScreen() {
         style={[styles.button, styles.right, { top: insets.top + 12 }]}
       />
 
-      <View style={[styles.sheet, dark && styles.sheetDark, { paddingBottom: insets.bottom + 24 }]}>
-        {trips.length > 0 ? (
-          <Text style={[type.bodyStrong, styles.since]}>Since {firstDriveMonth(trips)}</Text>
-        ) : null}
-        <View style={styles.stats}>
-          {stats.map(([value, unit]) => (
-            <View key={unit} style={styles.stat}>
-              <Text style={[type.stat, styles.value]}>{value}</Text>
-              <Text style={[type.small, styles.muted]}>{unit}</Text>
-            </View>
-          ))}
+      <View
+        style={[styles.sheet, dark && styles.sheetDark, { paddingBottom: insets.bottom + 24 }]}
+        accessibilityLabel="All time totals"
+      >
+        <View>
+          <Text style={styles.total}>
+            {distance.value}
+            <Text style={styles.totalUnit}> {distance.unit}</Text>
+          </Text>
+          {trips.length > 0 ? (
+            <Text style={styles.since}>driven since {firstDriveMonth(trips)}</Text>
+          ) : null}
         </View>
+        <FlagStack countries={countries} />
       </View>
     </View>
   );
@@ -218,12 +213,17 @@ const makeStyles = (c) => ({
     borderColor: c.card,
     backgroundColor: c.roadBadge,
   },
-  // A fixed panel, not a draggable sheet: square corners, no handle.
+  // A fixed panel, not a draggable sheet: square corners, no handle. Totals on
+  // the left, flags on the right.
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
     paddingTop: 20,
     paddingHorizontal: 16,
     backgroundColor: c.card,
@@ -234,9 +234,13 @@ const makeStyles = (c) => ({
     elevation: 12,
   },
   sheetDark: { shadowOpacity: 0.5 },
-  since: { color: c.text, textAlign: 'center', marginBottom: 10 },
-  stats: { flexDirection: 'row', paddingBottom: 4 },
-  stat: { flex: 1, alignItems: 'center' },
-  value: { color: c.accent, fontSize: 22, lineHeight: 28 },
-  muted: { color: c.textMuted },
+  total: {
+    fontFamily: fonts.medium,
+    fontSize: 40,
+    lineHeight: 40,
+    letterSpacing: -0.5,
+    color: c.accent,
+  },
+  totalUnit: { fontSize: 18 },
+  since: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 6 },
 });
