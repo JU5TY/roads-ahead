@@ -268,6 +268,23 @@ const ROADS = [
     match: /Furka/,
   },
   {
+    id: 'grimsel-pass',
+    name: 'Grimsel Pass',
+    region: 'Bernese Oberland',
+    country: 'Switzerland',
+    roadType: 'Mountain pass',
+    from: 'Innertkirchen',
+    to: 'Gletsch',
+    blurb:
+      'Past granite slabs and dammed lakes up to 2,164 m, then hairpins down to Gletsch. Often driven with the Furka and Susten as a loop.',
+    anchors: [
+      [8.2305, 46.7065],
+      [8.3373, 46.5612],
+      [8.3605, 46.5625],
+    ],
+    match: /^6 /,
+  },
+  {
     id: 'susten-pass',
     name: 'Susten Pass',
     region: 'Bernese Oberland',
@@ -316,25 +333,6 @@ const ROADS = [
       [7.336, 43.9937],
     ],
     match: /Moulinet|D 2566|M 70/,
-  },
-  {
-    id: 'trollstigen',
-    name: 'Trollstigen',
-    region: 'Møre og Romsdal',
-    country: 'Norway',
-    roadType: 'Mountain road',
-    from: 'Åndalsnes',
-    to: 'Valldal',
-    blurb:
-      'Eleven hairpins up a sheer valley wall beside the Stigfossen waterfall, then over the mountains to Valldal. Usually open late May to October.',
-    anchors: [
-      [7.719, 62.5205],
-      [7.664, 62.454],
-      [7.342, 62.3315],
-      [7.3029, 62.3191],
-      [7.265, 62.298],
-    ],
-    match: /^63 /,
   },
 ];
 
