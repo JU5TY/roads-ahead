@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import WeekDistance from '../components/home/WeekDistance';
 import YourMap from '../components/home/YourMap';
-import MapIllustration from '../components/MapIllustration';
+import NoTrips from '../components/NoTrips';
 import RoadsProgress from '../components/roads/RoadsProgress';
 import TripCard from '../components/TripCard';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -15,12 +15,12 @@ import { useRoadCounts } from '../hooks/useRoadCounts';
 import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { listTrips } from '../storage/tripStorage';
-import { bottomSpace, radius, spacing, type } from '../theme';
+import { bottomSpace, spacing, type } from '../theme';
 import { distanceParts } from '../utils/format';
 import { ICONIC_ROADS, ROADS_INTRO } from '../utils/iconicRoads';
 import { computeTotals, firstDriveMonth } from '../utils/tripSummary';
 
-/** The band at the top: the round Your map, the all-time distance and since when. */
+/** The top of Home: the round Your map, the all-time distance and since when. */
 function MapHero({ trips, units, insetTop }) {
   const styles = useStyles(makeStyles);
   const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
@@ -100,17 +100,7 @@ export default function HomeScreen() {
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
       >
-        <SectionHeader variant="overline" title="Latest trip" style={styles.emptyHeader} />
-        <View style={styles.emptyCard}>
-          <MapIllustration height={140} />
-          <View style={styles.emptyText}>
-            <Text style={[type.bodyStrong, styles.text]}>Your first trip will show here</Text>
-            <Text style={[type.body, styles.mutedSmall]}>
-              Tap Record when you set off. It keeps recording with the screen off.
-            </Text>
-          </View>
-        </View>
-        {showIconicRoads ? <RoadsCard /> : null}
+        <NoTrips style={styles.empty} />
       </ScrollView>
     );
   }
@@ -144,11 +134,8 @@ const makeStyles = (c) => ({
   // Bottom padding clears the floating Record pill above the nav bar.
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
   band: {
-    marginHorizontal: -spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingBottom: 28,
+    paddingBottom: 8, // 32 to the Distance card, with its 24
     alignItems: 'center',
-    backgroundColor: c.band,
   },
   total: {
     fontFamily: type.stat.fontFamily,
@@ -160,16 +147,7 @@ const makeStyles = (c) => ({
   },
   totalUnit: { fontSize: 20 },
   since: { marginTop: 4 }, // ~6 under the number's glyphs
-  text: { color: c.text },
   muted: { color: c.textMuted },
-  mutedSmall: { color: c.textMuted, fontSize: 14, lineHeight: 20 },
   roadsHint: { color: c.textMuted, fontSize: 14, lineHeight: 20, marginTop: 14 },
-  emptyHeader: { marginTop: 8 }, // 24 from the top, with the screen's 16
-  emptyCard: {
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    backgroundColor: c.card,
-    ...c.cardShadow,
-  },
-  emptyText: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 18, gap: 4 },
+  empty: { paddingTop: 188 }, // the same height as on Trips, under its title
 });

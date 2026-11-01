@@ -1,43 +1,39 @@
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../hooks/useTheme';
-import { radius, spacing, type } from '../theme';
+import { spacing, type } from '../theme';
+import { PROMPT_CHOICE, SETTINGS_ALLOW, SETTINGS_PRECISE } from '../utils/locationChoices';
+import PhoneChoice from './PhoneChoice';
 import Button from './ui/Button';
+import { HaloIcon } from './ui/Halo';
 
-// What to pick in the system prompt, in each platform's own wording.
-const CHOICE_HINT =
-  Platform.OS === 'ios'
-    ? 'On the next screen, tap "Allow While Using App" and leave Precise on.'
-    : 'On the next screen, choose "Precise" and "While using the app".';
-
+// Matches the Location screen: the same title and card when asking.
 const CONTENT = {
-  // First time: explain before the system prompt appears.
+  // Not asked yet (Not now during setup): explain before the system prompt.
   ask: {
-    title: 'Allow location to record your trip',
-    body: [
-      'Roads Ahead uses GPS to draw your route and work out distance, speed and rest stops.',
-      'It keeps recording while you use Google Maps. Your trips stay on this phone.',
-    ],
-    hint: CHOICE_HINT,
+    icon: 'location_on',
+    title: 'Allow location to map your drives',
+    lead: 'Every drive is recorded with GPS.',
+    choice: PROMPT_CHOICE,
     primary: 'Continue',
     secondary: 'Not now',
   },
   // Denied and the system won't ask again: only Settings can fix it.
   blocked: {
-    title: 'Location is off for Roads Ahead',
-    body: ['Roads Ahead needs your location to record a trip.'],
-    hint: 'In Settings, open Location (or Permissions → Location) and choose "While using the app".',
+    icon: 'location_off',
+    title: 'Location is turned off',
+    lead: 'Turn it back on in Settings to record your drives.',
+    choice: SETTINGS_ALLOW,
     primary: 'Open Settings',
     secondary: 'Cancel',
   },
   // Granted but approximate: accurate only to a few hundred metres.
   approximate: {
+    icon: 'my_location',
     title: 'Turn on precise location',
-    body: [
-      'Roads Ahead only has your approximate location, which is too rough to measure distance or speed.',
-    ],
-    hint: 'In Settings, open Location and turn on "Use precise location".',
+    lead: 'Approximate location is too rough to map your route or measure distance.',
+    choice: SETTINGS_PRECISE,
     primary: 'Open Settings',
     secondary: 'Start anyway',
   },
@@ -61,21 +57,23 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
     >
       <View style={styles.backdrop}>
         {content ? (
-          <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
-            <Text style={styles.title}>{content.title}</Text>
-            {content.body.map((line) => (
-              <Text key={line} style={styles.body}>
-                {line}
-              </Text>
-            ))}
-            <View style={styles.hint}>
-              <Text style={styles.hintText}>{content.hint}</Text>
-            </View>
-            <Button label={content.primary} onPress={onPrimary} />
+          <ScrollView
+            style={styles.sheet}
+            contentContainerStyle={[styles.sheetContent, { paddingBottom: 28 + insets.bottom }]}
+            bounces={false}
+          >
+            <View style={styles.handle} />
+            <HaloIcon icon={content.icon} />
+            <Text style={[type.title, styles.text, styles.title]} role="heading">
+              {content.title}
+            </Text>
+            <Text style={[type.bodyLarge, styles.muted, styles.lead]}>{content.lead}</Text>
+            <PhoneChoice {...content.choice} style={styles.choice} />
+            <Button label={content.primary} onPress={onPrimary} style={styles.primary} />
             <Pressable onPress={onSecondary} style={styles.secondary} accessibilityRole="button">
-              <Text style={styles.secondaryText}>{content.secondary}</Text>
+              <Text style={[type.button, styles.link]}>{content.secondary}</Text>
             </Pressable>
-          </View>
+          </ScrollView>
         ) : null}
       </View>
     </Modal>
@@ -84,22 +82,28 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
 
 const makeStyles = (c) => ({
   backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
+  // Scrolls on short phones rather than running off the top.
   sheet: {
+    flexGrow: 0,
     backgroundColor: c.background,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
-    padding: spacing.lg,
-    gap: spacing.sm,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
-  title: { ...type.title, color: c.text, marginBottom: spacing.xs },
-  body: { ...type.body, color: c.text },
-  hint: {
-    backgroundColor: c.accentContainer,
-    borderRadius: 20,
-    padding: spacing.md,
-    marginVertical: spacing.sm,
+  sheetContent: { paddingTop: 12, paddingHorizontal: spacing.lg },
+  handle: {
+    alignSelf: 'center',
+    width: 32,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 16,
+    backgroundColor: c.outline,
   },
-  hintText: { ...type.body, color: c.onAccentContainer },
-  secondary: { height: 48, alignItems: 'center', justifyContent: 'center' },
-  secondaryText: { ...type.button, color: c.accent },
+  title: { marginTop: 20 },
+  lead: { marginTop: 8, lineHeight: 24 },
+  choice: { marginTop: 20 },
+  primary: { marginTop: 24 },
+  secondary: { height: 48, marginTop: 8, alignItems: 'center', justifyContent: 'center' },
+  text: { color: c.text },
+  muted: { color: c.textMuted },
+  link: { color: c.accent },
 });

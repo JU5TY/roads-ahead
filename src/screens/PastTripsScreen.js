@@ -1,19 +1,18 @@
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import NoTrips from '../components/NoTrips';
 import RecordingBar from '../components/RecordingBar';
 import TripCard from '../components/TripCard';
-import Button from '../components/ui/Button';
-import Icon from '../components/ui/Icon';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
 import { useRoadCounts } from '../hooks/useRoadCounts';
-import { useStyles, useTheme } from '../hooks/useTheme';
+import { useStyles } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
 import { listTrips } from '../storage/tripStorage';
-import { bottomSpace, radius, spacing, type } from '../theme';
+import { bottomSpace, spacing, type } from '../theme';
 import { distanceParts } from '../utils/format';
 import { computeTotals } from '../utils/tripSummary';
 
@@ -51,32 +50,6 @@ function summaryLine(trips, units) {
   const count = `${totals.tripCount} ${totals.tripCount === 1 ? 'trip' : 'trips'}`;
   const prefix = thisYear.tripCount > 0 ? `${year} · ` : 'All time · ';
   return `${prefix}${count} · ${distance.value} ${distance.unit}`;
-}
-
-/** No trips yet: a short explainer and a Record button. */
-function EmptyTrips() {
-  const { c } = useTheme();
-  const styles = useStyles(makeStyles);
-  return (
-    <View style={styles.empty}>
-      <View style={styles.emptyTile}>
-        <Icon name="route" size={44} color={c.onAccentContainer} />
-      </View>
-      <Text style={[type.title, styles.emptyTitle]}>No trips yet</Text>
-      <Text style={[type.body, styles.muted, styles.emptyBody]}>
-        Your trips will appear here after your first drive.
-      </Text>
-      <Button
-        variant="tonal"
-        size="small"
-        icon="radio_button_checked"
-        iconFilled
-        label="Record"
-        style={styles.emptyButton}
-        onPress={() => router.navigate('/record')}
-      />
-    </View>
-  );
 }
 
 export default function PastTripsScreen() {
@@ -150,7 +123,7 @@ export default function PastTripsScreen() {
         )
       }
       ItemSeparatorComponent={() => <View style={styles.separator} />}
-      ListEmptyComponent={trips ? <EmptyTrips /> : null}
+      ListEmptyComponent={trips ? <NoTrips style={styles.empty} /> : null}
     />
   );
 }
@@ -164,16 +137,5 @@ const makeStyles = (c) => ({
   month: { marginTop: 20, marginBottom: 4 },
   separator: { height: spacing.sm },
   muted: { color: c.textMuted },
-  empty: { alignItems: 'center', paddingTop: 140, paddingHorizontal: 24 },
-  emptyTile: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.card,
-    backgroundColor: c.accentContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: { color: c.text, fontFamily: type.section.fontFamily, fontSize: 22, marginTop: 24 },
-  emptyBody: { textAlign: 'center', marginTop: 8 },
-  emptyButton: { marginTop: 24, paddingHorizontal: 24 },
+  empty: { paddingTop: 124 },
 });

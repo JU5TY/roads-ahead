@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { routeMarkers } from '../components/detail/mapMarkers';
 import IconicRoadsSection from '../components/roads/IconicRoadsSection';
 import RouteMap from '../components/RouteMap';
 import Button from '../components/ui/Button';
+import FadeUp from '../components/ui/FadeUp';
 import IconButton from '../components/ui/IconButton';
 import StatRow from '../components/ui/StatRow';
 import { useSettings } from '../context/SettingsContext';
@@ -15,32 +16,12 @@ import { ensureDrivePlaces } from '../services/placeService';
 import { getDrive, getDrivePoints } from '../storage/driveStorage';
 import { getDriveCompletions, getRoadTotals } from '../storage/roadStorage';
 import { getTrip } from '../storage/tripStorage';
-import { dayColorFor, spacing, type } from '../theme';
+import { spacing, type } from '../theme';
 import { driveGaps, routeSegments } from '../utils/crossings';
 import { distanceParts, elevationParts, formatDate, formatDurationShort } from '../utils/format';
 import { comingSoon } from '../utils/comingSoon';
 import { downsample } from '../utils/geoMath';
 import { dayNumberFor, groupIntoDays, routeLabel, tripTitle } from '../utils/tripSummary';
-
-/** Fades and slides its children up into place, `delay` ms after mounting. */
-function FadeUp({ delay, style, children }) {
-  const progress = useState(() => new Animated.Value(0))[0];
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 400,
-      delay,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  }, [progress, delay]);
-  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [8, 0] });
-  return (
-    <Animated.View style={[style, { opacity: progress, transform: [{ translateY }] }]}>
-      {children}
-    </Animated.View>
-  );
-}
 
 /** Shown after Stop: the drive just saved, with Share and View. */
 export default function SavedScreen() {
@@ -127,7 +108,7 @@ export default function SavedScreen() {
             'route',
             route,
             driveGaps(drive),
-            multiDay ? dayColorFor(c, dayNumber) : c.accent
+            c.accent
           )}
           markers={routeMarkers({
             firstPoint: route[0],

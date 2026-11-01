@@ -4,7 +4,6 @@
 const light = {
   background: '#F8F9FA', // the page behind cards
   card: '#FFFFFF', // cards, rows groups, sheets
-  band: '#FFFFFF', // Home's top band behind Your map (the page itself in dark)
   surface: '#FFFFFF', // stat tiles and other card-like blocks
   surfaceLow: '#FFFFFF',
   track: '#E8EAED', // segmented switch, search button, chips at rest
@@ -42,10 +41,9 @@ const light = {
   onStop: '#FFFFFF',
   start: '#1E8E3E',
   finish: '#D93025',
-  // Drawn map illustrations (Welcome, empty Home, Your map).
+  // Drawn maps (Your map, route thumbnails).
   mapLand: '#EEF2EC',
-  heroMapLand: '#EEF2EC', // the round maps on Home and Welcome, on the band
-  mapWater: '#C9DDF2',
+  heroMapLand: '#EEF2EC', // Home's round map, on the page
   mapRoad: '#FFFFFF',
   progressTrack: '#E3E5E8',
   outlinedRow: '#FFFFFF', // not-yet Iconic Road rows
@@ -80,7 +78,6 @@ const light = {
 const dark = {
   background: '#202124',
   card: '#2C2D31',
-  band: '#202124',
   surface: '#2C2D31',
   surfaceLow: '#2C2D31',
   track: '#3C4043',
@@ -117,8 +114,7 @@ const dark = {
   start: '#34A853',
   finish: '#EA4335',
   mapLand: '#1C2226',
-  heroMapLand: '#2C2D31', // the card colour, so the circle stands out on the band
-  mapWater: '#1E3348',
+  heroMapLand: '#2C2D31', // the card colour, so the circle stands out on the page
   mapRoad: '#2C343A',
   progressTrack: '#3A3B3F',
   outlinedRow: '#26272B',

@@ -4,13 +4,15 @@ import { Pressable, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getDriveRoutePreview } from '../../storage/driveStorage';
-import { dayColorFor } from '../../theme';
 import { driveGaps, splitAtCrossings } from '../../utils/crossings';
 import { groupIntoDays } from '../../utils/tripSummary';
 import RouteCircle from '../RouteCircle';
+import Halo from '../ui/Halo';
 import Icon from '../ui/Icon';
 
-const SIZE = 216;
+// The map circle inside its ring; the two together are 216 across.
+const SIZE = 176;
+const RING = 20;
 const POINTS_PER_DRIVE = 80;
 
 // The last routes drawn, so coming back to Home doesn't reload every drive.
@@ -60,15 +62,14 @@ function useAllRoutes(trips) {
 
 /**
  * Home's round "Your map": every road you've driven, drawn flat (no map to
- * load) and fitted inside the circle. The latest trip is bold in its day
- * colours, everything else faint blue; ferries, tunnels and pauses are dotted.
+ * load) and fitted inside the circle. The latest trip is bold, everything
+ * else faint; ferries, tunnels and pauses are dotted.
  * Opens the full map. `trips` newest first.
  */
 export default function YourMap({ trips }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const parts = useAllRoutes(trips);
-  const multiDay = groupIntoDays(trips[0]?.drives ?? []).length > 1;
 
   // Older routes first, so the latest trip is drawn on top.
   const lines = useMemo(
@@ -86,11 +87,11 @@ export default function YourMap({ trips }) {
         .map((p) => ({
           coordinates: p.coordinates,
           dotted: p.crossing !== null,
-          color: multiDay ? dayColorFor(c, p.day) : c.accent,
+          color: c.accent,
           width: 4.5,
         })),
     ],
-    [parts, multiDay, c]
+    [parts, c]
   );
 
   return (
@@ -100,9 +101,11 @@ export default function YourMap({ trips }) {
       accessibilityLabel="Open your map"
       style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
     >
-      <View style={styles.circle}>
-        <RouteCircle size={SIZE} lines={lines} />
-      </View>
+      <Halo size={SIZE + RING * 2}>
+        <View style={styles.circle}>
+          <RouteCircle size={SIZE} lines={lines} />
+        </View>
+      </Halo>
       <View style={styles.expand}>
         <Icon name="open_in_full" size={20} color={c.text} />
       </View>
@@ -111,8 +114,8 @@ export default function YourMap({ trips }) {
 }
 
 const makeStyles = (c) => ({
-  // No border or shadow, like the Trips list's round outlines.
-  wrap: { width: SIZE, height: SIZE },
+  // No border or shadow: the ring sets it off.
+  wrap: { width: SIZE + RING * 2, height: SIZE + RING * 2 },
   circle: {
     width: SIZE,
     height: SIZE,
@@ -121,7 +124,7 @@ const makeStyles = (c) => ({
     backgroundColor: c.heroMapLand,
   },
   pressed: { opacity: 0.9 },
-  // Overlaps the circle's bottom-right edge.
+  // Overlaps the ring's bottom-right edge.
   expand: {
     position: 'absolute',
     right: 4,
