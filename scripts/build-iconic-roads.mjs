@@ -166,20 +166,21 @@ const ROADS = [
     match: /A4086/,
   },
   {
-    id: 'snaefell-mountain-road',
-    name: 'Snaefell Mountain Road',
-    region: 'Mountain Course',
-    country: 'Isle of Man',
-    roadType: 'A road',
-    from: 'Ramsey',
-    to: 'Douglas',
+    id: 'blakey-ridge',
+    name: 'Blakey Ridge',
+    region: 'North York Moors',
+    country: 'England',
+    roadType: 'Minor road',
+    from: 'Hutton-le-Hole',
+    to: 'Castleton',
     blurb:
-      'The A18 over the shoulder of Snaefell, the mountain section of the TT course. Much of it has no speed limit, and it runs one way during the races.',
+      'Across the top of the North York Moors past the Lion Inn, with wide, open bends and views down into Farndale and Rosedale.',
     anchors: [
-      [-4.3945, 54.3165],
-      [-4.4818, 54.1646],
+      [-0.9175, 54.2995],
+      [-0.958, 54.406],
+      [-0.946, 54.466],
     ],
-    match: /A18/,
+    match: /Blakey|Stepin Turn/,
   },
   {
     id: 'stelvio-pass',
@@ -267,23 +268,6 @@ const ROADS = [
     match: /Furka/,
   },
   {
-    id: 'grimsel-pass',
-    name: 'Grimsel Pass',
-    region: 'Bernese Oberland',
-    country: 'Switzerland',
-    roadType: 'Mountain pass',
-    from: 'Innertkirchen',
-    to: 'Gletsch',
-    blurb:
-      'Past granite slabs and dammed lakes up to 2,164 m, then hairpins down to Gletsch. Often driven with the Furka and Susten as a loop.',
-    anchors: [
-      [8.2305, 46.7065],
-      [8.3373, 46.5612],
-      [8.3605, 46.5625],
-    ],
-    match: /^6 /,
-  },
-  {
     id: 'susten-pass',
     name: 'Susten Pass',
     region: 'Bernese Oberland',
@@ -299,41 +283,6 @@ const ROADS = [
       [8.5992, 46.7072],
     ],
     match: /Susten/,
-  },
-  {
-    id: 'tremola',
-    name: 'Tremola',
-    region: 'Ticino',
-    country: 'Switzerland',
-    roadType: 'Cobbled road',
-    from: 'Airolo',
-    to: 'Gotthard Pass',
-    blurb:
-      'The old cobbled road up the south side of the Gotthard, its hairpins stacked up the valley wall. Protected as a historic monument.',
-    anchors: [
-      [8.585, 46.5354],
-      [8.5698, 46.5465],
-      [8.5674, 46.5565],
-      [8.5575, 46.5703],
-    ],
-    match: /561|Tremola/,
-  },
-  {
-    id: 'san-bernardino-pass',
-    name: 'San Bernardino Pass',
-    region: 'Graubünden',
-    country: 'Switzerland',
-    roadType: 'Mountain pass',
-    from: 'Hinterrhein',
-    to: 'San Bernardino',
-    blurb:
-      'The old pass road over 2,066 m, quiet since the tunnel opened beneath it in 1967, with a lake at the top.',
-    anchors: [
-      [9.196, 46.532],
-      [9.172, 46.496],
-      [9.185, 46.463],
-    ],
-    match: /Passstrasse|Strada del Pass/,
   },
   {
     id: 'route-napoleon',
@@ -369,55 +318,6 @@ const ROADS = [
     match: /Moulinet|D 2566|M 70/,
   },
   {
-    id: 'gorges-du-verdon',
-    name: 'Gorges du Verdon',
-    region: 'Provence',
-    country: 'France',
-    roadType: 'Partly one way',
-    from: 'La Palud-sur-Verdon',
-    to: 'La Palud-sur-Verdon',
-    blurb:
-      "The Route des Crêtes, a loop along the north rim of one of Europe's deepest canyons, with viewpoints over drops of up to 700 m.",
-    anchors: [
-      [6.342, 43.78],
-      [6.354, 43.7505],
-      [6.342, 43.78],
-    ],
-    match: /D 23/,
-  },
-  {
-    id: 'sa-calobra',
-    name: 'Sa Calobra',
-    region: 'Mallorca',
-    country: 'Spain',
-    roadType: 'Mountain road',
-    from: 'Ma-10',
-    to: 'Sa Calobra',
-    blurb:
-      "The Ma-2141 drops nearly 700 m to the sea in a ribbon of hairpins, including the Nus de sa Corbata, where the road loops under itself.",
-    anchors: [
-      [2.835, 39.8075],
-      [2.8055, 39.85],
-    ],
-    match: /Ma-2141/,
-  },
-  {
-    id: 'transalpina',
-    name: 'Transalpina',
-    region: 'Parâng Mountains',
-    country: 'Romania',
-    roadType: 'Mountain pass',
-    from: 'Novaci',
-    to: 'Obârșia Lotrului',
-    blurb:
-      "The DN67C, Romania's highest road, crossing the Parâng Mountains at 2,145 m. Usually open July to October.",
-    anchors: [
-      [23.6705, 45.1785],
-      [23.629, 45.444],
-    ],
-    match: /DN67C/,
-  },
-  {
     id: 'trollstigen',
     name: 'Trollstigen',
     region: 'Møre og Romsdal',
@@ -435,71 +335,6 @@ const ROADS = [
       [7.265, 62.298],
     ],
     match: /^63 /,
-  },
-  {
-    id: 'atlantic-road',
-    name: 'Atlantic Road',
-    region: 'Møre og Romsdal',
-    country: 'Norway',
-    roadType: 'Coast road',
-    from: 'Vevang',
-    to: 'Kårvåg',
-    blurb:
-      'Eight bridges hopping between islets in the open sea, including the curving Storseisundet Bridge.',
-    anchors: [
-      [7.273, 63.02],
-      [7.355, 63.0175],
-      [7.419, 63.005],
-    ],
-    match: /Atlanterhavsvegen|Storseisundbrua/,
-  },
-  {
-    id: 'amalfi-coast',
-    name: 'Amalfi Coast',
-    region: 'Campania',
-    country: 'Italy',
-    roadType: 'Coast road',
-    from: 'Positano',
-    to: 'Vietri sul Mare',
-    blurb:
-      'The SS163 cut into the cliffs above the sea, through Amalfi and past lemon terraces. Narrow and busy in summer; best early in the morning.',
-    anchors: [
-      [14.485, 40.6281],
-      [14.728, 40.672],
-    ],
-    match: /SS163/,
-  },
-  {
-    id: 'kotor-serpentine',
-    name: 'Kotor Serpentine',
-    region: 'Bay of Kotor',
-    country: 'Montenegro',
-    roadType: 'Mountain road',
-    from: 'Kotor',
-    to: 'Krstac',
-    blurb:
-      'Twenty-five hairpins climbing almost 1,000 m from the Bay of Kotor towards Lovćen, with the bay below you at every turn.',
-    anchors: [
-      [18.7673, 42.4091],
-      [18.8001, 42.4255],
-    ],
-    match: /R-1(?!\d)/,
-  },
-  {
-    id: 'douro-valley',
-    name: 'Douro Valley',
-    region: 'Douro',
-    country: 'Portugal',
-    roadType: 'Main road',
-    from: 'Peso da Régua',
-    to: 'Pinhão',
-    blurb:
-      "The N222 along the south bank of the Douro, curving between terraced vineyards and the river. Often called one of the world's best driving roads.",
-    anchors: [
-      [-7.7887, 41.1556],
-      [-7.5527, 41.1746],
-    ],
-    match: /222/,
   },
 ];
 
@@ -663,12 +498,13 @@ async function elevations(points) {
 
 /**
  * Total ascent: every rise of at least CLIMB_HYSTERESIS_M, like a recorded trip's
- * climb. Each height is first averaged with its neighbours, as the elevation grid
- * otherwise picks up the slopes beside a road in gorges and on hillsides.
+ * climb. Each height is first averaged over about 700 m of road (three points
+ * either side), as the elevation grid otherwise picks up the slopes beside a
+ * road in gorges, on hillsides and on Alpine hairpins.
  */
 function climbOf(heights) {
   const smooth = heights.map((_, i) => {
-    const near = heights.slice(Math.max(0, i - 1), i + 2);
+    const near = heights.slice(Math.max(0, i - 3), i + 4);
     return near.reduce((a, b) => a + b) / near.length;
   });
   let climb = 0;
