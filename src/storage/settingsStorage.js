@@ -4,9 +4,9 @@ import Storage from 'expo-sqlite/kv-store';
 
 const UNITS_KEY = 'settings.units';
 
-/** 'metric' | 'imperial' */
+/** 'metric' | 'imperial'; miles until km are chosen in Settings. */
 export function getUnits() {
-  return Storage.getItemSync(UNITS_KEY) === 'imperial' ? 'imperial' : 'metric';
+  return Storage.getItemSync(UNITS_KEY) === 'metric' ? 'metric' : 'imperial';
 }
 
 export function setUnits(units) {
