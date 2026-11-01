@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { type } from '../../theme';
@@ -55,7 +55,13 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
         <Text style={styles.heroUnit}>{distance.unit}</Text>
       </View>
       {stopChip || roadCount > 0 || countryCount > 1 ? (
-        <View style={styles.chips}>
+        // Scrolls sideways when the chips don't fit, edge to edge like the Drive pills.
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chips}
+        >
           {roadCount > 0 ? (
             <View style={[styles.chip, styles.chipRoads]}>
               <Icon name="verified" size={18} color={c.onRoadContainer} />
@@ -78,7 +84,7 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
               <Text style={[type.label, styles.chipText]}>{countryCount} countries</Text>
             </View>
           ) : null}
-        </View>
+        </ScrollView>
       ) : null}
       <View style={styles.grid}>
         {timesHidden ? (
@@ -87,7 +93,7 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
           <StatCard
             layout="wide"
             tone="accent"
-            icon="directions_car"
+            icon="timer"
             label="Driving time"
             value={formatDurationShort(stats.movingTimeMs)}
           />
@@ -202,7 +208,8 @@ const makeStyles = (c) => ({
     fontSize: 22,
     color: c.textMuted,
   },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  chipScroll: { marginHorizontal: -16, marginTop: 16, flexGrow: 0 },
+  chips: { gap: 8, paddingHorizontal: 16 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

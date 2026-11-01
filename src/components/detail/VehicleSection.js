@@ -3,7 +3,6 @@ import { Pressable, Text, View } from 'react-native';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { radius, type } from '../../theme';
 import { vehicleLabel } from '../../utils/vehicles';
-import RegistrationTag from '../RegistrationTag';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
 
@@ -31,7 +30,9 @@ export default function VehicleSection({ vehicle, count = 1, onChange }) {
             {several ? `${count} vehicles` : vehicle ? vehicleLabel(vehicle) : 'No vehicle'}
           </Text>
           {!several && vehicle?.registration ? (
-            <RegistrationTag registration={vehicle.registration} style={styles.tag} />
+            <Text style={[type.small, styles.registration]} numberOfLines={1}>
+              {vehicle.registration}
+            </Text>
           ) : null}
         </View>
         {onChange ? (
@@ -71,7 +72,7 @@ const makeStyles = (c) => ({
   },
   text: { flex: 1, minWidth: 0 },
   name: { color: c.text },
-  tag: { marginTop: 4 },
+  registration: { color: c.textMuted, marginTop: 2 },
   change: { height: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 22 },
   changeText: { color: c.accent },
   pressed: { opacity: 0.6 },
