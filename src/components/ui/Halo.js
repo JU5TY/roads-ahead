@@ -61,7 +61,7 @@ export function HaloIcon({ icon, grow = false, style }) {
 
 const makeStyles = (c) => ({
   wrap: { alignItems: 'center', justifyContent: 'center' },
-  ring: { ...StyleSheet.absoluteFillObject, backgroundColor: c.halo },
+  ring: { ...StyleSheet.absoluteFill, backgroundColor: c.halo },
   badge: {
     width: 72,
     height: 72,
