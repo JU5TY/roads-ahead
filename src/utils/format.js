@@ -16,14 +16,14 @@ export const toSpeed = (mps, units) =>
   (mps ?? 0) * (units === 'imperial' ? 3600 / METERS_PER_MILE : 3.6);
 
 export const formatDistance = (meters, units, digits = 1) =>
-  `${toDistance(meters, units).toFixed(digits)} ${distanceUnit(units)}`;
+  `${grouped(toDistance(meters, units), digits)} ${distanceUnit(units)}`;
 
 export const formatSpeed = (mps, units) => `${Math.round(toSpeed(mps, units))} ${speedUnit(units)}`;
 
 /** Elevation in meters, or feet when imperial. */
 export function formatElevation(m, units) {
   if (m === null || m === undefined) return '—';
-  return units === 'imperial' ? `${Math.round(m * FEET_PER_METER)} ft` : `${Math.round(m)} m`;
+  return units === 'imperial' ? `${grouped(m * FEET_PER_METER)} ft` : `${grouped(m)} m`;
 }
 
 /** 3725000 -> "1:02:05" */
