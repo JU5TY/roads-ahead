@@ -17,7 +17,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { listTrips } from '../storage/tripStorage';
 import { bottomSpace, radius, spacing, type } from '../theme';
 import { distanceParts } from '../utils/format';
-import { ICONIC_ROADS } from '../utils/iconicRoads';
+import { ICONIC_ROADS, ROADS_INTRO } from '../utils/iconicRoads';
 import { computeTotals, firstDriveMonth } from '../utils/tripSummary';
 
 /** The band at the top: the round Your map, the all-time distance and since when. */
@@ -52,9 +52,7 @@ function RoadsCard() {
       <Pressable onPress={() => router.push('/roads')} accessibilityRole="link">
         <RoadsProgress completed={done} total={ICONIC_ROADS.length}>
           {done === 0 ? (
-            <Text style={[type.body, styles.roadsHint]}>
-              Drive any of {ICONIC_ROADS.length} famous roads, like the Nürburgring, to complete them.
-            </Text>
+            <Text style={[type.body, styles.roadsHint]}>{ROADS_INTRO}</Text>
           ) : null}
         </RoadsProgress>
       </Pressable>

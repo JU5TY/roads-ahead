@@ -23,6 +23,14 @@ export const ROADS_VERSION = ICONIC_ROADS.map((r) => `${r.id}:${r.line.length}`)
 const byId = new Map(ICONIC_ROADS.map((r) => [r.id, r]));
 export const getRoad = (id) => byId.get(id) ?? null;
 
+const BRITAIN = new Set(['England', 'Scotland', 'Wales']);
+/** True for a road in England, Scotland or Wales; the rest are "Europe". */
+export const inBritain = (road) => BRITAIN.has(road.country);
+
+const ukCount = ICONIC_ROADS.filter(inBritain).length;
+/** What the list is, for Home and the Roads page. */
+export const ROADS_INTRO = `The UK's top ${ukCount} driving roads and Europe's top ${ICONIC_ROADS.length - ukCount}, waiting to be driven.`;
+
 const toRad = (d) => (d * Math.PI) / 180;
 
 /** Fast flat-earth distance in metres; accurate enough over a few hundred metres. */

@@ -13,14 +13,12 @@ import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles } from '../hooks/useTheme';
 import { spacing, type } from '../theme';
 import { distanceParts, formatShortDate } from '../utils/format';
-import { ICONIC_ROADS } from '../utils/iconicRoads';
+import { ICONIC_ROADS, ROADS_INTRO, inBritain } from '../utils/iconicRoads';
 
 const COUNTRIES = ['All', ...new Set(ICONIC_ROADS.map((r) => r.country))];
-const BRITAIN = new Set(['England', 'Scotland', 'Wales']);
 
 /** "Peak District", or "Provence, France" for a road outside Britain. */
-const placeOf = (road) =>
-  BRITAIN.has(road.country) ? road.region : `${road.region}, ${road.country}`;
+const placeOf = (road) => (inBritain(road) ? road.region : `${road.region}, ${road.country}`);
 
 /** "Last completed 5 Nov 2026" when done more than once, else "Completed 5 Nov 2026". */
 export const completedOn = ({ count, last }) =>
@@ -72,6 +70,7 @@ export default function RoadsScreen() {
         <Text style={[type.bodyLarge, styles.text, styles.summary]}>
           {completedCount} completed · {ICONIC_ROADS.length - completedCount} to go
         </Text>
+        <Text style={[type.body, styles.intro]}>{ROADS_INTRO}</Text>
       </View>
       {/* One row that scrolls sideways, edge to edge, as more countries get roads. */}
       <ScrollView
@@ -142,6 +141,14 @@ const makeStyles = (c) => ({
   h1: { alignSelf: 'stretch', color: c.text, marginHorizontal: 4, marginBottom: 12 },
   text: { color: c.text },
   summary: { marginTop: 14 },
+  intro: {
+    color: c.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 6,
+    marginHorizontal: 16,
+  },
   chipScroll: { marginHorizontal: -spacing.md, marginTop: spacing.md, flexGrow: 0 },
   chips: { gap: 8, paddingHorizontal: spacing.md },
   firstGroup: { marginTop: 24 },
