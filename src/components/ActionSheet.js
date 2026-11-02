@@ -75,7 +75,12 @@ export default function ActionSheet({ visible, title, subtitle, message, actions
                   </View>
                   {a.badge ? (
                     <View style={styles.badge}>
-                      <Icon name="workspace_premium" size={14} color={c.onWarningContainer} />
+                      <Icon
+                        name="workspace_premium"
+                        filled
+                        size={14}
+                        color={c.onAccentContainer}
+                      />
                       <Text style={styles.badgeText}>{a.badge}</Text>
                     </View>
                   ) : null}
@@ -140,8 +145,9 @@ const makeStyles = (c) => ({
     paddingRight: 10,
     paddingVertical: spacing.xs,
     borderRadius: 999,
-    backgroundColor: c.warningContainer,
+    // The Premium card's colours on You.
+    backgroundColor: c.accentContainer,
   },
-  badgeText: { ...type.caps, color: c.onWarningContainer },
+  badgeText: { ...type.caps, color: c.onAccentContainer },
   pressed: { opacity: 0.7 },
 });
