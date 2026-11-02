@@ -7,6 +7,7 @@ import { radius, spacing, type } from '../theme';
 import { registrationProblem, vehicleLabel } from '../utils/vehicles';
 import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
+import Icon from './ui/Icon';
 
 /** A labelled text input, with an `error` under it when there is one. */
 function Field({ label, error, ...input }) {
@@ -87,12 +88,20 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
           returnKeyType="done"
           onSubmitEditing={save}
         />
-        <Button label="Save" onPress={save} disabled={!valid} style={styles.save} />
-        {vehicle ? (
-          <Pressable onPress={confirmDelete} style={styles.link} accessibilityRole="button">
-            <Text style={[styles.linkText, { color: c.stop }]}>Remove vehicle</Text>
-          </Pressable>
-        ) : null}
+        {/* Editing, a round red bin sits beside Save (Delete trip's mark in menus). */}
+        <View style={styles.actions}>
+          <Button label="Save" onPress={save} disabled={!valid} style={styles.save} />
+          {vehicle ? (
+            <Pressable
+              onPress={confirmDelete}
+              style={({ pressed }) => [styles.remove, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Remove vehicle"
+            >
+              <Icon name="delete" size={24} color={c.danger} />
+            </Pressable>
+          ) : null}
+        </View>
       </ScrollView>
     </View>
   );
@@ -129,7 +138,16 @@ const makeStyles = (c) => ({
     paddingVertical: 14,
   },
   error: { ...type.small, color: c.stop, marginTop: 6 },
-  save: { marginTop: spacing.md },
-  link: { height: 48, alignItems: 'center', justifyContent: 'center' },
-  linkText: { ...type.button, color: c.accent },
+  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  save: { flex: 1 },
+  // Save's height, round.
+  remove: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.dangerContainer,
+  },
+  pressed: { opacity: 0.7 },
 });
