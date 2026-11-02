@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../hooks/useTheme';
 import { spacing, type } from '../theme';
@@ -46,7 +45,6 @@ const CONTENT = {
  * `kind` is 'ask' | 'blocked' | 'approximate', or null to hide.
  */
 export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
-  const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   // The last content stays while the sheet slides away.
   const [content, setContent] = useState(null);
@@ -57,7 +55,7 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
       {content ? (
         <ScrollView
           style={styles.sheet}
-          contentContainerStyle={[styles.sheetContent, { paddingBottom: 28 + insets.bottom }]}
+          contentContainerStyle={styles.sheetContent}
           bounces={false}
         >
           <HaloIcon icon={content.icon} />

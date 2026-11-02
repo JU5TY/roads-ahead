@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { showDialog } from './ui/DialogHost';
 import { useStyles, useTheme } from '../hooks/useTheme';
@@ -28,7 +27,6 @@ function Field({ label, error, ...input }) {
 
 // Mounted only while the sheet is open, so it starts from the saved vehicle each time.
 function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
-  const insets = useSafeAreaInsets();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [fields, setFields] = useState({
@@ -54,7 +52,7 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
   return (
     <View style={styles.sheet}>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: spacing.lg + insets.bottom }]}
+        contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{vehicle ? 'Edit vehicle' : 'Add vehicle'}</Text>

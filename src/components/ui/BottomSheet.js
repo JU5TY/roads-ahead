@@ -10,7 +10,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../../hooks/useTheme';
@@ -32,12 +32,15 @@ const DRIVER = { useNativeDriver: true };
  * rather than running past it, or behind the keyboard: react-native-keyboard-
  * controller's KeyboardAvoidingView moves it frame by frame with the keyboard
  * (edge-to-edge Android windows don't resize for it).
+ * The panel keeps the same space under every sheet's content, above the
+ * navigation bar or, while it's up, the keyboard (which covers the bar).
  * Tapping or dragging the handle down, tapping the scrim (unless `scrimCloses`
  * is false) or Back calls onClose: menus have no Cancel. No motion with reduced motion on.
  */
 export default function BottomSheet({ visible, onClose, scrimCloses = true, children }) {
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
+  const keyboardUp = useKeyboardState((s) => s.isVisible);
   const [mounted, setMounted] = useState(visible);
   const [scrim] = useState(() => new Animated.Value(0));
   // Starts off screen; the panel's own height once it's laid out.
@@ -138,7 +141,13 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
       >
         <Animated.View
           onLayout={onLayout}
-          style={[styles.panel, { transform: [{ translateY: offset }] }]}
+          style={[
+            styles.panel,
+            {
+              paddingBottom: spacing.md + (keyboardUp ? 0 : insets.bottom),
+              transform: [{ translateY: offset }],
+            },
+          ]}
         >
           <View
             {...pan.panHandlers}

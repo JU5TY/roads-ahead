@@ -1,5 +1,4 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { spacing, type } from '../theme';
@@ -17,13 +16,12 @@ import Icon from './ui/Icon';
  * actions: [{ label, key?, detail?, icon?, badge?, selected?, onPress, style?: 'destructive' }]
  */
 export default function ActionSheet({ visible, title, subtitle, message, actions, onClose }) {
-  const insets = useSafeAreaInsets();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const firstDestructive = actions.findIndex((a) => a.style === 'destructive');
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={[styles.sheet, { paddingBottom: spacing.md + insets.bottom }]}>
+      <View style={styles.sheet}>
         {title || subtitle || message ? (
           <View style={styles.header}>
             {title ? <Text style={styles.title}>{title}</Text> : null}

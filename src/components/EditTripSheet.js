@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
@@ -9,13 +8,12 @@ import Button from './ui/Button';
 
 // Mounted only while the sheet is open, so it starts from the saved values each time.
 function EditTripForm({ trip, onSave, onClose }) {
-  const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   const [name, setName] = useState(trip?.name ?? '');
   const [notes, setNotes] = useState(trip?.notes ?? '');
 
   return (
-    <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]}>
+    <View style={styles.sheet}>
       <Text style={styles.title}>Edit trip</Text>
 
       <Text style={styles.label}>Name</Text>
