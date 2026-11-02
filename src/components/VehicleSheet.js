@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { showDialog } from './ui/DialogHost';
@@ -9,7 +9,7 @@ import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 import Icon from './ui/Icon';
 
-/** A labelled text input, with an `error` under it when there is one. */
+/** A labelled text input, with an `error` under it when there is one. `ref` is the input's. */
 function Field({ label, error, ...input }) {
   const styles = useStyles(makeStyles);
   return (
@@ -38,8 +38,26 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
   });
   const set = (key) => (text) => setFields((prev) => ({ ...prev, [key]: text }));
   const problem = registrationProblem(fields, others);
-  const valid = fields.make.trim() && fields.model.trim() && !problem;
-  const save = () => valid && onSave(fields);
+  // Save is always there to tap; tapped with something missing, it says what
+  // under that field and puts the cursor in the first one to fix.
+  const [tried, setTried] = useState(false);
+  const makeRef = useRef(null);
+  const modelRef = useRef(null);
+  const registrationRef = useRef(null);
+  const missingMake = tried && !fields.make.trim() ? 'Enter a make' : null;
+  const missingModel = tried && !fields.model.trim() ? 'Enter a model' : null;
+  const save = () => {
+    const fix = !fields.make.trim()
+      ? makeRef
+      : !fields.model.trim()
+        ? modelRef
+        : problem
+          ? registrationRef
+          : null;
+    if (!fix) return onSave(fields);
+    setTried(true);
+    fix.current?.focus();
+  };
 
   const confirmDelete = () =>
     showDialog({
@@ -57,7 +75,9 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
         keyboardShouldPersistTaps="handled"
       >
         <Field
+          ref={makeRef}
           label="Make"
+          error={missingMake}
           value={fields.make}
           onChangeText={set('make')}
           autoCapitalize="words"
@@ -65,7 +85,9 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
           returnKeyType="next"
         />
         <Field
+          ref={modelRef}
           label="Model"
+          error={missingModel}
           value={fields.model}
           onChangeText={set('model')}
           returnKeyType="next"
@@ -78,6 +100,7 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
           returnKeyType="next"
         />
         <Field
+          ref={registrationRef}
           label="Registration"
           error={problem}
           value={fields.registration}
@@ -90,7 +113,7 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
         />
         {/* Editing, a round red bin sits beside Save (Delete trip's mark in menus). */}
         <View style={styles.actions}>
-          <Button label="Save" onPress={save} disabled={!valid} style={styles.save} />
+          <Button label="Save" onPress={save} style={styles.save} />
           {vehicle ? (
             <Pressable
               onPress={confirmDelete}
