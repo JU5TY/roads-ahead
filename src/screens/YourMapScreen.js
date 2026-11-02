@@ -6,10 +6,8 @@ import MapView, { Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import FlagStack from '../components/countries/FlagStack';
-import DotMarker from '../components/DotMarker';
 import IconButton from '../components/ui/IconButton';
 import { useSettings } from '../context/SettingsContext';
-import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { getLocationAccess } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
@@ -18,7 +16,6 @@ import { fonts } from '../theme';
 import { summarizeCountries } from '../utils/countries';
 import { driveGaps, routeSegments } from '../utils/crossings';
 import { distanceParts } from '../utils/format';
-import { getRoad } from '../utils/iconicRoads';
 import { computeTotals, firstDriveMonth } from '../utils/tripSummary';
 
 const MAX_MAP_POINTS = 6000; // across every drive, so a long history stays quick to draw
@@ -51,18 +48,16 @@ function useEveryRoute() {
 
 /**
  * Full-screen "Your map": every road you've driven, all time, in one style on a
- * real map you can pan and zoom. Completed Iconic Roads are teal dots. A sheet
- * at the bottom has the all-time totals.
+ * real map you can pan and zoom. A sheet at the bottom has the all-time totals.
  */
 export default function YourMapScreen() {
-  const { units, showIconicRoads } = useSettings();
+  const { units } = useSettings();
   const { c, scheme } = useTheme();
   const dark = scheme === 'dark';
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
   const data = useEveryRoute();
-  const roadTotals = useRoadTotals();
 
   const segments = useMemo(
     () =>
@@ -70,20 +65,6 @@ export default function YourMapScreen() {
         routeSegments(`drive-${drive.id}`, points, driveGaps(drive), c.accent)
       ),
     [data, c]
-  );
-  // A dot halfway along each completed road.
-  const roadDots = useMemo(
-    () =>
-      showIconicRoads && roadTotals
-        ? [...roadTotals.keys()]
-            .map(getRoad)
-            .filter(Boolean)
-            .map((road) => {
-              const [latitude, longitude] = road.line[Math.floor(road.line.length / 2)];
-              return { id: road.id, name: road.name, coordinate: { latitude, longitude } };
-            })
-        : [],
-    [showIconicRoads, roadTotals]
   );
 
   const fit = () => {
@@ -154,16 +135,6 @@ export default function YourMapScreen() {
             {...(s.dotted ? { lineDashPattern: [1, 8], lineCap: 'round' } : null)}
           />
         ))}
-        {roadDots.map((r) => (
-          <DotMarker
-            key={r.id}
-            coordinate={r.coordinate}
-            accessibilityLabel={r.name}
-            onPress={() => router.push(`/roads/${r.id}`)}
-          >
-            <View style={styles.roadDot} />
-          </DotMarker>
-        ))}
       </MapView>
 
       <IconButton
@@ -205,14 +176,6 @@ const makeStyles = (c) => ({
   button: { position: 'absolute' },
   left: { left: 12 },
   right: { right: 12 },
-  roadDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: c.card,
-    backgroundColor: c.roadBadge,
-  },
   // A fixed panel, not a draggable sheet: square corners, no handle. Totals on
   // the left, flags on the right.
   sheet: {
