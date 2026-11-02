@@ -149,6 +149,9 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
             <View style={styles.handle} />
           </View>
           {children}
+          {/* While the keyboard slides up, the gap it leaves under the panel is
+              the panel's colour, not the screen behind. */}
+          <View style={styles.underfill} pointerEvents="none" />
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -163,6 +166,14 @@ const makeStyles = (c) => ({
     backgroundColor: c.background,
     borderTopLeftRadius: radius.card,
     borderTopRightRadius: radius.card,
+  },
+  underfill: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    height: 1000,
+    backgroundColor: c.background,
   },
   // A taller strip than the bar, so it's easy to grab; with the gap above every
   // sheet's content, so sheets don't add their own.
