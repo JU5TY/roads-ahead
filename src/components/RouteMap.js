@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useRef } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
 import DotMarker from './DotMarker';
+import MapCard, { MAP_CARD_ROOM } from './MapCard';
 import MapDot from './MapDot';
 
 const MAP_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
@@ -19,8 +20,11 @@ const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
  *           (`dotted` for a ferry or tunnel crossing, see utils/crossings.js)
  * markers:  [{ key, kind: 'start' | 'finish' | 'stop', coordinate, title, description?, color }]
  *           start and finish are filled dots, a rest stop a ring in its route
- *           colour (the same marks as the Trips list outline and the Timeline)
- * `ref` exposes focusMarker(key): zoom to that marker and open its callout.
+ *           colour (the same marks as the Trips list outline and the Timeline).
+ *           Tapping one shows its card over the bottom of the map (MapCard);
+ *           tapping the map, or the card's close button, hides it.
+ * `ref` exposes focusMarker(key): zoom to that marker and show its card.
+ * `onSelect(key | null)` hears when a card shows or hides.
  * `fitTo` (coordinates) frames part of the map, e.g. one drive of a trip; the
  * map moves to it whenever a new array is passed.
  * `flat` fills its parent edge to edge, under the status bar (the Trip page).
@@ -31,14 +35,21 @@ export default function RouteMap({
   height = 320,
   flat = false,
   fitTo,
+  onSelect,
   ref,
 }) {
   const { scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   const mapRef = useRef(null);
-  const markerRefs = useRef(new Map());
+  const [selectedKey, setSelected] = useState(null);
+  const setSelectedKey = (key) => {
+    setSelected(key);
+    onSelect?.(key);
+  };
   const all = segments.flatMap((s) => s.coordinates);
+  // A marker that's gone (another drive picked) takes its card with it.
+  const selected = markers.find((m) => m.key === selectedKey) ?? null;
 
   useImperativeHandle(ref, () => ({
     focusMarker(key) {
@@ -48,7 +59,7 @@ export default function RouteMap({
         { ...marker.coordinate, latitudeDelta: FOCUS_DELTA, longitudeDelta: FOCUS_DELTA },
         600
       );
-      markerRefs.current.get(key)?.showCallout();
+      setSelectedKey(key);
     },
   }));
 
@@ -79,6 +90,10 @@ export default function RouteMap({
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           onMapReady={() => fit()}
+          // iOS reports marker taps to the map too.
+          onPress={(e) => e.nativeEvent.action !== 'marker-press' && setSelectedKey(null)}
+          // Keeps the map's logo clear of the card.
+          mapPadding={{ top: 0, right: 0, left: 0, bottom: selected ? MAP_CARD_ROOM : 0 }}
           userInterfaceStyle={scheme}
           initialRegion={{
             latitude: all[0].latitude,
@@ -99,25 +114,23 @@ export default function RouteMap({
           {markers.map((m, i) => (
             <DotMarker
               key={m.key}
-              ref={(r) => {
-                if (r) markerRefs.current.set(m.key, r);
-                else markerRefs.current.delete(m.key);
-              }}
               coordinate={m.coordinate}
-              title={m.title}
-              description={m.description}
-              zIndex={i}
-              redrawKey={m.color}
+              onPress={() => setSelectedKey(m.key)}
+              // The selected marker draws on top.
+              zIndex={m.key === selectedKey ? markers.length : i}
+              redrawKey={`${m.color}:${m.key === selectedKey}`}
             >
-              <MapDot kind={m.kind} color={m.color} />
+              <MapDot kind={m.kind} color={m.color} selected={m.key === selectedKey} />
             </DotMarker>
           ))}
         </MapView>
-      ) : (
+      ) : null}
+      {selected ? <MapCard marker={selected} onClose={() => setSelectedKey(null)} /> : null}
+      {all.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No GPS points were recorded.</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }

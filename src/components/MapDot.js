@@ -6,16 +6,18 @@ import { useStyles } from '../hooks/useTheme';
  * A map marker's look: a filled dot (start, finish) or, for a rest stop, a
  * ring in its route colour. The same marks as the Trips list outline and the
  * Timeline. Goes inside a react-native-maps <Marker> anchored at its centre.
+ * `selected` draws it larger: the marker whose card is showing.
  */
-export default function MapDot({ kind, color }) {
+export default function MapDot({ kind, color, selected = false }) {
   const styles = useStyles(makeStyles);
   return (
     <View
-      style={
+      style={[
         kind === 'stop'
           ? [styles.ring, { borderColor: color }]
-          : [styles.dot, { backgroundColor: color }]
-      }
+          : [styles.dot, { backgroundColor: color }],
+        selected && styles.selected,
+      ]}
     />
   );
 }
@@ -35,4 +37,5 @@ const makeStyles = (c) => ({
     borderWidth: 3,
     backgroundColor: c.mapRoad,
   },
+  selected: { width: 16, height: 16, borderRadius: 8 },
 });

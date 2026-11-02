@@ -8,7 +8,7 @@ import ChartsCard from '../components/charts/ChartsCard';
 import TripPhotos from '../components/photos/TripPhotos';
 import CountriesSection from '../components/countries/CountriesSection';
 import DetailLayout from '../components/detail/DetailLayout';
-import { routeMarkers, stopMarkerKey } from '../components/detail/mapMarkers';
+import { routeMarkers, stopMarkerKey, stopMarkers } from '../components/detail/mapMarkers';
 import Timeline from '../components/detail/Timeline';
 import IconicRoadsSection from '../components/roads/IconicRoadsSection';
 import { DetailsRows, HeroStats, TitleBlock } from '../components/detail/TripStats';
@@ -65,6 +65,7 @@ export default function TripScreen() {
   const [picked, setPicked] = useState(driveParam ? Number(driveParam) : null); // drive id, null = All
   const [vehicles, setVehicles] = useState([]); // the Garage
   const [loads, setLoads] = useState(0); // bumped to load the trip again (after deleting a drive)
+  const [focusedStop, setFocusedStop] = useState(null); // { driveId, time }: a Timeline stop on All
   const {
     photos,
     access: photoAccess,
@@ -196,6 +197,14 @@ export default function TripScreen() {
     [days, dayColorOf]
   );
 
+  // All shows no rest stops: a stop tapped in the Timeline gets its ring, and
+  // once that's on the map the map zooms to it.
+  useEffect(() => {
+    if (focusedStop) {
+      mapRef.current?.focusMarker(stopMarkerKey(focusedStop.driveId, focusedStop.time));
+    }
+  }, [focusedStop]);
+
   const tracks = useMemo(
     () =>
       days.flatMap((day) =>
@@ -239,7 +248,7 @@ export default function TripScreen() {
   const showTripStop = (item) => {
     const drive = trip.drives.find((d) => d.stats.stops.some((s) => s.startedAt === item.time));
     showMap();
-    if (drive) mapRef.current?.focusMarker(stopMarkerKey(drive.id, item.time));
+    if (drive) setFocusedStop({ driveId: drive.id, time: item.time });
   };
 
   const save = async (values) => {
@@ -255,6 +264,7 @@ export default function TripScreen() {
   const selected = selectedDrive ?? null;
   const pick = (driveId) => {
     setPicked(driveId);
+    setFocusedStop(null);
     showMap();
   };
   const dayNumberOf = (d) => days.find((day) => day.drives.includes(d))?.number ?? 1;
@@ -314,33 +324,46 @@ export default function TripScreen() {
     });
   };
 
+  // On All, only the stop tapped in the Timeline (drawn under start and finish).
+  const focusDrive =
+    !selected && focusedStop && trip.drives.find((d) => d.id === focusedStop.driveId);
+  const focusedStopMarkers = focusDrive
+    ? stopMarkers(focusDrive, driveColors.get(focusDrive.id)).filter(
+        (m) => m.key === stopMarkerKey(focusDrive.id, focusedStop.time)
+      )
+    : [];
+
   const map = (
     <RouteMap
       ref={mapRef}
       flat
       segments={segments}
       fitTo={fitTo}
-      markers={routeMarkers(
-        selected
-          ? {
-              firstPoint: fitTo[0],
-              lastPoint: fitTo.at(-1),
-              startName: selected.places.start,
-              endName: selected.places.end,
-              drives: [selected],
-              c,
-              colorOf: (d) => driveColors.get(d.id),
-            }
-          : {
-              firstPoint: segments[0]?.coordinates[0],
-              lastPoint: segments.at(-1)?.coordinates.at(-1),
-              startName: first.places.start,
-              endName: last.places.end,
-              drives: trip.drives,
-              c,
-              colorOf: (d) => driveColors.get(d.id),
-            }
-      )}
+      // A Timeline stop's ring goes when its card does.
+      onSelect={(key) => key === null && setFocusedStop(null)}
+      markers={[
+        ...focusedStopMarkers,
+        ...routeMarkers(
+          selected
+            ? {
+                firstPoint: fitTo[0],
+                lastPoint: fitTo.at(-1),
+                startName: selected.places.start,
+                endName: selected.places.end,
+                drives: [selected],
+                c,
+                colorOf: (d) => driveColors.get(d.id),
+              }
+            : {
+                firstPoint: segments[0]?.coordinates[0],
+                lastPoint: segments.at(-1)?.coordinates.at(-1),
+                startName: first.places.start,
+                endName: last.places.end,
+                drives: [],
+                c,
+              }
+        ),
+      ]}
     />
   );
 
