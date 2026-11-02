@@ -27,7 +27,7 @@ function Field({ label, error, ...input }) {
 }
 
 // Mounted only while the sheet is open, so it starts from the saved vehicle each time.
-function VehicleForm({ vehicle, others, onSave, onDelete }) {
+function VehicleForm({ vehicle, others: othersNow, onSave, onDelete }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [fields, setFields] = useState({
@@ -37,6 +37,10 @@ function VehicleForm({ vehicle, others, onSave, onDelete }) {
     registration: vehicle?.registration ?? '',
   });
   const set = (key) => (text) => setFields((prev) => ({ ...prev, [key]: text }));
+  // The Garage as it was when the sheet opened: once saved, the list reloads
+  // with this vehicle in it while the sheet slides away, and it would look
+  // like its own twin ("add the registration" flashing up).
+  const [others] = useState(othersNow);
   const problem = registrationProblem(fields, others);
   // Save is always there to tap; tapped with something missing, it says what
   // under that field and puts the cursor in the first one to fix.
