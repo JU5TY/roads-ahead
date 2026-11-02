@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../hooks/useTheme';
@@ -60,7 +60,6 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
           contentContainerStyle={[styles.sheetContent, { paddingBottom: 28 + insets.bottom }]}
           bounces={false}
         >
-          <View style={styles.handle} />
           <HaloIcon icon={content.icon} />
           <Text style={[type.title, styles.text, styles.title]} role="heading">
             {content.title}
@@ -79,22 +78,8 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
 
 const makeStyles = (c) => ({
   // Scrolls on short phones rather than running off the top.
-  sheet: {
-    flexGrow: 0,
-    flexShrink: 1,
-    backgroundColor: c.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  sheetContent: { paddingTop: 12, paddingHorizontal: spacing.lg },
-  handle: {
-    alignSelf: 'center',
-    width: 32,
-    height: 4,
-    borderRadius: 2,
-    marginBottom: 16,
-    backgroundColor: c.outline,
-  },
+  sheet: { flexGrow: 0, flexShrink: 1 },
+  sheetContent: { paddingHorizontal: spacing.lg },
   title: { marginTop: 20 },
   lead: { marginTop: 8, lineHeight: 24 },
   choice: { marginTop: 20 },

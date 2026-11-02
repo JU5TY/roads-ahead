@@ -2,7 +2,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { radius, spacing, type } from '../theme';
+import { spacing, type } from '../theme';
 import BottomSheet from './ui/BottomSheet';
 import Icon from './ui/Icon';
 
@@ -19,7 +19,6 @@ export default function ActionSheet({ visible, title, message, actions, onClose 
   return (
     <BottomSheet visible={visible} onClose={onClose} maxHeight="80%">
       <View style={[styles.sheet, { paddingBottom: spacing.md + insets.bottom }]}>
-        <View style={styles.handle} />
         {title ? <Text style={styles.title}>{title}</Text> : null}
         {message ? <Text style={styles.message}>{message}</Text> : null}
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
@@ -85,22 +84,9 @@ export default function ActionSheet({ visible, title, message, actions, onClose 
 
 const makeStyles = (c) => ({
   sheet: {
-    backgroundColor: c.background,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
     gap: spacing.sm,
     flexShrink: 1,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 32,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: c.outlineStrong,
-    opacity: 0.4,
-    marginBottom: spacing.sm,
   },
   title: { ...type.title, color: c.text, marginHorizontal: spacing.xs },
   message: { ...type.body, color: c.textMuted, marginHorizontal: spacing.xs },
