@@ -94,6 +94,8 @@ export default function RouteMap({
           onPress={(e) => e.nativeEvent.action !== 'marker-press' && setSelectedKey(null)}
           // Keeps the map's logo clear of the card.
           mapPadding={{ top: 0, right: 0, left: 0, bottom: selected ? MAP_CARD_ROOM : 0 }}
+          // No Google Maps toolbar (Android) over the card when a marker is tapped.
+          toolbarEnabled={false}
           userInterfaceStyle={scheme}
           initialRegion={{
             latitude: all[0].latitude,
