@@ -8,6 +8,7 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import DialogHost from '../components/ui/DialogHost';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
@@ -77,9 +78,12 @@ function AppStack() {
 }
 
 export default function RootLayout() {
+  // KeyboardProvider: sheets with fields move in step with the keyboard (BottomSheet).
   return (
-    <SettingsProvider>
-      <AppStack />
-    </SettingsProvider>
+    <KeyboardProvider>
+      <SettingsProvider>
+        <AppStack />
+      </SettingsProvider>
+    </KeyboardProvider>
   );
 }

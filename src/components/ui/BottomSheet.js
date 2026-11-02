@@ -4,13 +4,13 @@ import {
   Animated,
   Dimensions,
   Easing,
-  KeyboardAvoidingView,
   Modal,
   PanResponder,
   Pressable,
   StyleSheet,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../../hooks/useTheme';
@@ -29,8 +29,9 @@ const DRIVER = { useNativeDriver: true };
  * go the same way out before it unmounts. Children are the panel's content and
  * mount afresh each time it opens; give a ScrollView in it room to shrink
  * (`flexShrink: 1` on its parents) so a tall sheet scrolls under the status bar
- * rather than running past it, or behind the keyboard (kept clear with padding
- * on Android too: edge-to-edge windows don't resize for it).
+ * rather than running past it, or behind the keyboard: react-native-keyboard-
+ * controller's KeyboardAvoidingView moves it frame by frame with the keyboard
+ * (edge-to-edge Android windows don't resize for it).
  * Tapping or dragging the handle down, tapping the scrim (unless `scrimCloses`
  * is false) or Back calls onClose: menus have no Cancel. No motion with reduced motion on.
  */
@@ -149,7 +150,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
             <View style={styles.handle} />
           </View>
           {children}
-          {/* While the keyboard slides up, the gap it leaves under the panel is
+          {/* If the keyboard ever runs ahead of the panel, the gap under it is
               the panel's colour, not the screen behind. */}
           <View style={styles.underfill} pointerEvents="none" />
         </Animated.View>
