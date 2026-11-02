@@ -131,7 +131,7 @@ export default function YourMapScreen() {
             key={s.key}
             coordinates={s.coordinates}
             strokeColor={s.color}
-            strokeWidth={4}
+            strokeWidth={3.5}
             {...(s.dotted ? { lineDashPattern: [1, 8], lineCap: 'round' } : null)}
           />
         ))}

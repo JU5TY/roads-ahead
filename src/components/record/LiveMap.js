@@ -59,7 +59,7 @@ export default function LiveMap({ segments = [], position, centreKey, follow = f
           key={s.key}
           coordinates={s.coordinates}
           strokeColor={c.accent}
-          strokeWidth={4}
+          strokeWidth={3.5}
           {...(s.dotted ? { lineDashPattern: [1, 8], lineCap: 'round' } : null)}
         />
       ))}
