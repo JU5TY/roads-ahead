@@ -30,7 +30,6 @@ import { listVehicles, setDriveVehicle } from '../storage/vehicleStorage';
 import { dayColorFor, type } from '../theme';
 import {
   formatDate,
-  formatDateRange,
   formatDayDate,
   formatTime,
   tripKicker,
@@ -385,14 +384,6 @@ export default function TripScreen() {
     >
       <ActionSheet
         visible={menu === 'options'}
-        title={title}
-        subtitle={
-          selected && !single
-            ? [`Drive ${trip.drives.indexOf(selected) + 1}`, routeLabel(selected.places)]
-                .filter(Boolean)
-                .join(' · ')
-            : formatDateRange(first.startedAt, last.endedAt)
-        }
         actions={[
           { icon: 'edit', label: 'Edit trip', onPress: () => setMenu('edit') },
           {
@@ -447,7 +438,6 @@ export default function TripScreen() {
       ) : null}
       <ActionSheet
         visible={menu === 'vehicle'}
-        title="Vehicle for this drive"
         actions={vehicles.map((v) => ({
           key: String(v.id),
           label: vehicleLabel(v),

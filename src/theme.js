@@ -189,8 +189,6 @@ export const type = {
   headline: { fontFamily: fonts.regular, fontSize: 32, lineHeight: 40 },
   title: { fontFamily: fonts.regular, fontSize: 28, lineHeight: 34 },
   section: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 24 },
-  // A menu's title (ActionSheet).
-  sheetTitle: { fontFamily: fonts.medium, fontSize: 20, lineHeight: 26 },
   // Uppercase group labels on Home, Trips and You ("LATEST TRIP").
   overline: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, letterSpacing: 0.8 },
   statLarge: { fontFamily: fonts.medium, fontSize: 32, lineHeight: 38, letterSpacing: -0.3 },

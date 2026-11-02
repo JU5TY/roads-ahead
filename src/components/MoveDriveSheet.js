@@ -48,7 +48,6 @@ export default function MoveDriveSheet({ visible, drive, allowNewTrip, onMoved, 
   return (
     <ActionSheet
       visible={visible}
-      title="Move drive to…"
       message={trips.length === 0 && !allowNewTrip ? 'There are no other trips yet.' : undefined}
       actions={actions}
       onClose={onClose}

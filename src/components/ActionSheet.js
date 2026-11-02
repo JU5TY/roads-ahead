@@ -7,32 +7,22 @@ import Icon from './ui/Icon';
 
 /**
  * The app's menu: a bottom sheet of actions (Android's Alert only allows three
- * buttons). A title with an optional `subtitle` (what the menu is for, e.g. the
- * trip) or longer `message`, then rows: an icon in a round tinted well, the label
+ * buttons). No title: an optional grey `message` where a menu needs explaining
+ * (e.g. the break reminder), then rows: an icon in a round tinted well, the label
  * and an optional grey `detail` under it, and a `badge` pill (e.g. "Premium").
  * Destructive rows come last, red, under a divider. For picking one option,
  * `selected` tints that row and adds a tick (rows without icons, e.g. the break
  * reminder). The handle, the scrim and Back close it (onClose).
  * actions: [{ label, key?, detail?, icon?, badge?, selected?, onPress, style?: 'destructive' }]
  */
-export default function ActionSheet({ visible, title, subtitle, message, actions, onClose }) {
+export default function ActionSheet({ visible, message, actions, onClose }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const firstDestructive = actions.findIndex((a) => a.style === 'destructive');
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.sheet}>
-        {title || subtitle || message ? (
-          <View style={styles.header}>
-            {title ? <Text style={styles.title}>{title}</Text> : null}
-            {subtitle ? (
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {subtitle}
-              </Text>
-            ) : null}
-            {message ? <Text style={[styles.subtitle, styles.message]}>{message}</Text> : null}
-          </View>
-        ) : null}
+        {message ? <Text style={styles.message}>{message}</Text> : null}
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {actions.map((a, i) => {
             const destructive = a.style === 'destructive';
@@ -99,11 +89,13 @@ export default function ActionSheet({ visible, title, subtitle, message, actions
 
 const makeStyles = (c) => ({
   sheet: { flexShrink: 1 },
-  // Lined up with the other sheets' titles (24 in from the edge).
-  header: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm + spacing.xs, gap: 2 },
-  title: { ...type.sheetTitle, color: c.text },
-  subtitle: { ...type.body, color: c.textMuted },
-  message: { marginTop: spacing.xs },
+  // 24 in from the edge, in line with the icons.
+  message: {
+    ...type.body,
+    color: c.textMuted,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm + spacing.xs,
+  },
   list: { flexGrow: 0 },
   // Rows inset 12, their content another 12: icons line up with the title.
   listContent: { paddingHorizontal: 12, gap: 2 },

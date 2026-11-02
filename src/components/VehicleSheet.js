@@ -26,7 +26,7 @@ function Field({ label, error, ...input }) {
 }
 
 // Mounted only while the sheet is open, so it starts from the saved vehicle each time.
-function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
+function VehicleForm({ vehicle, others, onSave, onDelete }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [fields, setFields] = useState({
@@ -55,7 +55,6 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>{vehicle ? 'Edit vehicle' : 'Add vehicle'}</Text>
         <Field
           label="Make"
           value={fields.make}
@@ -94,9 +93,6 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
             <Text style={[styles.linkText, { color: c.stop }]}>Remove vehicle</Text>
           </Pressable>
         ) : null}
-        <Pressable onPress={onClose} style={styles.link} accessibilityRole="button">
-          <Text style={styles.linkText}>Cancel</Text>
-        </Pressable>
       </ScrollView>
     </View>
   );
@@ -109,13 +105,12 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
  */
 export default function VehicleSheet({ visible, vehicle, others, onSave, onDelete, onClose }) {
   return (
-    <BottomSheet visible={visible} onClose={onClose} maxHeight="90%">
+    <BottomSheet visible={visible} onClose={onClose}>
       <VehicleForm
         vehicle={vehicle}
         others={others}
         onSave={onSave}
         onDelete={onDelete}
-        onClose={onClose}
       />
     </BottomSheet>
   );
@@ -124,7 +119,6 @@ export default function VehicleSheet({ visible, vehicle, others, onSave, onDelet
 const makeStyles = (c) => ({
   sheet: { flexShrink: 1 },
   content: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  title: { ...type.title, color: c.text, marginBottom: spacing.xs },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm, marginBottom: 6 },
   input: {
     ...type.bodyLarge,

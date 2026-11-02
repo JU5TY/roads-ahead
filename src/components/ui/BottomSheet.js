@@ -35,7 +35,8 @@ const DRIVER = { useNativeDriver: true };
  * The panel keeps the same space under every sheet's content, above the
  * navigation bar or, while it's up, the keyboard (which covers the bar).
  * Tapping or dragging the handle down, tapping the scrim (unless `scrimCloses`
- * is false) or Back calls onClose: menus have no Cancel. No motion with reduced motion on.
+ * is false) or Back calls onClose, so no sheet has a Cancel button (and forms
+ * have no title either). No motion with reduced motion on.
  */
 export default function BottomSheet({ visible, onClose, scrimCloses = true, children }) {
   const insets = useSafeAreaInsets();

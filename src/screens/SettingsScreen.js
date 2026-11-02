@@ -137,7 +137,6 @@ export default function SettingsScreen() {
     >
       <ActionSheet
         visible={picking}
-        title="Break reminder"
         message="On Record, a break bar appears 30 minutes before this much driving without a break, then turns orange. A stop or pause of 15 minutes or more counts as a break."
         actions={BREAK_REMINDER_OPTIONS.map((minutes) => ({
           key: String(minutes),

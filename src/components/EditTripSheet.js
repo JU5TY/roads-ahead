@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { useStyles } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
@@ -7,15 +7,13 @@ import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 
 // Mounted only while the sheet is open, so it starts from the saved values each time.
-function EditTripForm({ trip, onSave, onClose }) {
+function EditTripForm({ trip, onSave }) {
   const styles = useStyles(makeStyles);
   const [name, setName] = useState(trip?.name ?? '');
   const [notes, setNotes] = useState(trip?.notes ?? '');
 
   return (
     <View style={styles.sheet}>
-      <Text style={styles.title}>Edit trip</Text>
-
       <Text style={styles.label}>Name</Text>
       <TextInput
         value={name}
@@ -36,9 +34,6 @@ function EditTripForm({ trip, onSave, onClose }) {
       />
 
       <Button label="Save" onPress={() => onSave({ name, notes })} style={styles.save} />
-      <Pressable onPress={onClose} style={styles.cancel} accessibilityRole="button">
-        <Text style={styles.cancelText}>Cancel</Text>
-      </Pressable>
     </View>
   );
 }
@@ -47,14 +42,13 @@ function EditTripForm({ trip, onSave, onClose }) {
 export default function EditTripSheet({ visible, trip, onSave, onClose }) {
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <EditTripForm trip={trip} onSave={onSave} onClose={onClose} />
+      <EditTripForm trip={trip} onSave={onSave} />
     </BottomSheet>
   );
 }
 
 const makeStyles = (c) => ({
   sheet: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  title: { ...type.title, color: c.text, marginBottom: spacing.xs },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm },
   input: {
     ...type.bodyLarge,
@@ -66,6 +60,4 @@ const makeStyles = (c) => ({
   },
   notes: { minHeight: 100, maxHeight: 200 },
   save: { marginTop: spacing.md },
-  cancel: { height: 48, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { ...type.button, color: c.accent },
 });
