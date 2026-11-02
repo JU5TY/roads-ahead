@@ -20,9 +20,7 @@ const OPEN_MS = 300;
 const CLOSE_MS = 220;
 const DRAG_CLOSE = 80; // dragged this far down (or flicked), the sheet closes
 const SHOW_WAIT_MS = 250; // opens anyway if the Modal never says it's showing
-// On the JS thread: native-driven animations in an Android Modal can skip
-// straight to their end (the scrim showed with no fade). Two values, briefly.
-const DRIVER = { useNativeDriver: false };
+const DRIVER = { useNativeDriver: true };
 
 /**
  * A modal sheet from the bottom of the screen, the same for every sheet: a
@@ -150,7 +148,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
 }
 
 const makeStyles = (c) => ({
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: c.scrim },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: c.scrim },
   column: { flex: 1, justifyContent: 'flex-end' },
   panel: {
     flexShrink: 1,
