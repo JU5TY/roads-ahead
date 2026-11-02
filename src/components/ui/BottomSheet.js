@@ -31,8 +31,8 @@ const DRIVER = { useNativeDriver: true };
  * (`flexShrink: 1` on its parents) so a tall sheet scrolls under the status bar
  * rather than running past it, or behind the keyboard (kept clear with padding
  * on Android too: edge-to-edge windows don't resize for it).
- * Dragging the handle down, tapping the scrim (unless `scrimCloses` is false)
- * or Back calls onClose. No motion with reduced motion on.
+ * Tapping or dragging the handle down, tapping the scrim (unless `scrimCloses`
+ * is false) or Back calls onClose: menus have no Cancel. No motion with reduced motion on.
  */
 export default function BottomSheet({ visible, onClose, scrimCloses = true, children }) {
   const insets = useSafeAreaInsets();
@@ -102,12 +102,14 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
   };
 
   // The handle drags the panel down; let go far enough (or flick) and it closes.
+  // A tap on it closes too (it's the Close button for screen readers).
   const pan = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
     onPanResponderMove: (_, g) => offset.setValue(Math.max(0, g.dy)),
     onPanResponderRelease: (_, g) => {
-      if (g.dy > DRAG_CLOSE || g.vy > 0.8) onClose();
+      const tap = Math.abs(g.dx) < 4 && Math.abs(g.dy) < 4;
+      if (tap || g.dy > DRAG_CLOSE || g.vy > 0.8) onClose();
       else Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }).start();
     },
   });
@@ -137,7 +139,13 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
           onLayout={onLayout}
           style={[styles.panel, { transform: [{ translateY: offset }] }]}
         >
-          <View {...pan.panHandlers} style={styles.grabber}>
+          <View
+            {...pan.panHandlers}
+            style={styles.grabber}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <View style={styles.handle} />
           </View>
           {children}

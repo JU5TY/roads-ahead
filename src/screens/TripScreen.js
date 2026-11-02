@@ -28,7 +28,13 @@ import { getTripCompletions } from '../storage/roadStorage';
 import { deleteTrip, getTrip, updateTrip } from '../storage/tripStorage';
 import { listVehicles, setDriveVehicle } from '../storage/vehicleStorage';
 import { dayColorFor, type } from '../theme';
-import { formatDate, formatDayDate, formatTime, tripKicker } from '../utils/format';
+import {
+  formatDate,
+  formatDateRange,
+  formatDayDate,
+  formatTime,
+  tripKicker,
+} from '../utils/format';
 import { driveGaps, routeSegments, withoutCrossings } from '../utils/crossings';
 import { averageMovingSpeed, downsample } from '../utils/geoMath';
 import { getRoad } from '../utils/iconicRoads';
@@ -379,13 +385,20 @@ export default function TripScreen() {
     >
       <ActionSheet
         visible={menu === 'options'}
-        title={selected && !single ? 'Options' : 'Trip options'}
+        title={title}
+        subtitle={
+          selected && !single
+            ? [`Drive ${trip.drives.indexOf(selected) + 1}`, routeLabel(selected.places)]
+                .filter(Boolean)
+                .join(' · ')
+            : formatDateRange(first.startedAt, last.endedAt)
+        }
         actions={[
           { icon: 'edit', label: 'Edit trip', onPress: () => setMenu('edit') },
           {
             icon: 'download',
             label: 'Export',
-            detail: premium ? null : 'Premium',
+            badge: premium ? null : 'Premium',
             onPress: () => {
               setMenu(null);
               if (premium) comingSoon('Exporting trips');

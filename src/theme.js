@@ -38,6 +38,8 @@ const light = {
   warningContainer: '#FEEFC3',
   onWarningContainer: '#5F3B00',
   breakDue: '#E8710A', // Record's break bar once a break is due
+  danger: '#C5221F', // destructive menu rows (Delete trip)
+  dangerContainer: '#FCE8E6', // their icon well
   stop: '#D93025',
   onStop: '#FFFFFF',
   start: '#1E8E3E',
@@ -117,6 +119,8 @@ const dark = {
   warningContainer: '#3D3214',
   onWarningContainer: '#FDD663',
   breakDue: '#FCAD70',
+  danger: '#F28B82',
+  dangerContainer: '#4A1C1A',
   stop: '#F28B82',
   onStop: '#601410',
   start: '#34A853',
@@ -185,6 +189,8 @@ export const type = {
   headline: { fontFamily: fonts.regular, fontSize: 32, lineHeight: 40 },
   title: { fontFamily: fonts.regular, fontSize: 28, lineHeight: 34 },
   section: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 24 },
+  // A menu's title (ActionSheet).
+  sheetTitle: { fontFamily: fonts.medium, fontSize: 20, lineHeight: 26 },
   // Uppercase group labels on Home, Trips and You ("LATEST TRIP").
   overline: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, letterSpacing: 0.8 },
   statLarge: { fontFamily: fonts.medium, fontSize: 32, lineHeight: 38, letterSpacing: -0.3 },

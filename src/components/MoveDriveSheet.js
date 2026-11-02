@@ -34,10 +34,11 @@ export default function MoveDriveSheet({ visible, drive, allowNewTrip, onMoved, 
 
   const actions = [
     ...(allowNewTrip
-      ? [{ label: 'Make it a separate trip', style: 'primary', onPress: () => move(null) }]
+      ? [{ icon: 'add', label: 'Make it a separate trip', onPress: () => move(null) }]
       : []),
     ...trips.map((t) => ({
       key: `trip-${t.id}`,
+      icon: 'route',
       label: tripTitle(t) ?? formatDate(t.drives[0].startedAt),
       detail: formatDateRange(t.drives[0].startedAt, t.drives.at(-1).endedAt),
       onPress: () => move(t.id),
