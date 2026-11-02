@@ -9,25 +9,19 @@ import { registrationProblem, vehicleLabel } from '../utils/vehicles';
 import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 
-/** A labelled text input; `optional` adds "(optional)", `hint` a grey line under it. */
-function Field({ label, optional, hint, error, ...input }) {
-  const { c } = useTheme();
+/** A labelled text input, with an `error` under it when there is one. */
+function Field({ label, error, ...input }) {
   const styles = useStyles(makeStyles);
   return (
     <View>
-      <Text style={styles.label}>
-        {label}
-        {optional ? <Text style={styles.optional}> (optional)</Text> : null}
-      </Text>
+      <Text style={styles.label}>{label}</Text>
       <TextInput
-        placeholderTextColor={c.textMuted}
         style={styles.input}
         accessibilityLabel={label}
         maxLength={40}
         {...input}
       />
-      {error ? <Text style={[styles.hint, styles.error]}>{error}</Text> : null}
-      {hint && !error ? <Text style={styles.hint}>{hint}</Text> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
@@ -68,7 +62,6 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
           label="Make"
           value={fields.make}
           onChangeText={set('make')}
-          placeholder="e.g. Mazda"
           autoCapitalize="words"
           autoFocus={!vehicle}
           returnKeyType="next"
@@ -77,40 +70,26 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
           label="Model"
           value={fields.model}
           onChangeText={set('model')}
-          placeholder="e.g. MX-5"
           returnKeyType="next"
         />
         <Field
           label="Nickname"
-          optional
-          hint="Shown instead of the make and model."
           value={fields.nickname}
           onChangeText={set('nickname')}
-          placeholder="e.g. The weekend car"
           autoCapitalize="sentences"
           returnKeyType="next"
         />
         <Field
           label="Registration"
-          optional
-          hint="Needed if you have two of the same car. Only you see it; it’s never on shared images."
           error={problem}
           value={fields.registration}
           onChangeText={set('registration')}
-          placeholder="e.g. AB12 CDE"
           autoCapitalize="characters"
           autoCorrect={false}
           maxLength={12}
           returnKeyType="done"
           onSubmitEditing={save}
         />
-        {vehicle ? null : (
-          <Text style={styles.hint}>
-            {others.length
-              ? 'New trips are put down to your default vehicle; you can change it on any drive.'
-              : 'Your trips so far, and every new one, are put down to it.'}
-          </Text>
-        )}
         <Button label="Save" onPress={save} disabled={!valid} style={styles.save} />
         {vehicle ? (
           <Pressable onPress={confirmDelete} style={styles.link} accessibilityRole="button">
@@ -149,7 +128,6 @@ const makeStyles = (c) => ({
   content: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   title: { ...type.title, color: c.text, marginBottom: spacing.xs },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm, marginBottom: 6 },
-  optional: { fontFamily: type.body.fontFamily },
   input: {
     ...type.bodyLarge,
     backgroundColor: c.surface,
@@ -158,8 +136,7 @@ const makeStyles = (c) => ({
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
   },
-  hint: { ...type.small, color: c.textMuted, marginTop: 6 },
-  error: { color: c.stop },
+  error: { ...type.small, color: c.stop, marginTop: 6 },
   save: { marginTop: spacing.md },
   link: { height: 48, alignItems: 'center', justifyContent: 'center' },
   linkText: { ...type.button, color: c.accent },
