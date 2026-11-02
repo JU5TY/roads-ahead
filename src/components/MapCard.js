@@ -25,7 +25,7 @@ export default function MapCard({ marker, onClose }) {
   return (
     <FadeUp key={marker.key} style={styles.wrap}>
       <View style={styles.card} accessible accessibilityLabel={`${marker.title}. ${detail}`}>
-        <MapDot kind={marker.kind} color={marker.color} />
+        <MapDot kind={marker.kind} color={marker.color} size={16} />
         <View style={styles.text}>
           <Text style={styles.title} numberOfLines={1}>
             {marker.title}

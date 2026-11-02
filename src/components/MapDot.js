@@ -7,17 +7,19 @@ import { useStyles } from '../hooks/useTheme';
  * ring in its route colour. The same marks as the Trips list outline and the
  * Timeline. Goes inside a react-native-maps <Marker> anchored at its centre.
  * `selected` sets it in a soft halo of its colour: the marker whose card is
- * showing. Colours are #RRGGBB.
+ * showing. Colours are #RRGGBB. `size` is for the mark on a MapCard.
  */
-export default function MapDot({ kind, color, selected = false }) {
+export default function MapDot({ kind, color, selected = false, size = 10 }) {
   const styles = useStyles(makeStyles);
+  const dims = { width: size, height: size, borderRadius: size / 2 };
   const dot = (
     <View
-      style={
+      style={[
         kind === 'stop'
           ? [styles.ring, { borderColor: color }]
-          : [styles.dot, { backgroundColor: color }]
-      }
+          : [styles.dot, { backgroundColor: color }],
+        dims,
+      ]}
     />
   );
   return selected ? (
@@ -29,16 +31,10 @@ export default function MapDot({ kind, color, selected = false }) {
 
 const makeStyles = (c) => ({
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
     borderWidth: 2,
     borderColor: c.mapRoad,
   },
   ring: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
     borderWidth: 3,
     backgroundColor: c.mapRoad,
   },
