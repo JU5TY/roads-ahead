@@ -11,7 +11,7 @@ import MapDot from './MapDot';
 const MAP_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
 const FOCUS_DELTA = 0.01; // ~1 km across when zooming to a single marker
 // Round caps make each dash a dot (Google Maps on Android draws true dots).
-const DOTS = { lineDashPattern: [1, 10], lineCap: 'round' };
+const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
 
 /**
  * Map of one or more route segments.
@@ -92,7 +92,7 @@ export default function RouteMap({
               key={s.key}
               coordinates={s.coordinates}
               strokeColor={s.color}
-              strokeWidth={5}
+              strokeWidth={4}
               {...(s.dotted ? DOTS : null)}
             />
           ))}

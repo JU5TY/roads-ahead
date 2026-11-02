@@ -22,16 +22,16 @@ export default function MapDot({ kind, color }) {
 
 const makeStyles = (c) => ({
   dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: c.mapRoad,
   },
   ring: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     borderWidth: 3,
     backgroundColor: c.mapRoad,
   },
