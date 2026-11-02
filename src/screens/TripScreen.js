@@ -419,7 +419,6 @@ export default function TripScreen() {
       <EditTripSheet
         visible={menu === 'edit'}
         trip={trip}
-        placeholder={tripRouteLabel(trip) ?? 'Trip name'}
         onSave={save}
         onClose={() => setMenu(null)}
       />

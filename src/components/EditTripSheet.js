@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useStyles, useTheme } from '../hooks/useTheme';
+import { useStyles } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
 import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 
 // Mounted only while the sheet is open, so it starts from the saved values each time.
-function EditTripForm({ trip, placeholder, onSave, onClose }) {
+function EditTripForm({ trip, onSave, onClose }) {
   const insets = useSafeAreaInsets();
-  const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [name, setName] = useState(trip?.name ?? '');
   const [notes, setNotes] = useState(trip?.notes ?? '');
@@ -23,20 +22,15 @@ function EditTripForm({ trip, placeholder, onSave, onClose }) {
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder={placeholder}
-        placeholderTextColor={c.textMuted}
         style={styles.input}
         returnKeyType="done"
         maxLength={80}
       />
-      <Text style={styles.hint}>Leave empty to name it after the route.</Text>
 
       <Text style={styles.label}>Notes</Text>
       <TextInput
         value={notes}
         onChangeText={setNotes}
-        placeholder="Who came, highlights, things to remember…"
-        placeholderTextColor={c.textMuted}
         style={[styles.input, styles.notes]}
         multiline
         textAlignVertical="top"
@@ -51,11 +45,11 @@ function EditTripForm({ trip, placeholder, onSave, onClose }) {
   );
 }
 
-/** Edit a trip's name and notes. `placeholder` is the automatic title shown when unnamed. */
-export default function EditTripSheet({ visible, trip, placeholder, onSave, onClose }) {
+/** Edit a trip's name and notes; an empty name goes back to the automatic title. */
+export default function EditTripSheet({ visible, trip, onSave, onClose }) {
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <EditTripForm trip={trip} placeholder={placeholder} onSave={onSave} onClose={onClose} />
+      <EditTripForm trip={trip} onSave={onSave} onClose={onClose} />
     </BottomSheet>
   );
 }
@@ -73,7 +67,6 @@ const makeStyles = (c) => ({
     paddingVertical: 14,
   },
   notes: { minHeight: 100, maxHeight: 200 },
-  hint: { ...type.small, color: c.textMuted },
   save: { marginTop: spacing.md },
   cancel: { height: 48, alignItems: 'center', justifyContent: 'center' },
   cancelText: { ...type.button, color: c.accent },
