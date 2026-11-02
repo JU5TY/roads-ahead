@@ -20,6 +20,9 @@ const OPEN_MS = 300;
 const CLOSE_MS = 220;
 const DRAG_CLOSE = 80; // dragged this far down (or flicked), the sheet closes
 const SHOW_WAIT_MS = 250; // opens anyway if the Modal never says it's showing
+// On the JS thread: native-driven animations in an Android Modal can skip
+// straight to their end (the scrim showed with no fade). Two values, briefly.
+const DRIVER = { useNativeDriver: false };
 
 /**
  * A modal sheet from the bottom of the screen, the same for every sheet: a
@@ -50,13 +53,8 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
     const duration = reduceMotion.current ? 0 : open ? OPEN_MS : CLOSE_MS;
     const easing = open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic);
     Animated.parallel([
-      Animated.timing(scrim, { toValue: open ? 1 : 0, duration, easing, useNativeDriver: true }),
-      Animated.timing(offset, {
-        toValue: open ? 0 : height.current,
-        duration,
-        easing,
-        useNativeDriver: true,
-      }),
+      Animated.timing(scrim, { toValue: open ? 1 : 0, duration, easing, ...DRIVER }),
+      Animated.timing(offset, { toValue: open ? 0 : height.current, duration, easing, ...DRIVER }),
     ]).start(after);
   };
 
@@ -112,7 +110,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
     onPanResponderMove: (_, g) => offset.setValue(Math.max(0, g.dy)),
     onPanResponderRelease: (_, g) => {
       if (g.dy > DRAG_CLOSE || g.vy > 0.8) onClose();
-      else Animated.spring(offset, { toValue: 0, bounciness: 0, useNativeDriver: true }).start();
+      else Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }).start();
     },
   });
 
