@@ -1,8 +1,9 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
+import BottomSheet from './ui/BottomSheet';
 import Icon from './ui/Icon';
 
 /**
@@ -16,77 +17,73 @@ export default function ActionSheet({ visible, title, message, actions, onClose 
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        {/* Swallow taps on the sheet itself so only the backdrop closes it. */}
-        <Pressable style={[styles.sheet, { paddingBottom: spacing.md + insets.bottom }]}>
-          <View style={styles.handle} />
-          {title ? <Text style={styles.title}>{title}</Text> : null}
-          {message ? <Text style={styles.message}>{message}</Text> : null}
-          <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-            {actions.map((a) => (
-              <Pressable
-                key={a.key ?? a.label}
-                onPress={a.onPress}
-                style={({ pressed }) => [
-                  styles.action,
-                  a.style === 'primary' && styles.actionPrimary,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityState={a.selected !== undefined ? { selected: a.selected } : undefined}
-              >
-                {a.icon ? (
-                  <Icon
-                    name={a.icon}
-                    size={22}
-                    color={
-                      a.style === 'primary'
-                        ? c.onAccentContainer
-                        : a.style === 'destructive'
-                          ? c.finish
-                          : c.accent
-                    }
-                  />
-                ) : null}
-                <View style={styles.actionText}>
+    <BottomSheet visible={visible} onClose={onClose} maxHeight="80%">
+      <View style={[styles.sheet, { paddingBottom: spacing.md + insets.bottom }]}>
+        <View style={styles.handle} />
+        {title ? <Text style={styles.title}>{title}</Text> : null}
+        {message ? <Text style={styles.message}>{message}</Text> : null}
+        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+          {actions.map((a) => (
+            <Pressable
+              key={a.key ?? a.label}
+              onPress={a.onPress}
+              style={({ pressed }) => [
+                styles.action,
+                a.style === 'primary' && styles.actionPrimary,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityState={a.selected !== undefined ? { selected: a.selected } : undefined}
+            >
+              {a.icon ? (
+                <Icon
+                  name={a.icon}
+                  size={22}
+                  color={
+                    a.style === 'primary'
+                      ? c.onAccentContainer
+                      : a.style === 'destructive'
+                        ? c.finish
+                        : c.accent
+                  }
+                />
+              ) : null}
+              <View style={styles.actionText}>
+                <Text
+                  style={[
+                    styles.actionLabel,
+                    a.style === 'primary' && styles.actionLabelPrimary,
+                    a.style === 'destructive' && styles.actionLabelDestructive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {a.label}
+                </Text>
+                {a.detail ? (
                   <Text
                     style={[
-                      styles.actionLabel,
+                      styles.actionDetail,
                       a.style === 'primary' && styles.actionLabelPrimary,
-                      a.style === 'destructive' && styles.actionLabelDestructive,
                     ]}
                     numberOfLines={1}
                   >
-                    {a.label}
+                    {a.detail}
                   </Text>
-                  {a.detail ? (
-                    <Text
-                      style={[
-                        styles.actionDetail,
-                        a.style === 'primary' && styles.actionLabelPrimary,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {a.detail}
-                    </Text>
-                  ) : null}
-                </View>
-                {a.selected ? <Icon name="check" size={22} color={c.accent} /> : null}
-              </Pressable>
-            ))}
-          </ScrollView>
-          <Pressable onPress={onClose} style={styles.cancel} accessibilityRole="button">
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
+                ) : null}
+              </View>
+              {a.selected ? <Icon name="check" size={22} color={c.accent} /> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+        <Pressable onPress={onClose} style={styles.cancel} accessibilityRole="button">
+          <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </View>
+    </BottomSheet>
   );
 }
 
 const makeStyles = (c) => ({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
   sheet: {
     backgroundColor: c.background,
     borderTopLeftRadius: radius.card,
@@ -94,7 +91,7 @@ const makeStyles = (c) => ({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     gap: spacing.sm,
-    maxHeight: '80%',
+    flexShrink: 1,
   },
   handle: {
     alignSelf: 'center',

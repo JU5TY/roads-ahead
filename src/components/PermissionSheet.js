@@ -1,10 +1,12 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../hooks/useTheme';
 import { spacing, type } from '../theme';
 import { PROMPT_CHOICE, SETTINGS_ALLOW, SETTINGS_PRECISE } from '../utils/locationChoices';
 import PhoneChoice from './PhoneChoice';
+import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 import { HaloIcon } from './ui/Halo';
 
@@ -46,45 +48,40 @@ const CONTENT = {
 export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
-  const content = kind ? CONTENT[kind] : null;
+  // The last content stays while the sheet slides away.
+  const [content, setContent] = useState(null);
+  if (kind && CONTENT[kind] !== content) setContent(CONTENT[kind]);
 
   return (
-    <Modal
-      visible={Boolean(content)}
-      transparent
-      animationType="slide"
-      onRequestClose={onSecondary}
-    >
-      <View style={styles.backdrop}>
-        {content ? (
-          <ScrollView
-            style={styles.sheet}
-            contentContainerStyle={[styles.sheetContent, { paddingBottom: 28 + insets.bottom }]}
-            bounces={false}
-          >
-            <View style={styles.handle} />
-            <HaloIcon icon={content.icon} />
-            <Text style={[type.title, styles.text, styles.title]} role="heading">
-              {content.title}
-            </Text>
-            <Text style={[type.bodyLarge, styles.muted, styles.lead]}>{content.lead}</Text>
-            <PhoneChoice {...content.choice} style={styles.choice} />
-            <Button label={content.primary} onPress={onPrimary} style={styles.primary} />
-            <Pressable onPress={onSecondary} style={styles.secondary} accessibilityRole="button">
-              <Text style={[type.button, styles.link]}>{content.secondary}</Text>
-            </Pressable>
-          </ScrollView>
-        ) : null}
-      </View>
-    </Modal>
+    <BottomSheet visible={Boolean(kind)} onClose={onSecondary} scrimCloses={false}>
+      {content ? (
+        <ScrollView
+          style={styles.sheet}
+          contentContainerStyle={[styles.sheetContent, { paddingBottom: 28 + insets.bottom }]}
+          bounces={false}
+        >
+          <View style={styles.handle} />
+          <HaloIcon icon={content.icon} />
+          <Text style={[type.title, styles.text, styles.title]} role="heading">
+            {content.title}
+          </Text>
+          <Text style={[type.bodyLarge, styles.muted, styles.lead]}>{content.lead}</Text>
+          <PhoneChoice {...content.choice} style={styles.choice} />
+          <Button label={content.primary} onPress={onPrimary} style={styles.primary} />
+          <Pressable onPress={onSecondary} style={styles.secondary} accessibilityRole="button">
+            <Text style={[type.button, styles.link]}>{content.secondary}</Text>
+          </Pressable>
+        </ScrollView>
+      ) : null}
+    </BottomSheet>
   );
 }
 
 const makeStyles = (c) => ({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
   // Scrolls on short phones rather than running off the top.
   sheet: {
     flexGrow: 0,
+    flexShrink: 1,
     backgroundColor: c.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,

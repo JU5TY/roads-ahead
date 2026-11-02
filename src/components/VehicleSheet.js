@@ -1,19 +1,12 @@
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { showDialog } from './ui/DialogHost';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
 import { registrationProblem, vehicleLabel } from '../utils/vehicles';
+import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 
 /** A labelled text input; `optional` adds "(optional)", `hint` a grey line under it. */
@@ -138,29 +131,22 @@ function VehicleForm({ vehicle, others, onSave, onDelete, onClose }) {
  * { make, model, nickname, registration } as typed.
  */
 export default function VehicleSheet({ visible, vehicle, others, onSave, onDelete, onClose }) {
-  const styles = useStyles(makeStyles);
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* Padding on Android too: edge-to-edge windows don't resize for the keyboard. */}
-      <KeyboardAvoidingView style={styles.backdrop} behavior="padding">
-        {visible ? (
-          <VehicleForm
-            vehicle={vehicle}
-            others={others}
-            onSave={onSave}
-            onDelete={onDelete}
-            onClose={onClose}
-          />
-        ) : null}
-      </KeyboardAvoidingView>
-    </Modal>
+    <BottomSheet visible={visible} onClose={onClose} maxHeight="90%">
+      <VehicleForm
+        vehicle={vehicle}
+        others={others}
+        onSave={onSave}
+        onDelete={onDelete}
+        onClose={onClose}
+      />
+    </BottomSheet>
   );
 }
 
 const makeStyles = (c) => ({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
   sheet: {
-    maxHeight: '90%',
+    flexShrink: 1,
     backgroundColor: c.background,
     borderTopLeftRadius: radius.card,
     borderTopRightRadius: radius.card,

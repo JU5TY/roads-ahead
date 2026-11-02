@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
+import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 
 // Mounted only while the sheet is open, so it starts from the saved values each time.
@@ -52,21 +53,14 @@ function EditTripForm({ trip, placeholder, onSave, onClose }) {
 
 /** Edit a trip's name and notes. `placeholder` is the automatic title shown when unnamed. */
 export default function EditTripSheet({ visible, trip, placeholder, onSave, onClose }) {
-  const styles = useStyles(makeStyles);
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* Padding on Android too: edge-to-edge windows don't resize for the keyboard. */}
-      <KeyboardAvoidingView style={styles.backdrop} behavior="padding">
-        {visible ? (
-          <EditTripForm trip={trip} placeholder={placeholder} onSave={onSave} onClose={onClose} />
-        ) : null}
-      </KeyboardAvoidingView>
-    </Modal>
+    <BottomSheet visible={visible} onClose={onClose}>
+      <EditTripForm trip={trip} placeholder={placeholder} onSave={onSave} onClose={onClose} />
+    </BottomSheet>
   );
 }
 
 const makeStyles = (c) => ({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
   sheet: {
     backgroundColor: c.background,
     borderTopLeftRadius: radius.card,
