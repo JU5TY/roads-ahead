@@ -146,7 +146,7 @@ export default function VehicleSheet({ visible, vehicle, others, onSave, onDelet
 
 const makeStyles = (c) => ({
   sheet: { flexShrink: 1 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm },
+  content: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   title: { ...type.title, color: c.text, marginBottom: spacing.xs },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm, marginBottom: 6 },
   optional: { fontFamily: type.body.fontFamily },

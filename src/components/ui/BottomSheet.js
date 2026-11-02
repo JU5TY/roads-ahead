@@ -156,8 +156,9 @@ const makeStyles = (c) => ({
     borderTopLeftRadius: radius.card,
     borderTopRightRadius: radius.card,
   },
-  // A taller strip than the bar, so it's easy to grab.
-  grabber: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.sm },
+  // A taller strip than the bar, so it's easy to grab; with the gap above every
+  // sheet's content, so sheets don't add their own.
+  grabber: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.md },
   handle: {
     width: 32,
     height: 4,

@@ -88,8 +88,9 @@ const makeStyles = (c) => ({
     gap: spacing.sm,
     flexShrink: 1,
   },
-  title: { ...type.title, color: c.text, marginHorizontal: spacing.xs },
-  message: { ...type.body, color: c.textMuted, marginHorizontal: spacing.xs },
+  // Lined up with the other sheets' titles (24 in from the edge).
+  title: { ...type.title, color: c.text, marginHorizontal: spacing.sm },
+  message: { ...type.body, color: c.textMuted, marginHorizontal: spacing.sm },
   list: { flexGrow: 0 },
   listContent: { gap: spacing.xs, paddingTop: spacing.xs },
   action: {

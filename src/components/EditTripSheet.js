@@ -61,7 +61,7 @@ export default function EditTripSheet({ visible, trip, placeholder, onSave, onCl
 }
 
 const makeStyles = (c) => ({
-  sheet: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm },
+  sheet: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   title: { ...type.title, color: c.text, marginBottom: spacing.xs },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm },
   input: {
