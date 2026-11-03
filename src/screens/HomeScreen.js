@@ -138,7 +138,7 @@ const makeStyles = (c) => ({
     alignItems: 'center',
   },
   total: { ...type.total, color: c.accent, marginTop: 16 },
-  totalUnit: type.totalUnit,
+  totalUnit: { ...type.totalUnit, color: c.textMuted },
   since: { marginTop: 4 }, // ~6 under the number's glyphs
   muted: { color: c.textMuted },
   roadsHint: { color: c.textMuted, fontSize: 14, lineHeight: 20, marginTop: 14 },

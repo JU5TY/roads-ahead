@@ -198,6 +198,6 @@ const makeStyles = (c) => ({
   },
   sheetDark: { shadowOpacity: 0.5 },
   total: { ...type.total, color: c.accent },
-  totalUnit: type.totalUnit,
+  totalUnit: { ...type.totalUnit, color: c.textMuted },
   since: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 6 },
 });

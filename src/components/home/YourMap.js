@@ -10,8 +10,8 @@ import RouteCircle from '../RouteCircle';
 import Halo from '../ui/Halo';
 import Icon from '../ui/Icon';
 
-// The map circle inside its ring; the two together are 216 across.
-const SIZE = 176;
+// The map circle inside its ring: 200 across, like the Welcome logo.
+const SIZE = 160;
 const RING = 20;
 const POINTS_PER_DRIVE = 80;
 
@@ -62,8 +62,8 @@ function useAllRoutes(trips) {
 
 /**
  * Home's round "Your map": every road you've driven, drawn flat (no map to
- * load) and fitted inside the circle. The latest trip is bold, everything
- * else faint; ferries, tunnels and pauses are dotted.
+ * load) and fitted inside the circle, white on the app icon's blue. The latest
+ * trip is bold, everything else faint; ferries, tunnels and pauses are dotted.
  * Opens the full map. `trips` newest first.
  */
 export default function YourMap({ trips }) {
@@ -79,15 +79,15 @@ export default function YourMap({ trips }) {
         .map((p) => ({
           coordinates: p.coordinates,
           dotted: p.crossing !== null,
-          color: c.accent,
-          opacity: 0.4,
+          color: c.heroMapRoute,
+          opacity: 0.5,
         })),
       ...parts
         .filter((p) => p.day !== null)
         .map((p) => ({
           coordinates: p.coordinates,
           dotted: p.crossing !== null,
-          color: c.accent,
+          color: c.heroMapRoute,
           width: 4.5,
         })),
     ],

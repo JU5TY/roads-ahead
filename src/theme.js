@@ -46,7 +46,9 @@ const light = {
   finish: '#D93025',
   // Drawn maps (Your map, route thumbnails).
   mapLand: '#EEF2EC',
-  heroMapLand: '#EEF2EC', // Home's round map, on the page
+  // Home's round map: the app icon's blue and white, the same in dark.
+  heroMapLand: '#1A73E8',
+  heroMapRoute: '#FFFFFF',
   mapRoad: '#FFFFFF',
   progressTrack: '#E3E5E8',
   outlinedRow: '#FFFFFF', // not-yet Iconic Road rows
@@ -126,7 +128,8 @@ const dark = {
   start: '#34A853',
   finish: '#EA4335',
   mapLand: '#1C2226',
-  heroMapLand: '#2C2D31', // the card colour, so the circle stands out on the page
+  heroMapLand: '#1A73E8',
+  heroMapRoute: '#FFFFFF',
   mapRoad: '#2C343A',
   progressTrack: '#3A3B3F',
   outlinedRow: '#26272B',
