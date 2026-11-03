@@ -71,7 +71,7 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
               {tripTitle(trip) ?? formatDate(first.startedAt)}
             </Text>
             <View style={large ? styles.metaRow : null}>
-              <Text style={[large ? type.body : styles.rowMeta, styles.muted]} numberOfLines={1}>
+              <Text style={[type.body, styles.muted]} numberOfLines={1}>
                 {formatDistance(summary.distanceM, units, summary.distanceM < 100000 ? 1 : 0)}
                 {timed.length > 0 ? ` · ${formatDurationShort(movingTimeMs)}` : ''}
                 {/* One drive a day goes without saying; more shows it's a trip, not a drive. */}
@@ -113,7 +113,6 @@ const makeStyles = (c) => ({
   },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
   rowTitle: { ...type.bodyStrong },
-  rowMeta: { ...type.body, fontSize: 14 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
   chipBelow: { flexDirection: 'row', gap: 6, marginTop: 4 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 6 },

@@ -27,7 +27,7 @@ export default function CountriesCard({ trips }) {
       <SectionHeader variant="overline" title="Countries" />
       <View style={styles.card}>
         <View style={styles.count}>
-          <Text style={[type.statLarge, styles.number]}>{countries.length}</Text>
+          <Text style={[type.stat, styles.number]}>{countries.length}</Text>
           <Text style={[type.bodyLarge, styles.muted]}>
             {countries.length === 1 ? 'country driven' : 'countries driven'}
           </Text>
@@ -50,7 +50,7 @@ export default function CountriesCard({ trips }) {
 const makeStyles = (c) => ({
   card: { padding: 20, borderRadius: 12, backgroundColor: c.card, ...c.cardShadow },
   count: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  number: { fontSize: 40, lineHeight: 44, color: c.text },
+  number: { color: c.text },
   muted: { color: c.textMuted },
   flags: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20, rowGap: 14, marginTop: 16 },
   flag: { alignItems: 'center', gap: 6, maxWidth: 96 },

@@ -23,6 +23,6 @@ export default function NoTrips({ style }) {
 
 const makeStyles = (c) => ({
   wrap: { alignItems: 'center', paddingHorizontal: 24 },
-  title: { color: c.text, fontFamily: type.section.fontFamily, fontSize: 22, marginTop: 24 },
+  title: { ...type.section, color: c.text, marginTop: 24 },
   body: { color: c.textMuted, textAlign: 'center', marginTop: 8 },
 });

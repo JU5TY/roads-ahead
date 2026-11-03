@@ -30,7 +30,7 @@ export default function PhoneChoice({ title, step, options, caption, style }) {
 }
 
 const makeStyles = (c) => ({
-  card: { padding: 16, borderRadius: 16, backgroundColor: c.card, ...c.cardShadow },
+  card: { padding: 20, borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
   text: { color: c.text },
   muted: { color: c.textMuted, fontFamily: type.body.fontFamily },
   step: { marginTop: 2 },

@@ -295,6 +295,6 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  moreText: { color: '#FFFFFF' },
+  moreText: { color: c.onPhoto },
   pressed: { opacity: 0.6 },
 });

@@ -74,9 +74,9 @@ export default function WeekDistance({ trips, units, now }) {
       </View>
       <View style={styles.body}>
         <View style={styles.today}>
-          <Text style={[type.statLarge, styles.value]} numberOfLines={1} adjustsFontSizeToFit>
+          <Text style={[type.stat, styles.value]} numberOfLines={1} adjustsFontSizeToFit>
             {shown.value}
-            <Text style={type.statUnit}> {shown.unit}</Text>
+            <Text style={[type.statUnit, styles.muted]}> {shown.unit}</Text>
           </Text>
           <Text style={[type.label, styles.value, styles.todayLabel]}>
             {droveToday ? 'Today' : 'In total'}

@@ -106,7 +106,7 @@ const makeStyles = (c) => ({
   headerButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   title: { color: c.text },
   grid: { paddingHorizontal: 16, gap: GAP },
-  viewer: { flex: 1, backgroundColor: '#000000' },
+  viewer: { flex: 1, backgroundColor: c.photoBackground },
   viewerBar: {
     position: 'absolute',
     top: 0,
@@ -120,5 +120,5 @@ const makeStyles = (c) => ({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   round: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  viewerText: { color: '#FFFFFF', flexShrink: 1 },
+  viewerText: { color: c.onPhoto, flexShrink: 1 },
 });

@@ -95,7 +95,7 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  moreText: { color: '#FFFFFF' },
+  moreText: { color: c.onPhoto },
   card: {
     flexDirection: 'row',
     gap: 16,

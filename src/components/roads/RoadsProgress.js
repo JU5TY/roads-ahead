@@ -15,7 +15,7 @@ export default function RoadsProgress({ completed, total, children, style }) {
       accessibilityLabel={`${completed} of ${total} Iconic Roads completed`}
     >
       <View style={styles.count}>
-        <Text style={[type.display, styles.number]}>{completed}</Text>
+        <Text style={[type.stat, styles.number]}>{completed}</Text>
         <Text style={[type.bodyLarge, styles.muted]}>of {total} completed</Text>
       </View>
       <View style={styles.track}>
@@ -31,7 +31,7 @@ export default function RoadsProgress({ completed, total, children, style }) {
 const makeStyles = (c) => ({
   card: { borderRadius: radius.card, padding: 20 },
   count: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  number: { fontSize: 40, lineHeight: 44, letterSpacing: 0, color: c.text },
+  number: { color: c.text },
   muted: { color: c.textMuted },
   track: { height: 8, borderRadius: 4, backgroundColor: c.progressTrack, marginTop: 14 },
   fill: { height: 8, borderRadius: 4, backgroundColor: c.accent },

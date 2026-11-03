@@ -47,7 +47,7 @@ const makeStyles = (c) => ({
   divider: { borderLeftWidth: 1, borderLeftColor: c.divider },
   centre: { textAlign: 'center' },
   number: { marginTop: 4 },
-  // A notch below type.stat, so three fit beside each other.
-  value: { color: c.accent, fontSize: 24, lineHeight: 30 },
+  // Shrinks to fit when three long values sit side by side.
+  value: { color: c.accent },
   muted: { color: c.textMuted },
 });

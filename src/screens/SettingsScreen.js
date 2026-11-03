@@ -355,7 +355,7 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
     backgroundColor: c.accentWell,
   },
-  premiumTitle: { color: c.onAccentContainer, fontSize: 17 },
+  premiumTitle: { color: c.onAccentContainer },
   premiumText: { color: c.accentContainerMuted, fontSize: 13, lineHeight: 18 },
   view: {
     height: 36,

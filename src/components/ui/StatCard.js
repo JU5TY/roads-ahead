@@ -76,7 +76,7 @@ export default function StatCard({
 }
 
 const makeStyles = () => ({
-  card: { borderRadius: radius.card, padding: 18 },
+  card: { borderRadius: radius.card, padding: 20 },
   wide: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 20 },
   well: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },

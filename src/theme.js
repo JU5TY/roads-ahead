@@ -63,6 +63,10 @@ const light = {
   navPill: 'transparent',
   onNavPill: '#1A73E8',
   scrim: 'rgba(0,0,0,0.32)',
+  // Floating buttons' shadow, and the full-screen photo viewer.
+  shadow: '#000000',
+  photoBackground: '#000000',
+  onPhoto: '#FFFFFF',
   // Light cards float on a soft shadow; dark cards are just lighter grey.
   cardShadow: {
     shadowColor: '#3C4043',
@@ -144,6 +148,9 @@ const dark = {
   navPill: 'transparent',
   onNavPill: '#8AB4F8',
   scrim: 'rgba(0,0,0,0.5)',
+  shadow: '#000000',
+  photoBackground: '#000000',
+  onPhoto: '#FFFFFF',
   cardShadow: null,
   dayColors: ['#FDD663', '#FF8BCB', '#C58AF9', '#78D9EC', '#FCAD70', '#9FA8DA', '#D7A985'],
   dayBadges: [

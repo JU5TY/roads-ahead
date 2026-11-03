@@ -190,7 +190,7 @@ const makeStyles = (c) => ({
     paddingTop: 20,
     paddingHorizontal: 16,
     backgroundColor: c.card,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: -2 },

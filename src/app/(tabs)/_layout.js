@@ -121,7 +121,7 @@ const makeStyles = (c) => ({
     paddingLeft: 16,
     paddingRight: 22,
     backgroundColor: c.floating,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOpacity: 0.25,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },

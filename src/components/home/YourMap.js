@@ -135,7 +135,7 @@ const makeStyles = (c) => ({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: c.floating,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },

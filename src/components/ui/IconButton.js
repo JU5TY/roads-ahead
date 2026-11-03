@@ -63,7 +63,7 @@ const makeStyles = (c) => ({
   wrap: { alignItems: 'center', gap: 8 },
   circle: { alignItems: 'center', justifyContent: 'center' },
   shadow: {
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },

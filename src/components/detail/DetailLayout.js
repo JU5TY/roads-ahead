@@ -91,7 +91,7 @@ const makeStyles = (c) => ({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
     backgroundColor: c.background,
-    shadowColor: '#000',
+    shadowColor: c.shadow,
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: -2 },

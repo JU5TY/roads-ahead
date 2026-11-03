@@ -231,8 +231,7 @@ const makeStyles = (c) => ({
     gap: 16,
     borderRadius: 12,
     ...c.cardShadow,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
+    padding: 20,
     backgroundColor: c.card,
   },
   hiddenWell: {
