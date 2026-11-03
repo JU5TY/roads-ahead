@@ -1,7 +1,7 @@
 import { Modal, Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { pressedOpacity, type } from '../../theme';
 
 /**
  * Centred dialog: a title, an optional bold `highlight` line (e.g. Record's
@@ -97,5 +97,5 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
   },
   cancel: { borderWidth: 1, borderColor: c.outline },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: pressedOpacity },
 });

@@ -13,7 +13,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { getRoadCompletions } from '../storage/roadStorage';
 import { getTrip } from '../storage/tripStorage';
-import { type } from '../theme';
+import { pressedOpacity, radius, type } from '../theme';
 import { distanceParts, elevationParts, formatLongDate, formatShortDate } from '../utils/format';
 import { bendsLabel, completedLabel, getRoad } from '../utils/iconicRoads';
 import { dayNumberFor, groupIntoDays, tripTitle } from '../utils/tripSummary';
@@ -267,7 +267,7 @@ const makeStyles = (c) => ({
     marginTop: 18,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: radius.card,
   },
   statusDone: { backgroundColor: c.roadContainer },
   statusTodo: {
@@ -287,7 +287,7 @@ const makeStyles = (c) => ({
   blurb: { marginHorizontal: 4, lineHeight: 24 },
   group: {
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },
@@ -316,5 +316,5 @@ const makeStyles = (c) => ({
     marginHorizontal: 4,
   },
   aboutHeader: { marginBottom: 8 },
-  pressed: { opacity: 0.6 },
+  pressed: { opacity: pressedOpacity },
 });

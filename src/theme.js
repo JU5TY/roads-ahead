@@ -213,7 +213,10 @@ export const type = {
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 
-export const radius = { sm: 6, md: 12, lg: 12, card: 12, pill: 999 };
+export const radius = { sm: 6, card: 12, pill: 999 };
+
+// How much anything tappable fades while pressed.
+export const pressedOpacity = 0.7;
 
 /**
  * Buttons that float over the bottom of a scrolling page, and the room the

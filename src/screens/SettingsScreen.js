@@ -18,7 +18,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { useVehicles } from '../hooks/useVehicles';
 import { BREAK_REMINDER_OPTIONS } from '../storage/settingsStorage';
 import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
-import { spacing, type } from '../theme';
+import { pressedOpacity, radius, spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
@@ -344,7 +344,7 @@ const makeStyles = (c) => ({
     paddingVertical: 14,
     paddingLeft: 16,
     paddingRight: 14,
-    borderRadius: 12,
+    borderRadius: radius.card,
     backgroundColor: c.accentContainer,
   },
   premiumWell: {
@@ -365,5 +365,5 @@ const makeStyles = (c) => ({
     backgroundColor: c.accent,
   },
   viewText: { color: c.onAccent },
-  pressed: { opacity: 0.85 },
+  pressed: { opacity: pressedOpacity },
 });

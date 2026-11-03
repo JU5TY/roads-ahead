@@ -32,7 +32,7 @@ const makeStyles = (c) => ({
     gap: 6,
     height: 32,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: 16,
   },
   chipOn: { gap: 4, paddingLeft: 10, backgroundColor: c.accentContainer },
   chipOff: { borderWidth: 1, borderColor: c.outline },

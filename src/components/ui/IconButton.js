@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { pressedOpacity, type } from '../../theme';
 import Icon from './Icon';
 
 /**
@@ -70,5 +70,5 @@ const makeStyles = (c) => ({
     elevation: 2,
   },
   label: { color: c.text },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: pressedOpacity },
 });

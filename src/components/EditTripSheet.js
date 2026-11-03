@@ -54,7 +54,7 @@ const makeStyles = (c) => ({
     ...type.bodyLarge,
     backgroundColor: c.card,
     color: c.text,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
   },

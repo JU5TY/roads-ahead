@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { pressedOpacity, type } from '../../theme';
 import { formatDistance, formatDurationShort, formatTime } from '../../utils/format';
 import PhotoGallery from '../photos/PhotoGallery';
 import PhotoThumb from '../photos/PhotoThumb';
@@ -296,5 +296,5 @@ const makeStyles = (c) => ({
     backgroundColor: c.photoScrim,
   },
   moreText: { color: c.onPhoto },
-  pressed: { opacity: 0.6 },
+  pressed: { opacity: pressedOpacity },
 });

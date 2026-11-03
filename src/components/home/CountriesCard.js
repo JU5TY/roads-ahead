@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 
 import { useStyles } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { radius, type } from '../../theme';
 import { summarizeCountries } from '../../utils/countries';
 import Flag from '../countries/Flag';
 import SectionHeader from '../ui/SectionHeader';
@@ -48,7 +48,7 @@ export default function CountriesCard({ trips }) {
 }
 
 const makeStyles = (c) => ({
-  card: { padding: 20, borderRadius: 12, backgroundColor: c.card, ...c.cardShadow },
+  card: { padding: 20, borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
   count: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   number: { color: c.text },
   muted: { color: c.textMuted },

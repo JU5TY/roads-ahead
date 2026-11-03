@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useTripPreview } from '../hooks/useTripPreview';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { radius, type } from '../theme';
+import { pressedOpacity, radius, type } from '../theme';
 import { formatDate, formatDistance, formatDurationShort, tripKicker } from '../utils/format';
 import { groupIntoDays, summarizeDrives, tripTitle } from '../utils/tripSummary';
 import RoutePreview from './RoutePreview';
@@ -107,7 +107,7 @@ const makeStyles = (c) => ({
     gap: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: radius.lg,
+    borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },
@@ -133,5 +133,5 @@ const makeStyles = (c) => ({
   kicker: { color: c.accent },
   title: { color: c.text },
   muted: { color: c.textMuted },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: pressedOpacity },
 });

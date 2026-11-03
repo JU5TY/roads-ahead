@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { radius, type } from '../../theme';
 import {
   distanceParts,
   formatDurationShort,
@@ -209,9 +209,9 @@ const makeStyles = (c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    height: 34,
+    height: 32,
     paddingHorizontal: 14,
-    borderRadius: 17,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: c.outline,
   },
@@ -219,7 +219,7 @@ const makeStyles = (c) => ({
   grid: { gap: 10, marginTop: 20 },
   group: {
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },
@@ -229,7 +229,7 @@ const makeStyles = (c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    borderRadius: 12,
+    borderRadius: radius.card,
     ...c.cardShadow,
     padding: 20,
     backgroundColor: c.card,

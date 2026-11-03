@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { showDialog } from './ui/DialogHost';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { radius, spacing, type } from '../theme';
+import { pressedOpacity, radius, spacing, type } from '../theme';
 import { registrationProblem, vehicleLabel } from '../utils/vehicles';
 import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
@@ -160,7 +160,7 @@ const makeStyles = (c) => ({
     ...type.bodyLarge,
     backgroundColor: c.card,
     color: c.text,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
   },
@@ -176,5 +176,5 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
     backgroundColor: c.dangerContainer,
   },
-  pressed: { opacity: 0.7 },
+  pressed: { opacity: pressedOpacity },
 });

@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { spacing, type } from '../theme';
+import { pressedOpacity, spacing, type } from '../theme';
 import BottomSheet from './ui/BottomSheet';
 import Icon from './ui/Icon';
 
@@ -141,5 +141,5 @@ const makeStyles = (c) => ({
     backgroundColor: c.accentContainer,
   },
   badgeText: { ...type.caps, color: c.onAccentContainer },
-  pressed: { opacity: 0.7 },
+  pressed: { opacity: pressedOpacity },
 });

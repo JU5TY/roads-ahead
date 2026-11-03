@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
+import { pressedOpacity, radius, type } from '../../theme';
 import { vehicleLabel } from '../../utils/vehicles';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
@@ -75,5 +75,5 @@ const makeStyles = (c) => ({
   registration: { color: c.textMuted, marginTop: 2 },
   change: { height: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 22 },
   changeText: { color: c.accent },
-  pressed: { opacity: 0.6 },
+  pressed: { opacity: pressedOpacity },
 });

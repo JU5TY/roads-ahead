@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
 import { useActiveDrive } from '../hooks/useActiveDrive';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { type } from '../theme';
+import { pressedOpacity, radius, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { liveMetrics } from '../utils/geoMath';
 import Icon from './ui/Icon';
@@ -47,10 +47,10 @@ const makeStyles = (c) => ({
     gap: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: radius.card,
     backgroundColor: c.accentContainer,
   },
-  pressed: { opacity: 0.85 },
+  pressed: { opacity: pressedOpacity },
   dot: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 4, backgroundColor: c.stop },
   text: { flex: 1 },
   title: { color: c.onAccentContainer },

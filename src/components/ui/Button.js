@@ -1,7 +1,7 @@
 import { Pressable, Text } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
+import { pressedOpacity, radius, type } from '../../theme';
 import Icon from './Icon';
 
 const SIZES = {
@@ -79,6 +79,6 @@ const makeStyles = (c) => ({
   // Pull "· Day 4" back from the 10px gap so the dot has a space's width on
   // both sides, as if it were one line of text.
   trailing: { flexShrink: 0, marginLeft: -6 },
-  pressed: { opacity: 0.85 },
+  pressed: { opacity: pressedOpacity },
   disabled: { opacity: 0.4 },
 });

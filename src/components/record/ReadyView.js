@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { spacing, type } from '../../theme';
+import { radius, spacing, type } from '../../theme';
 import { dayNumberFor, tripTitle } from '../../utils/tripSummary';
 import Icon from '../ui/Icon';
 import IconButton from '../ui/IconButton';
@@ -155,7 +155,7 @@ const makeStyles = (c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    borderRadius: 12,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: c.outline,
     paddingVertical: 14,

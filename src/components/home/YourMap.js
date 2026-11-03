@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getDriveRoutePreview } from '../../storage/driveStorage';
+import { pressedOpacity } from '../../theme';
 import { driveGaps, splitAtCrossings } from '../../utils/crossings';
 import { groupIntoDays } from '../../utils/tripSummary';
 import RouteCircle from '../RouteCircle';
@@ -123,7 +124,7 @@ const makeStyles = (c) => ({
     overflow: 'hidden',
     backgroundColor: c.heroMapLand,
   },
-  pressed: { opacity: 0.9 },
+  pressed: { opacity: pressedOpacity },
   // Overlaps the ring's bottom-right edge.
   expand: {
     position: 'absolute',

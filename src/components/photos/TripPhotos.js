@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { radius, type } from '../../theme';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
@@ -100,7 +100,7 @@ const makeStyles = (c) => ({
     flexDirection: 'row',
     gap: 16,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },

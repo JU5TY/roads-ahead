@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { useStyles } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { radius, type } from '../../theme';
 import { formatDistance } from '../../utils/format';
 import SectionHeader from '../ui/SectionHeader';
 import Flag from './Flag';
@@ -44,7 +44,7 @@ export default function CountriesSection({ rows, units, scope }) {
 const makeStyles = (c) => ({
   group: {
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },

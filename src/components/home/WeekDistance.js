@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
+import { pressedOpacity, radius, type } from '../../theme';
 import { distanceParts } from '../../utils/format';
 import Icon from '../ui/Icon';
 
@@ -136,7 +136,7 @@ const makeStyles = (c) => ({
     ...c.cardShadow,
   },
   head: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: pressedOpacity },
   text: { color: c.text },
   muted: { color: c.textMuted },
   sub: { fontFamily: type.body.fontFamily, marginTop: 2 },

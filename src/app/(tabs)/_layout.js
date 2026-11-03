@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../../components/ui/Icon';
 import { useActiveDrive } from '../../hooks/useActiveDrive';
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { floating, type } from '../../theme';
+import { floating, pressedOpacity, type } from '../../theme';
 
 const ICONS = { index: 'home', trips: 'route', settings: 'person' };
 const NAV_HEIGHT = 64;
@@ -129,5 +129,5 @@ const makeStyles = (c) => ({
   },
   pillRound: { width: 56, paddingLeft: 0, paddingRight: 0, justifyContent: 'center' },
   pillText: { color: c.text },
-  pressed: { opacity: 0.85 },
+  pressed: { opacity: pressedOpacity },
 });

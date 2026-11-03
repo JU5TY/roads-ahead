@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { type } from '../../theme';
+import { pressedOpacity, radius, type } from '../../theme';
 import Icon from '../ui/Icon';
 
 /**
@@ -43,7 +43,7 @@ export default function RoadRow({ name, subtitle, completed, onPress, chevron = 
 }
 
 const makeStyles = (c) => ({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: radius.card },
   completed: { backgroundColor: c.roadContainer, paddingVertical: 12, paddingHorizontal: 16 },
   notYet: {
     backgroundColor: c.outlinedRow,
@@ -53,5 +53,5 @@ const makeStyles = (c) => ({
     paddingHorizontal: 15,
   },
   text: { flex: 1, minWidth: 0 },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: pressedOpacity },
 });
