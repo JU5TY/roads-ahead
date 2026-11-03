@@ -18,6 +18,7 @@ import { checkDriveCountries } from '../storage/countryStorage';
 import { checkDriveCrossings } from '../storage/crossingStorage';
 import { checkDrive } from '../storage/roadStorage';
 import { removeExampleTrip } from '../storage/tripStorage';
+import { palettes } from '../theme';
 import {
   applyFixes,
   finalizeStats,
@@ -52,7 +53,7 @@ const TRACKING_OPTIONS = {
   foregroundService: {
     notificationTitle: 'Road trip in progress',
     notificationBody: 'Recording your route in the background.',
-    notificationColor: '#F2A93B',
+    notificationColor: palettes.light.accent,
     killServiceOnDestroy: false,
   },
 };

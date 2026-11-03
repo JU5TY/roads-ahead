@@ -117,7 +117,7 @@ const makeStyles = (c) => ({
     gap: 8,
     paddingHorizontal: 8,
     paddingBottom: 8,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: c.photoScrim,
   },
   round: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   viewerText: { color: c.onPhoto, flexShrink: 1 },

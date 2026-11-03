@@ -4,8 +4,6 @@
 const light = {
   background: '#F8F9FA', // the page behind cards
   card: '#FFFFFF', // cards, rows groups, sheets
-  surface: '#FFFFFF', // stat tiles and other card-like blocks
-  surfaceLow: '#FFFFFF',
   track: '#E8EAED', // segmented switch, search button, chips at rest
   outline: '#DADCE0',
   outlineStrong: '#80868B', // switch track when off
@@ -29,17 +27,13 @@ const light = {
   ringNumber: '#00796B',
   roadBadge: '#00796B', // round badge behind a completed road's tick (road page, Drive saved)
   onRoadBadge: '#FFFFFF',
-  roadHalo: '#1EB59F', // ring around the Drive saved badge
   // Stat cards: white with a blue number (Driving time adds a blue icon well).
-  statAccent: '#FFFFFF',
-  onStatAccent: '#1A73E8',
-  statAccentIcon: '#1A73E8',
-  statAccentIconWell: '#E8F0FE',
   warningContainer: '#FEEFC3',
   onWarningContainer: '#5F3B00',
   breakDue: '#E8710A', // Record's break bar once a break is due
   danger: '#C5221F', // destructive menu rows (Delete trip)
   dangerContainer: '#FCE8E6', // their icon well
+  onDanger: '#FFFFFF', // the confirm dialog's red button
   stop: '#D93025',
   onStop: '#FFFFFF',
   start: '#1E8E3E',
@@ -50,7 +44,7 @@ const light = {
   heroMapLand: '#1A73E8',
   heroMapRoute: '#FFFFFF',
   mapRoad: '#FFFFFF',
-  progressTrack: '#E3E5E8',
+  progressTrack: '#E8EAED',
   outlinedRow: '#FFFFFF', // not-yet Iconic Road rows
   screen: '#FFFFFF', // full-screen pages without cards (Record, Drive saved)
   recordControl: '#E8EAED', // Record's round Maps / Hide map buttons and break track
@@ -59,13 +53,14 @@ const light = {
   onRecordingPill: '#A50E0E',
   floating: '#FFFFFF', // round buttons over the map, the Record pill
   navBar: '#FFFFFF',
-  navBorder: '#E3E5E8',
+  navBorder: '#E8EAED',
   navPill: 'transparent',
   onNavPill: '#1A73E8',
   scrim: 'rgba(0,0,0,0.32)',
   // Floating buttons' shadow, and the full-screen photo viewer.
   shadow: '#000000',
   photoBackground: '#000000',
+  photoScrim: 'rgba(0,0,0,0.45)', // over photos: "+3" tiles, the viewer's top bar
   onPhoto: '#FFFFFF',
   // Light cards float on a soft shadow; dark cards are just lighter grey.
   cardShadow: {
@@ -93,8 +88,6 @@ const light = {
 const dark = {
   background: '#202124',
   card: '#2C2D31',
-  surface: '#2C2D31',
-  surfaceLow: '#2C2D31',
   track: '#3C4043',
   outline: '#44474A',
   outlineStrong: '#9AA0A6',
@@ -117,16 +110,12 @@ const dark = {
   ringNumber: '#7FD3C6',
   roadBadge: '#5CD5C4',
   onRoadBadge: '#003731',
-  roadHalo: '#3DDBB8',
-  statAccent: '#2C2D31',
-  onStatAccent: '#8AB4F8',
-  statAccentIcon: '#8AB4F8',
-  statAccentIconWell: '#283A55',
   warningContainer: '#3D3214',
   onWarningContainer: '#FDD663',
   breakDue: '#FCAD70',
   danger: '#F28B82',
   dangerContainer: '#4A1C1A',
+  onDanger: '#601410',
   stop: '#F28B82',
   onStop: '#601410',
   start: '#34A853',
@@ -135,7 +124,7 @@ const dark = {
   heroMapLand: '#1A73E8',
   heroMapRoute: '#FFFFFF',
   mapRoad: '#2C343A',
-  progressTrack: '#3A3B3F',
+  progressTrack: '#3C4043',
   outlinedRow: '#26272B',
   screen: '#202124',
   recordControl: '#35363A',
@@ -150,6 +139,7 @@ const dark = {
   scrim: 'rgba(0,0,0,0.5)',
   shadow: '#000000',
   photoBackground: '#000000',
+  photoScrim: 'rgba(0,0,0,0.45)', // over photos: "+3" tiles, the viewer's top bar
   onPhoto: '#FFFFFF',
   cardShadow: null,
   dayColors: ['#FDD663', '#FF8BCB', '#C58AF9', '#78D9EC', '#FCAD70', '#9FA8DA', '#D7A985'],

@@ -72,5 +72,5 @@ export default function RoutePreview({ segments, height = 160, active = true }) 
 }
 
 const makeStyles = (c) => ({
-  placeholder: { backgroundColor: c.surface },
+  placeholder: { backgroundColor: c.card },
 });

@@ -83,7 +83,7 @@ export default function DetailLayout({
 
 const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
-  map: { backgroundColor: c.surface },
+  map: { backgroundColor: c.card },
   scrollContent: { flexGrow: 1 },
   // A straight top edge where it meets the map (the Google logo stays clear).
   content: {

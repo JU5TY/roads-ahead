@@ -59,7 +59,7 @@ export default function RouteThumb({ segments, size = 56 }) {
             cx={drawn.end[0]}
             cy={drawn.end[1]}
             r={3}
-            fill={c.stop}
+            fill={c.finish}
             stroke={c.mapRoad}
             strokeWidth={1}
           />

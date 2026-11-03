@@ -293,7 +293,7 @@ const makeStyles = (c) => ({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: c.photoScrim,
   },
   moreText: { color: c.onPhoto },
   pressed: { opacity: 0.6 },

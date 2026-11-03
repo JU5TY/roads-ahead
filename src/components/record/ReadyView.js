@@ -132,7 +132,7 @@ const makeStyles = (c) => ({
     minHeight: 180,
     borderBottomWidth: 1,
     borderBottomColor: c.outline,
-    backgroundColor: c.surface,
+    backgroundColor: c.card,
   },
   mapButtonLeft: { position: 'absolute', left: 12 },
   mapButtonRight: { position: 'absolute', right: 12 },

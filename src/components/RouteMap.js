@@ -140,8 +140,8 @@ export default function RouteMap({
 }
 
 const makeStyles = (c) => ({
-  wrap: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: c.surface },
-  flat: { flex: 1, backgroundColor: c.surface },
+  wrap: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: c.card },
+  flat: { flex: 1, backgroundColor: c.card },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.md },
   emptyText: { ...type.small, color: c.textMuted },
 });

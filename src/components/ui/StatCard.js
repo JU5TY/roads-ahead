@@ -23,9 +23,9 @@ export default function StatCard({
   const styles = useStyles(makeStyles);
   const tc = {
     // White card: grey icon, blue number.
-    surface: { bg: c.surface, fg: c.onStatAccent, muted: c.textMuted, icon: c.textMuted },
+    surface: { bg: c.card, fg: c.accent, muted: c.textMuted, icon: c.textMuted },
     // Wide Driving time card: blue icon in a round blue well.
-    accent: { bg: c.statAccent, fg: c.onStatAccent, muted: c.textMuted, icon: c.statAccentIcon },
+    accent: { bg: c.card, fg: c.accent, muted: c.textMuted, icon: c.accent },
     warning: {
       bg: c.warningContainer,
       fg: c.onWarningContainer,
@@ -43,7 +43,7 @@ export default function StatCard({
         accessible
         accessibilityLabel={`${label}: ${value}${unit ?? ''}`}
       >
-        <View style={[styles.well, { backgroundColor: c.statAccentIconWell }]}>
+        <View style={[styles.well, { backgroundColor: c.accentContainer }]}>
           <Icon name={icon} size={26} color={tc.icon} />
         </View>
         <View style={styles.flex}>

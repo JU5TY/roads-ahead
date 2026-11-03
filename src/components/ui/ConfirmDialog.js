@@ -49,13 +49,13 @@ export default function ConfirmDialog({
               onPress={onConfirm}
               style={({ pressed }) => [
                 styles.button,
-                { backgroundColor: destructive ? c.stop : c.accent },
+                { backgroundColor: destructive ? c.danger : c.accent },
                 pressed && styles.pressed,
               ]}
               accessibilityRole="button"
             >
               <Text
-                style={[type.button, { color: destructive ? c.onStop : c.onAccent }]}
+                style={[type.button, { color: destructive ? c.onDanger : c.onAccent }]}
                 numberOfLines={1}
               >
                 {confirmLabel}

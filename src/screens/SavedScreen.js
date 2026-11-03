@@ -181,7 +181,7 @@ export default function SavedScreen() {
 const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.screen },
   center: { alignItems: 'center', justifyContent: 'center' },
-  map: { borderBottomWidth: 1, borderBottomColor: c.outline, backgroundColor: c.surface },
+  map: { borderBottomWidth: 1, borderBottomColor: c.outline, backgroundColor: c.card },
   close: { position: 'absolute', left: 12 },
   body: { paddingHorizontal: spacing.md, paddingTop: 20, paddingBottom: 24 },
   kicker: { color: c.accent, marginHorizontal: 4 },

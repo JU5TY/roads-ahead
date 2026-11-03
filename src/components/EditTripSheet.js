@@ -52,7 +52,7 @@ const makeStyles = (c) => ({
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm },
   input: {
     ...type.bodyLarge,
-    backgroundColor: c.surface,
+    backgroundColor: c.card,
     color: c.text,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
