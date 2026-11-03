@@ -162,7 +162,7 @@ export function DetailsRows({
             ]
           : []),
         ...height,
-        ['speed', 'Avg speed', formatSpeed(averageMovingSpeed(stats), units)],
+        ['speed', 'Average speed', formatSpeed(averageMovingSpeed(stats), units)],
         ['bolt', 'Max speed', formatSpeed(stats.topSpeedMps, units)],
       ];
   if (rows.length === 0) return null;

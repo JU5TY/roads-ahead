@@ -259,7 +259,7 @@ export default function SettingsScreen() {
       />
       <ListRow
         icon="download"
-        title="Export trips (GPX)"
+        title="GPX export"
         right={<PremiumTag />}
         onPress={premium ? () => comingSoon('GPX export') : openPremium}
       />

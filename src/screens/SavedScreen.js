@@ -147,7 +147,7 @@ export default function SavedScreen() {
                     value: formatDurationShort(drive.stats.movingTimeMs),
                     label: 'Driving time',
                   },
-              { icon: 'landscape', ...highest, label: 'Highest' },
+              { icon: 'landscape', ...highest, label: 'Highest point' },
             ]}
           />
         </FadeUp>

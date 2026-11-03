@@ -150,7 +150,7 @@ export default function RoadScreen() {
       : ['trending_up', climb.value, climb.unit, 'Climb'];
   const stats = [
     ['straighten', length.value, length.unit, 'Length'],
-    ['landscape', highest.value, highest.unit, 'Highest'],
+    ['landscape', highest.value, highest.unit, 'Highest point'],
     third,
   ];
   const details = [
