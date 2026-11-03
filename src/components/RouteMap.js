@@ -10,9 +10,6 @@ import MapCard, { MAP_CARD_ROOM } from './MapCard';
 import MapDot from './MapDot';
 
 const MAP_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
-// The same top and bottom, so the map's centre stays in the middle and routes
-// frame as they would with none.
-const MAP_INSETS = { top: MAP_CARD_ROOM, right: 0, left: 0, bottom: MAP_CARD_ROOM };
 const FOCUS_DELTA = 0.01; // ~1 km across when zooming to a single marker
 // Round caps make each dash a dot (Google Maps on Android draws true dots).
 const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
@@ -95,9 +92,8 @@ export default function RouteMap({
           onMapReady={() => fit()}
           // iOS reports marker taps to the map too.
           onPress={(e) => e.nativeEvent.action !== 'marker-press' && setSelectedKey(null)}
-          // Keeps the map's logo clear of the card. Always set, as changing it
-          // when the card shows moves the map under it.
-          mapPadding={MAP_INSETS}
+          // Keeps the map's logo clear of the card.
+          mapPadding={{ top: 0, right: 0, left: 0, bottom: selected ? MAP_CARD_ROOM : 0 }}
           // No Google Maps toolbar (Android) over the card when a marker is tapped.
           toolbarEnabled={false}
           userInterfaceStyle={scheme}
