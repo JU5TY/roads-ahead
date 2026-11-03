@@ -12,7 +12,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { getLocationAccess } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
 import { listTrips } from '../storage/tripStorage';
-import { fonts } from '../theme';
+import { fonts, type } from '../theme';
 import { summarizeCountries } from '../utils/countries';
 import { driveGaps, routeSegments } from '../utils/crossings';
 import { distanceParts } from '../utils/format';
@@ -197,13 +197,7 @@ const makeStyles = (c) => ({
     elevation: 12,
   },
   sheetDark: { shadowOpacity: 0.5 },
-  total: {
-    fontFamily: fonts.medium,
-    fontSize: 40,
-    lineHeight: 40,
-    letterSpacing: -0.5,
-    color: c.accent,
-  },
-  totalUnit: { fontSize: 18 },
+  total: { ...type.total, color: c.accent },
+  totalUnit: type.totalUnit,
   since: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 6 },
 });

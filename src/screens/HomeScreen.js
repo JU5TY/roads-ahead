@@ -137,15 +137,8 @@ const makeStyles = (c) => ({
     paddingBottom: 8, // 32 to the Distance card, with its 24
     alignItems: 'center',
   },
-  total: {
-    fontFamily: type.stat.fontFamily,
-    fontSize: 44,
-    lineHeight: 48,
-    letterSpacing: -0.5,
-    color: c.accent,
-    marginTop: 16,
-  },
-  totalUnit: { fontSize: 20 },
+  total: { ...type.total, color: c.accent, marginTop: 16 },
+  totalUnit: type.totalUnit,
   since: { marginTop: 4 }, // ~6 under the number's glyphs
   muted: { color: c.textMuted },
   roadsHint: { color: c.textMuted, fontSize: 14, lineHeight: 20, marginTop: 14 },

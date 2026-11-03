@@ -191,6 +191,9 @@ export const type = {
   section: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 24 },
   // Uppercase group labels on Home, Trips and You ("LATEST TRIP").
   overline: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, letterSpacing: 0.8 },
+  // All-time and trip distance (Home, Your map, Trip), with totalUnit.
+  total: { fontFamily: fonts.medium, fontSize: 36, lineHeight: 40, letterSpacing: -0.5 },
+  totalUnit: { fontFamily: fonts.medium, fontSize: 18 },
   statLarge: { fontFamily: fonts.medium, fontSize: 32, lineHeight: 38, letterSpacing: -0.3 },
   stat: { fontFamily: fonts.medium, fontSize: 28, lineHeight: 34 },
   statUnit: { fontFamily: fonts.medium, fontSize: 15 },

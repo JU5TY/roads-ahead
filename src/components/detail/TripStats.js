@@ -201,13 +201,8 @@ const makeStyles = (c) => ({
     marginTop: 18,
     marginHorizontal: 4,
   },
-  heroValue: { ...type.display, color: c.accent },
-  heroUnit: {
-    ...type.title,
-    fontFamily: type.bodyLarge.fontFamily,
-    fontSize: 22,
-    color: c.textMuted,
-  },
+  heroValue: { ...type.total, color: c.accent },
+  heroUnit: { ...type.totalUnit, color: c.textMuted },
   chipScroll: { marginHorizontal: -16, marginTop: 16, flexGrow: 0 },
   chips: { gap: 8, paddingHorizontal: 16 },
   chip: {

@@ -8,7 +8,7 @@ import Icon from './Icon';
  * Stat tile from the Trip/Record bento grid.
  * tone: 'surface' (white, blue number) | 'accent' (wide card, blue icon well) | 'warning' (amber, break due).
  * layout: 'tile' (icon over value over label) | 'wide' (icon well left, label
- * over a larger value: the full-width Driving time card).
+ * over the value: the full-width Driving time card).
  */
 export default function StatCard({
   icon,
@@ -48,7 +48,7 @@ export default function StatCard({
         </View>
         <View style={styles.flex}>
           <Text style={[labelStyle, styles.wideLabel]}>{label}</Text>
-          <Text style={[type.statLarge, { color: tc.fg }]} numberOfLines={1}>
+          <Text style={[type.stat, { color: tc.fg }]} numberOfLines={1}>
             {value}
             {unit ? <Text style={[type.statUnit, { color: tc.muted }]}> {unit}</Text> : null}
           </Text>
