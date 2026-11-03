@@ -34,7 +34,11 @@ export default function StatCard({
     },
   }[tone];
   const card = [styles.card, { backgroundColor: tc.bg }, tone !== 'warning' && c.cardShadow, style];
-  const labelStyle = [type.small, { color: tc.muted }, tone === 'warning' && styles.strongLabel];
+  const labelStyle = [
+    layout === 'wide' ? type.bodySmall : type.small,
+    { color: tc.muted },
+    tone === 'warning' && styles.strongLabel,
+  ];
 
   if (layout === 'wide') {
     return (
@@ -47,7 +51,7 @@ export default function StatCard({
           <Icon name={icon} size={26} color={tc.icon} />
         </View>
         <View style={styles.flex}>
-          <Text style={[labelStyle, styles.wideLabel]}>{label}</Text>
+          <Text style={labelStyle}>{label}</Text>
           <Text style={[type.stat, { color: tc.fg }]} numberOfLines={1}>
             {value}
             {unit ? <Text style={[type.statUnit, { color: tc.muted }]}> {unit}</Text> : null}
@@ -82,5 +86,4 @@ const makeStyles = () => ({
   flex: { flex: 1 },
   value: { marginTop: 10 },
   strongLabel: { fontFamily: type.smallStrong.fontFamily },
-  wideLabel: { fontSize: 14, lineHeight: 20 },
 });

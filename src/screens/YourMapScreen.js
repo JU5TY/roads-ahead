@@ -12,7 +12,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { getLocationAccess } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
 import { listTrips } from '../storage/tripStorage';
-import { fonts, type } from '../theme';
+import { type } from '../theme';
 import { summarizeCountries } from '../utils/countries';
 import { driveGaps, routeSegments } from '../utils/crossings';
 import { distanceParts } from '../utils/format';
@@ -199,5 +199,5 @@ const makeStyles = (c) => ({
   sheetDark: { shadowOpacity: 0.5 },
   total: { ...type.total, color: c.accent },
   totalUnit: { ...type.totalUnit, color: c.textMuted },
-  since: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 6 },
+  since: { ...type.bodySmall, color: c.textMuted, marginTop: 6 },
 });

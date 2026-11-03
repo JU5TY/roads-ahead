@@ -114,7 +114,7 @@ function TimesHiddenCard() {
       </View>
       <View style={styles.flex}>
         <Text style={[type.bodyStrong, styles.hiddenTitle]}>Times hidden for safety</Text>
-        <Text style={[type.body, styles.subtitleText, styles.hiddenText]}>
+        <Text style={[type.bodySmall, styles.subtitleText]}>
           {"This drive starts and ends at an Iconic Road, so its times and speeds aren't shown."}
         </Text>
       </View>
@@ -243,7 +243,6 @@ const makeStyles = (c) => ({
     backgroundColor: c.accentContainer,
   },
   hiddenTitle: { color: c.text },
-  hiddenText: { fontSize: 14, lineHeight: 20 },
   subtitleText: { color: c.textMuted, marginTop: 2 },
   hiddenNote: { marginTop: 8, marginHorizontal: 4 },
   flex: { flex: 1 },

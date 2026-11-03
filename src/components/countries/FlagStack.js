@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { fonts } from '../../theme';
+import { type } from '../../theme';
 import Icon from '../ui/Icon';
 
 const SIZE = 36;
@@ -81,5 +81,5 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
   },
   more: { backgroundColor: c.accentContainer },
-  moreText: { fontFamily: fonts.medium, fontSize: 13, color: c.onAccentContainer },
+  moreText: { ...type.smallStrong, color: c.onAccentContainer },
 });

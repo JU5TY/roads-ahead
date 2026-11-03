@@ -143,7 +143,7 @@ const makeStyles = (c) => ({
     backgroundColor: c.accentContainer,
   },
   tileTitle: { marginTop: 12 },
-  tileText: { marginTop: 2, fontSize: 13, lineHeight: 18 },
+  tileText: { marginTop: 2 },
   free: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, marginHorizontal: 4 },
   freeText: { flexShrink: 1, fontFamily: type.body.fontFamily },
   bar: {

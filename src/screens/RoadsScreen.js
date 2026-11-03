@@ -70,7 +70,7 @@ export default function RoadsScreen() {
         <Text style={[type.bodyLarge, styles.text, styles.summary]}>
           {completedCount} completed · {ICONIC_ROADS.length - completedCount} to go
         </Text>
-        <Text style={[type.body, styles.intro]}>{ROADS_INTRO}</Text>
+        <Text style={[type.bodySmall, styles.intro]}>{ROADS_INTRO}</Text>
       </View>
       {/* One row that scrolls sideways, edge to edge, as more countries get roads. */}
       <ScrollView
@@ -143,8 +143,6 @@ const makeStyles = (c) => ({
   summary: { marginTop: 14 },
   intro: {
     color: c.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
     textAlign: 'center',
     marginTop: 6,
     marginHorizontal: 16,

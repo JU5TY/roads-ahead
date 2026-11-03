@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { fonts, radius, type } from '../../theme';
+import { radius, type } from '../../theme';
 import { distanceParts } from '../../utils/format';
 import Icon from '../ui/Icon';
 
@@ -109,7 +109,7 @@ export default function WeekDistance({ trips, units, now }) {
                     x={x + BAR_W / 2}
                     y={94}
                     fontSize={13}
-                    fontFamily={isToday ? fonts.semibold : type.body.fontFamily}
+                    fontFamily={isToday ? type.smallStrong.fontFamily : type.small.fontFamily}
                     fill={isToday ? c.text : c.textMuted}
                     textAnchor="middle"
                   >

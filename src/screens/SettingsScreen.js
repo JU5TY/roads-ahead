@@ -356,7 +356,7 @@ const makeStyles = (c) => ({
     backgroundColor: c.accentWell,
   },
   premiumTitle: { color: c.onAccentContainer },
-  premiumText: { color: c.accentContainerMuted, fontSize: 13, lineHeight: 18 },
+  premiumText: { color: c.accentContainerMuted },
   view: {
     height: 36,
     paddingHorizontal: 14,

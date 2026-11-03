@@ -170,5 +170,5 @@ const makeStyles = (c) => ({
   },
   startWrap: { alignItems: 'center' },
   startBusy: { height: 108 },
-  startLabel: { fontSize: 14, lineHeight: 20 },
+  startLabel: type.label,
 });

@@ -170,8 +170,6 @@ export const fonts = {
   regular: 'GoogleSansFlex-Regular', // 400: titles, body
   medium: 'GoogleSansFlex-Medium', // 500: labels, numbers, buttons
   semibold: 'GoogleSansFlex-SemiBold', // 600: the caps date line
-  strong: 'GoogleSansFlex-Medium',
-  bold: 'GoogleSansFlex-SemiBold',
   display: 'GoogleSansFlex-Display', // 500 cut for large sizes: hero numbers
 };
 
@@ -200,6 +198,8 @@ export const type = {
   bodyLarge: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 22 },
   bodyStrong: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22 },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
+  // Grey supporting lines: hints, intros, stat captions.
+  bodySmall: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
   label: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20 },
   button: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
   small: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },

@@ -52,7 +52,7 @@ function RoadsCard() {
       <Pressable onPress={() => router.push('/roads')} accessibilityRole="link">
         <RoadsProgress completed={done} total={ICONIC_ROADS.length}>
           {done === 0 ? (
-            <Text style={[type.body, styles.roadsHint]}>{ROADS_INTRO}</Text>
+            <Text style={[type.bodySmall, styles.roadsHint]}>{ROADS_INTRO}</Text>
           ) : null}
         </RoadsProgress>
       </Pressable>
@@ -141,6 +141,6 @@ const makeStyles = (c) => ({
   totalUnit: { ...type.totalUnit, color: c.textMuted },
   since: { marginTop: 4 }, // ~6 under the number's glyphs
   muted: { color: c.textMuted },
-  roadsHint: { color: c.textMuted, fontSize: 14, lineHeight: 20, marginTop: 14 },
+  roadsHint: { color: c.textMuted, marginTop: 14 },
   empty: { paddingTop: 188 }, // the same height as on Trips, under its title
 });

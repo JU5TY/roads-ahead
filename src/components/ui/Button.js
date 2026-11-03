@@ -5,7 +5,7 @@ import { radius, type } from '../../theme';
 import Icon from './Icon';
 
 const SIZES = {
-  large: { height: 64, iconSize: 26, text: { ...type.button, fontSize: 18 } },
+  large: { height: 64, iconSize: 26, text: { ...type.button, fontSize: 18, lineHeight: 24 } },
   medium: { height: 56, iconSize: 22, text: { ...type.bodyStrong } },
   small: { height: 48, iconSize: 20, text: type.button },
 };

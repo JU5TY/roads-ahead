@@ -388,7 +388,7 @@ const makeStyles = (c) => ({
   liveStats: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
   liveStat: { flex: 1, alignItems: 'center' },
   liveValue: { color: c.textStrong },
-  liveLabel: { ...type.body, fontSize: 14, lineHeight: 20, color: c.textMuted },
+  liveLabel: { ...type.bodySmall, color: c.textMuted },
   liveDivider: { width: 1, height: 40, backgroundColor: c.outline },
   breakBox: { gap: 10, marginTop: 32 },
   breakTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
