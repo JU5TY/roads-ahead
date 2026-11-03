@@ -10,7 +10,9 @@ import MapCard, { MAP_CARD_ROOM } from './MapCard';
 import MapDot from './MapDot';
 
 const MAP_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
-const MAP_INSETS = { top: 0, right: 0, left: 0, bottom: MAP_CARD_ROOM };
+// The same top and bottom, so the map's centre stays in the middle and routes
+// frame as they would with none.
+const MAP_INSETS = { top: MAP_CARD_ROOM, right: 0, left: 0, bottom: MAP_CARD_ROOM };
 const FOCUS_DELTA = 0.01; // ~1 km across when zooming to a single marker
 // Round caps make each dash a dot (Google Maps on Android draws true dots).
 const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
