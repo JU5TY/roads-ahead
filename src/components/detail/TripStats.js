@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { radius, type } from '../../theme';
@@ -36,13 +36,15 @@ export function TitleBlock({ kicker, title, subtitle, notes, onPress }) {
  * and Driving time; the rest is in DetailsRows. `stats` is a drive's stats or
  * a summarizeDrives() result. `timesHidden` swaps Driving time for a note (a
  * drive that starts and ends at an Iconic Road); `roadCount` and
- * `countryCount` (shown from 2) add chips.
+ * `countryCount` (shown from 2) add chips. At most two chips, so the row never
+ * scrolls (a sideways row reads as tappable, like the Drive pills): with all
+ * three, stops gives way, as on the trip list (it's in Details anyway).
  */
 export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, countryCount = 0 }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const distance = distanceParts(stats.distanceM, units);
-  const stopChip = stats.stopCount > 0;
+  const stopChip = stats.stopCount > 0 && !(roadCount > 0 && countryCount > 1);
 
   return (
     <>
@@ -55,13 +57,7 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
         <Text style={styles.heroUnit}>{distance.unit}</Text>
       </View>
       {stopChip || roadCount > 0 || countryCount > 1 ? (
-        // Scrolls sideways when the chips don't fit, edge to edge like the Drive pills.
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chipScroll}
-          contentContainerStyle={styles.chips}
-        >
+        <View style={styles.chips}>
           {roadCount > 0 ? (
             <View style={[styles.chip, styles.chipRoads]}>
               <Icon name="verified" size={18} color={c.onRoadContainer} />
@@ -84,7 +80,7 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
               <Text style={[type.label, styles.chipText]}>{countryCount} countries</Text>
             </View>
           ) : null}
-        </ScrollView>
+        </View>
       ) : null}
       <View style={styles.grid}>
         {timesHidden ? (
@@ -203,8 +199,7 @@ const makeStyles = (c) => ({
   },
   heroValue: { ...type.total, color: c.accent },
   heroUnit: { ...type.totalUnit, color: c.textMuted },
-  chipScroll: { marginHorizontal: -16, marginTop: 16, flexGrow: 0 },
-  chips: { gap: 8, paddingHorizontal: 16 },
+  chips: { flexDirection: 'row', gap: 8, marginTop: 16 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
