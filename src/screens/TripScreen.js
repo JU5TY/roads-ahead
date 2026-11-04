@@ -392,7 +392,7 @@ export default function TripScreen() {
             badge: premium ? null : 'Premium',
             onPress: () => {
               setMenu(null);
-              if (premium) comingSoon('GPX export');
+              if (premium) comingSoon('Export');
               else openPremium();
             },
           },

@@ -259,9 +259,9 @@ export default function SettingsScreen() {
       />
       <ListRow
         icon="download"
-        title="GPX export"
+        title="Export"
         right={<PremiumTag />}
-        onPress={premium ? () => comingSoon('GPX export') : openPremium}
+        onPress={premium ? () => comingSoon('Export') : openPremium}
       />
 
       <SectionHeader variant="label" title="About" />

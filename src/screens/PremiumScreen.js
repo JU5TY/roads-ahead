@@ -15,7 +15,7 @@ const FEATURES = [
   ['cloud_upload', 'Automatic backup', 'Trips safe if you change phone'],
   ['share', 'Photo sharing', 'Your photos with your route and stats'],
   ['garage', 'More vehicles', 'Your whole garage in one place'],
-  ['download', 'GPX export', 'Take routes into other apps'],
+  ['download', 'Export', 'Take routes into other apps'],
   ['map', 'Satellite maps', 'Satellite and terrain views of your trips'],
   ['landscape', 'Map posters', 'Your trip map as a digital wallpaper'],
 ];
