@@ -31,9 +31,9 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
             <Icon name="photo_library" size={24} color={c.onAccentContainer} />
           </View>
           <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.text]}>See your trip photos here</Text>
+            <Text style={[type.bodyStrong, styles.text]}>{"We'll find your trip photos"}</Text>
             <Text style={[type.small, styles.muted]}>
-              Photos you took during the trip are matched by time. They stay in your gallery.
+              We match them by when they were taken, and they stay in your gallery.
             </Text>
             <Button
               size="small"
