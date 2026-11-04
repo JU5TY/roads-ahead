@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { radius, type } from '../../theme';
@@ -14,20 +14,16 @@ import ListRow from '../ui/ListRow';
 import SectionHeader from '../ui/SectionHeader';
 import StatCard from '../ui/StatCard';
 
-/** Green caps line, title, grey subtitle and optional notes. Tapping it calls onPress (edit). */
-export function TitleBlock({ kicker, title, subtitle, notes, onPress }) {
+/** Green caps line, title, grey subtitle and optional notes. Edited from the menu, not by tapping. */
+export function TitleBlock({ kicker, title, subtitle, notes }) {
   const styles = useStyles(makeStyles);
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-    >
+    <View>
       <Text style={[type.kicker, styles.kicker]}>{kicker}</Text>
       <Text style={[type.title, styles.title]}>{title}</Text>
       {subtitle ? <Text style={[type.body, styles.subtitle]}>{subtitle}</Text> : null}
       {notes ? <Text style={[type.body, styles.notes]}>{notes}</Text> : null}
-    </Pressable>
+    </View>
   );
 }
 

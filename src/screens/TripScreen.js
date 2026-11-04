@@ -457,7 +457,6 @@ export default function TripScreen() {
         title={title}
         subtitle={subtitle}
         notes={trip.notes}
-        onPress={() => setMenu('edit')}
       />
       {single ? null : (
         // One page per trip: All, or one drive at a time.
