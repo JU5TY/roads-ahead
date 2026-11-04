@@ -32,19 +32,16 @@ export function TitleBlock({ kicker, title, subtitle, notes, onPress }) {
 }
 
 /**
- * The headline: distance, with Iconic Roads, rest-stops and countries chips,
+ * The headline: distance, with Iconic Roads and countries chips (as on the trip list),
  * and Driving time; the rest is in DetailsRows. `stats` is a drive's stats or
  * a summarizeDrives() result. `timesHidden` swaps Driving time for a note (a
  * drive that starts and ends at an Iconic Road); `roadCount` and
- * `countryCount` (shown from 2) add chips. At most two chips, so the row never
- * scrolls (a sideways row reads as tappable, like the Drive pills): with all
- * three, stops gives way, as on the trip list (it's in Details anyway).
+ * `countryCount` (shown from 2) add chips.
  */
 export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, countryCount = 0 }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const distance = distanceParts(stats.distanceM, units);
-  const stopChip = stats.stopCount > 0 && !(roadCount > 0 && countryCount > 1);
 
   return (
     <>
@@ -56,21 +53,13 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
         <Text style={styles.heroValue}>{distance.value}</Text>
         <Text style={styles.heroUnit}>{distance.unit}</Text>
       </View>
-      {stopChip || roadCount > 0 || countryCount > 1 ? (
+      {roadCount > 0 || countryCount > 1 ? (
         <View style={styles.chips}>
           {roadCount > 0 ? (
             <View style={[styles.chip, styles.chipRoads]}>
               <Icon name="verified" size={18} color={c.onRoadContainer} />
               <Text style={[type.label, styles.chipRoadsText]}>
                 {roadCount} {roadCount === 1 ? 'Iconic Road' : 'Iconic Roads'}
-              </Text>
-            </View>
-          ) : null}
-          {stopChip ? (
-            <View style={styles.chip}>
-              <Icon name="local_cafe" size={18} color={c.textMuted} />
-              <Text style={[type.label, styles.chipText]}>
-                {stats.stopCount} {stats.stopCount === 1 ? 'stop' : 'stops'}
               </Text>
             </View>
           ) : null}
