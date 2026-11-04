@@ -137,26 +137,19 @@ export default function RoadScreen() {
     />
   );
 
-  // Third stat: corners (the Ring), else steepest, else climb. Details then show
-  // what didn't fit: climb unless it's the third stat, steepest when corners
-  // took its place, otherwise how twisty.
+  // Length and Highest point on every road; the rest is in Details, Corners
+  // taking Bends' place where they're counted (the Ring).
   const steepest = road.steepestPct ? `${road.steepestPct}%` : null;
-  const climbIsStat = !road.corners && !steepest;
-  // [icon, value, unit, label]
-  const third = road.corners
-    ? ['turn_sharp_right', String(road.corners), null, 'Corners']
-    : steepest
-      ? ['show_chart', String(road.steepestPct), '%', 'Steepest']
-      : ['trending_up', climb.value, climb.unit, 'Climb'];
   const stats = [
-    ['straighten', length.value, length.unit, 'Length'],
-    ['landscape', highest.value, highest.unit, 'Highest point'],
-    third,
+    { icon: 'straighten', ...length, label: 'Length' },
+    { icon: 'landscape', ...highest, label: 'Highest point' },
   ];
+  // [icon, title, value]
   const details = [
-    !climbIsStat && ['trending_up', 'Climb', `${climb.value} ${climb.unit}`],
-    road.corners && steepest
-      ? ['show_chart', 'Steepest', steepest]
+    ['trending_up', 'Climb', `${climb.value} ${climb.unit}`],
+    steepest && ['show_chart', 'Steepest', steepest],
+    road.corners
+      ? ['turn_sharp_right', 'Corners', String(road.corners)]
       : ['turn_sharp_right', 'Bends', bendsLabel(road)],
     ['swap_horiz', 'Road type', road.roadType],
   ].filter(Boolean);
@@ -205,10 +198,7 @@ export default function RoadScreen() {
         </View>
       )}
 
-      <StatRow
-        style={styles.stats}
-        stats={stats.map(([icon, value, unit, label]) => ({ icon, value, unit, label }))}
-      />
+      <StatRow style={styles.stats} stats={stats} />
 
       <SectionHeader title="About" style={styles.aboutHeader} />
       <Text style={[type.bodyLarge, styles.muted, styles.blurb]}>{road.blurb}</Text>

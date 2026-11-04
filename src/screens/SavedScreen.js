@@ -89,7 +89,6 @@ export default function SavedScreen() {
     multiDay ? `Day ${dayNumber} saved${name ? ` · ${name}` : ''}` : 'Drive saved'
   ).toUpperCase();
   const distance = distanceParts(drive.stats.distanceM, units);
-  const highest = elevationParts(drive.stats.maxAltitudeM, units);
   const climb = elevationParts(drive.stats.elevationGainM, units);
   // The cross goes Home. View goes Home too, then opens the trip on top with
   // this drive picked, so Back from the trip lands on Home, not Record.
@@ -135,8 +134,8 @@ export default function SavedScreen() {
           {routeLabel(drive.places) ?? formatDate(drive.startedAt)}
         </Text>
         <FadeUp delay={300} style={styles.stats}>
-          {/* Same card as an Iconic Road's. Highest point is never hidden; when
-              times are, Climb takes Driving time's place so there are still three. */}
+          {/* Same tiles as an Iconic Road's. When times are hidden, Climb takes
+              Driving time's place; the rest is on the trip page (View). */}
           <StatRow
             stats={[
               { icon: 'straighten', ...distance, label: 'Distance' },
@@ -147,7 +146,6 @@ export default function SavedScreen() {
                     value: formatDurationShort(drive.stats.movingTimeMs),
                     label: 'Driving time',
                   },
-              { icon: 'landscape', ...highest, label: 'Highest point' },
             ]}
           />
         </FadeUp>
