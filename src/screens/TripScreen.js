@@ -385,7 +385,7 @@ export default function TripScreen() {
       <ActionSheet
         visible={menu === 'options'}
         actions={[
-          { icon: 'edit', label: 'Edit trip', onPress: () => setMenu('edit') },
+          { icon: 'edit', label: 'Edit name and notes', onPress: () => setMenu('edit') },
           {
             icon: 'download',
             label: 'Export',
