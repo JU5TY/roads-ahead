@@ -75,7 +75,7 @@ export default function TripScreen() {
     photos,
     access: photoAccess,
     allow: allowPhotos,
-  } = usePhotos(trip?.drives.map((d) => [d.startedAt, d.endedAt])); // not the time between drives
+  } = usePhotos([[trip?.drives[0]?.startedAt, trip?.drives.at(-1)?.endedAt]]); // the whole trip, overnights too
   const scrollRef = useRef(null);
   const mapRef = useRef(null);
 

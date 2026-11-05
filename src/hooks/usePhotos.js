@@ -5,8 +5,7 @@ import { Linking } from 'react-native';
 import { getPhotoAccess, getPhotosBetween, requestPhotoAccess } from '../services/photoService';
 
 /**
- * Gallery photos taken during any of `spans` ([[from, to]] in ms, e.g. one per
- * drive), oldest first. Never prompts by itself:
+ * Gallery photos taken during any of `spans` ([[from, to]] in ms), oldest first. Never prompts by itself:
  * { access: null (loading) | 'granted' | 'ask' | 'blocked', photos, allow() }.
  * allow() asks for access, or opens Settings once asking is no longer possible.
  */

@@ -93,7 +93,7 @@ export default function ShareScreen() {
   const drives = useMemo(() => (drive ? [drive] : trip?.drives), [drive, trip]);
   const previewOf = useMemo(() => (drives ? { drives } : null), [drives]);
   const segments = useTripPreview(previewOf, { points: CARD_POINTS });
-  const { photos, access, allow } = usePhotos(drives?.map((d) => [d.startedAt, d.endedAt]));
+  const { photos, access, allow } = usePhotos([[drives?.[0]?.startedAt, drives?.at(-1)?.endedAt]]);
 
   if (!trip) {
     return (
