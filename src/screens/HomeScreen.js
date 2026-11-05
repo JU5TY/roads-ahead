@@ -16,25 +16,7 @@ import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { listTrips } from '../storage/tripStorage';
 import { bottomSpace, spacing, type } from '../theme';
-import { distanceParts } from '../utils/format';
 import { ICONIC_ROADS, ROADS_INTRO } from '../utils/iconicRoads';
-import { computeTotals, firstDriveMonth } from '../utils/tripSummary';
-
-/** The top of Home: the round Your map, the all-time distance and since when. */
-function MapHero({ trips, units, insetTop }) {
-  const styles = useStyles(makeStyles);
-  const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
-  return (
-    <View style={[styles.band, { paddingTop: insetTop + 40 }]}>
-      <YourMap trips={trips} />
-      <Text style={styles.total}>
-        {distance.value}
-        <Text style={styles.totalUnit}> {distance.unit}</Text>
-      </Text>
-      <Text style={[type.bodyLarge, styles.muted, styles.since]}>driven since {firstDriveMonth(trips)}</Text>
-    </View>
-  );
-}
 
 /** Iconic Roads progress, linking to the full list. */
 function RoadsCard() {
@@ -107,7 +89,9 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <MapHero trips={trips} units={units} insetTop={insets.top} />
+      <View style={{ paddingTop: insets.top + spacing.md }}>
+        <YourMap trips={trips} units={units} />
+      </View>
       <WeekDistance trips={trips} units={units} now={now} />
       <SectionHeader
         variant="overline"
@@ -133,14 +117,6 @@ const makeStyles = (c) => ({
   center: { alignItems: 'center', justifyContent: 'center' },
   // Bottom padding clears the floating Record pill above the nav bar.
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
-  band: {
-    paddingBottom: 8, // 32 to the Distance card, with its 24
-    alignItems: 'center',
-  },
-  total: { ...type.total, color: c.accent, marginTop: 16 },
-  totalUnit: { ...type.totalUnit, color: c.textMuted },
-  since: { marginTop: 4 }, // ~6 under the number's glyphs
-  muted: { color: c.textMuted },
   roadsHint: { color: c.textMuted, marginTop: 14 },
   empty: { paddingTop: 188 }, // the same height as on Trips, under its title
 });

@@ -1,13 +1,13 @@
 import { Image as ExpoImage } from 'expo-image';
 import { useMemo } from 'react';
 import { Image, Platform, Text, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Path, Polyline, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Polyline, Rect, Stop } from 'react-native-svg';
 
 import { fonts } from '../../theme';
-import { landPath } from '../../utils/countries';
 import { distanceParts, formatDurationShort } from '../../utils/format';
 import { fitInBox } from '../../utils/routeOutline';
 import AppLogo from '../AppLogo';
+import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
 import FlagStack from '../countries/FlagStack';
 
 // The card is laid out on a 432 x 540 grid and scaled to `width`, so the preview
@@ -18,13 +18,9 @@ const PAD = 28;
 const GAP = 20;
 const TEXT_TOP = 304; // where the text starts when it has every line
 const ROUTE_MARGIN = 36; // the padding, plus most of a dot's radius
-// Zoomed in further than this (grid units per degree of latitude, a route under about
-// 65 km), the bundled borders turn blocky and roads can look like they're at sea: no land.
-const MAX_LAND_ZOOM = 400;
-const BLUE = '#174EA6';
-const LAND = '#2F6FD0';
+const BLUE = MAP_BLUE;
 const WHITE = '#FFFFFF';
-const PALE_ON_BLUE = '#D2E3FC';
+const PALE_ON_BLUE = MAP_PALE;
 const PALE_ON_PHOTO = '#E8EAED';
 const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
 
@@ -89,11 +85,7 @@ export default function ShareCard({
     [segments]
   );
   const fit = useMemo(() => fitInBox(routes, WIDTH, TEXT_TOP, ROUTE_MARGIN), [routes]);
-  const land = useMemo(() => {
-    if (!fit) return '';
-    const zoom = fit.project({ latitude: 0, longitude: 0 })[1] - fit.project({ latitude: 1, longitude: 0 })[1];
-    return zoom > MAX_LAND_ZOOM ? '' : landPath(fit.project, WIDTH, HEIGHT);
-  }, [fit]);
+  const land = useLandPath(fit, WIDTH, HEIGHT);
   const pale = photoUri ? PALE_ON_PHOTO : PALE_ON_BLUE;
   const distance = distanceParts(content.stats.distanceM, units);
   const line = (fontFamily, fontSize, lineHeight, color, extra) => ({
@@ -115,13 +107,6 @@ export default function ShareCard({
         accessible={false}
       >
         <Defs>
-          <LinearGradient id="landFade" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={BLUE} stopOpacity={0} />
-            <Stop offset="0.25" stopColor={BLUE} stopOpacity={0.07} />
-            <Stop offset="0.5" stopColor={BLUE} stopOpacity={0.25} />
-            <Stop offset="0.75" stopColor={BLUE} stopOpacity={0.48} />
-            <Stop offset="1" stopColor={BLUE} stopOpacity={0.65} />
-          </LinearGradient>
           <LinearGradient id="photoShade" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#000000" stopOpacity={0.28} />
             <Stop offset="0.45" stopColor="#000000" stopOpacity={0.22} />
@@ -132,12 +117,7 @@ export default function ShareCard({
         {photoUri ? (
           <Rect width={WIDTH} height={HEIGHT} fill="url(#photoShade)" />
         ) : (
-          <>
-            {/* The stroke closes hairline gaps where neighbouring countries meet. */}
-            {land ? <Path d={land} fill={LAND} stroke={LAND} strokeWidth={1.2} /> : null}
-            <Rect y={196} width={WIDTH} height={105} fill="url(#landFade)" />
-            <Rect y={301} width={WIDTH} height={HEIGHT - 301} fill={BLUE} fillOpacity={0.65} />
-          </>
+          <DrawnLand path={land} width={WIDTH} height={HEIGHT} fadeEnd={301} />
         )}
         <RouteLines segments={segments ?? []} fit={fit} />
       </Svg>

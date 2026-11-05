@@ -41,8 +41,6 @@ const light = {
   // Drawn maps (Your map, route thumbnails).
   mapLand: '#EEF2EC',
   // Home's round map: the app icon's blue and white, the same in dark.
-  heroMapLand: '#1A73E8',
-  heroMapRoute: '#FFFFFF',
   mapRoad: '#FFFFFF',
   progressTrack: '#E8EAED',
   outlinedRow: '#FFFFFF', // not-yet Iconic Road rows
@@ -121,8 +119,6 @@ const dark = {
   start: '#34A853',
   finish: '#EA4335',
   mapLand: '#1C2226',
-  heroMapLand: '#1A73E8',
-  heroMapRoute: '#FFFFFF',
   mapRoad: '#2C343A',
   progressTrack: '#3C4043',
   outlinedRow: '#26272B',
