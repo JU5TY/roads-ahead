@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { showMessage } from '../components/ui/DialogHost';
+import { showDialog, showMessage } from '../components/ui/DialogHost';
 import ActionSheet from '../components/ActionSheet';
 import VehicleSheet from '../components/VehicleSheet';
 import Icon from '../components/ui/Icon';
@@ -16,13 +16,18 @@ import { PREMIUM_TAGLINE, openPremium, usePremium } from '../hooks/usePremium';
 import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { useVehicles } from '../hooks/useVehicles';
+import { exportAllTrips, showExportFailed } from '../services/exportService';
+import { countSavedPoints } from '../storage/driveStorage';
+import { getExampleTripId } from '../storage/exampleTrip';
 import { BREAK_REMINDER_OPTIONS } from '../storage/settingsStorage';
+import { listTrips } from '../storage/tripStorage';
 import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { pressedOpacity, radius, spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
 import { ICONIC_ROADS, ROADS_ATTRIBUTION } from '../utils/iconicRoads';
+import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
 import { hasTwin } from '../utils/vehicles';
 
 const UNIT_LABELS = { metric: 'Kilometres', imperial: 'Miles' };
@@ -109,6 +114,36 @@ export default function SettingsScreen() {
   const premium = usePremium();
   // Free: one vehicle in the Garage; Premium: as many as you like.
   const canAddVehicle = premium || !vehicles?.length;
+  const [exporting, setExporting] = useState(null); // null | "Exporting trip 3 of 12"
+
+  const confirmExport = async () => {
+    if (exporting) return;
+    const exampleId = getExampleTripId();
+    let trips;
+    let points;
+    try {
+      trips = (await listTrips()).filter((trip) => trip.id !== exampleId);
+      points = await countSavedPoints();
+    } catch (err) {
+      console.warn('Export failed', err);
+      showExportFailed();
+      return;
+    }
+    if (!trips.length) {
+      showMessage('Nothing to export yet', 'Your trips can be exported once you have recorded a drive.');
+      return;
+    }
+    const mb = Math.ceil((points * GPX_ZIPPED_BYTES_PER_POINT) / 1e6) || 1;
+    showDialog({
+      title: trips.length === 1 ? 'Export your trip?' : `Export all ${trips.length} trips?`,
+      message: `This makes a zip file of about ${mb} MB, with a GPX file for each trip.`,
+      confirmLabel: 'Export',
+      onConfirm: async () => {
+        await exportAllTrips(trips, (done, total) => setExporting(`Exporting trip ${done} of ${total}`));
+        setExporting(null);
+      },
+    });
+  };
 
   const saveVehicle = async (fields) => {
     try {
@@ -259,9 +294,11 @@ export default function SettingsScreen() {
       />
       <ListRow
         icon="download"
-        title="Export"
+        title="Export all"
+        subtitle={exporting}
         right={<PremiumTag />}
-        onPress={premium ? () => comingSoon('Export') : openPremium}
+        // Free for everyone for now, though still badged: it goes behind Premium later.
+        onPress={confirmExport}
       />
 
       <SectionHeader variant="label" title="About" />

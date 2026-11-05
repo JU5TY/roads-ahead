@@ -118,6 +118,18 @@ export async function getDrivePoints(driveId) {
   );
 }
 
+/** How many GPS points the saved drives hold, the example trip's aside: sizes an export. */
+export async function countSavedPoints() {
+  const db = await getDb();
+  const row = await db.getFirstAsync(
+    `SELECT COUNT(*) AS total FROM points WHERE drive_id IN (
+       SELECT id FROM drives WHERE status = 'completed' AND trip_id IS NOT ?
+     )`,
+    getExampleTripId()
+  );
+  return row.total;
+}
+
 /**
  * Roughly `maxPoints` evenly spaced points of a drive (always including the
  * last), thinned in SQL so long drives stay cheap to preview. Timestamps let

@@ -19,7 +19,7 @@ import RouteMap from '../components/RouteMap';
 import FilterChip from '../components/ui/FilterChip';
 import { useSettings } from '../context/SettingsContext';
 import { usePhotos } from '../hooks/usePhotos';
-import { openPremium, usePremium } from '../hooks/usePremium';
+import { usePremium } from '../hooks/usePremium';
 import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
@@ -37,6 +37,7 @@ import {
 import { driveGaps, routeSegments, withoutCrossings } from '../utils/crossings';
 import { averageMovingSpeed, downsample } from '../utils/geoMath';
 import { getRoad } from '../utils/iconicRoads';
+import { exportTrip } from '../services/exportService';
 import { comingSoon } from '../utils/comingSoon';
 import { countryRows } from '../utils/countries';
 import { buildDriveTimeline, buildTripTimeline } from '../utils/timeline';
@@ -390,10 +391,10 @@ export default function TripScreen() {
             icon: 'download',
             label: 'Export',
             badge: premium ? null : 'Premium',
+            // Free for everyone for now, though still badged: it goes behind Premium later.
             onPress: () => {
               setMenu(null);
-              if (premium) comingSoon('Export');
-              else openPremium();
+              exportTrip(trip);
             },
           },
           // The picked drive (or a lone one) can move to another trip, e.g. "Continue" was missed.
