@@ -142,7 +142,7 @@ export default function YourMap({ trips, units }) {
 }
 
 const makeStyles = (c) => ({
-  card: { borderRadius: 16, overflow: 'hidden', backgroundColor: MAP_BLUE, marginBottom: 8 },
+  card: { borderRadius: 16, overflow: 'hidden', backgroundColor: MAP_BLUE },
   pressed: { opacity: pressedOpacity },
   expand: {
     position: 'absolute',
