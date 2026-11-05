@@ -85,7 +85,7 @@ const makeStyles = (c) => ({
   },
   title: { color: c.text, fontSize: 24, lineHeight: 32 },
   highlight: { color: c.text, fontSize: 20, lineHeight: 28, marginTop: 12 },
-  message: { color: c.textMuted, marginTop: 8, lineHeight: 22 },
+  message: { color: c.textMuted, marginTop: 8 },
   messageAfter: { marginTop: 4 },
   buttons: { flexDirection: 'row', gap: 12, marginTop: 24 },
   button: {

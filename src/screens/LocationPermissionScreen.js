@@ -52,7 +52,7 @@ export default function LocationPermissionScreen() {
       <Text style={[type.title, styles.text, styles.title]} role="heading">
         Allow location to map your drives
       </Text>
-      <Text style={[type.bodyLarge, styles.muted, styles.lead]}>
+      <Text style={[type.lead, styles.muted, styles.lead]}>
         Every drive is recorded with GPS.
       </Text>
       <FeatureList items={REASONS} style={styles.reasons} />
@@ -72,7 +72,7 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   content: { flexGrow: 1, paddingHorizontal: 24 },
   title: { marginTop: 20 },
-  lead: { marginTop: 8, lineHeight: 24 },
+  lead: { marginTop: 8 },
   reasons: { marginTop: 24 },
   next: { marginTop: 24 },
   flex: { flex: 1 },

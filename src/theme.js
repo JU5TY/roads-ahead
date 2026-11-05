@@ -197,6 +197,8 @@ export const type = {
   statUnit: { fontFamily: fonts.medium, fontSize: 15 },
   bodyLarge: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 22 },
   bodyStrong: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22 },
+  // The sentence under a screen's title, and longer reading text.
+  lead: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24 },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
   // Grey supporting lines: hints, intros, stat captions.
   bodySmall: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },

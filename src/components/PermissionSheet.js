@@ -62,7 +62,7 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
           <Text style={[type.title, styles.text, styles.title]} role="heading">
             {content.title}
           </Text>
-          <Text style={[type.bodyLarge, styles.muted, styles.lead]}>{content.lead}</Text>
+          <Text style={[type.lead, styles.muted, styles.lead]}>{content.lead}</Text>
           <PhoneChoice {...content.choice} style={styles.choice} />
           <Button label={content.primary} onPress={onPrimary} style={styles.primary} />
           <Pressable onPress={onSecondary} style={styles.secondary} accessibilityRole="button">
@@ -79,7 +79,7 @@ const makeStyles = (c) => ({
   sheet: { flexGrow: 0, flexShrink: 1 },
   sheetContent: { paddingHorizontal: spacing.lg },
   title: { marginTop: 20 },
-  lead: { marginTop: 8, lineHeight: 24 },
+  lead: { marginTop: 8 },
   choice: { marginTop: 20 },
   primary: { marginTop: 24 },
   secondary: { height: 48, marginTop: 8, alignItems: 'center', justifyContent: 'center' },

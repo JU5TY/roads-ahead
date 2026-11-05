@@ -78,7 +78,7 @@ export default function ReadyView({ here, recent, now, busy, onStart }) {
       <View style={styles.body}>
         <View>
           <Text style={[type.title, styles.text, styles.title]}>Ready to go</Text>
-          <Text style={[type.body, styles.muted, styles.title]}>
+          <Text style={[type.lead, styles.muted, styles.title, styles.lead]}>
             {canContinue
               ? 'Pick up your trip or start a new one'
               : 'Your drive will start a new trip'}
@@ -149,6 +149,7 @@ const makeStyles = (c) => ({
     paddingVertical: 20,
   },
   title: { marginHorizontal: 4 },
+  lead: { marginTop: 8 },
   options: { gap: 8 },
   option: {
     minHeight: 68,

@@ -59,7 +59,7 @@ export default function PremiumScreen() {
           <Text style={[type.title, styles.text, styles.title]} role="heading">
             Premium
           </Text>
-          <Text style={[type.bodyLarge, styles.muted, styles.tagline]}>{PREMIUM_TAGLINE}</Text>
+          <Text style={[type.lead, styles.muted, styles.tagline]}>{PREMIUM_TAGLINE}</Text>
         </View>
 
         <View style={styles.grid}>
@@ -122,7 +122,7 @@ const makeStyles = (c) => ({
     backgroundColor: c.accentContainer,
   },
   title: { marginTop: 14 },
-  tagline: { marginTop: 6, textAlign: 'center' },
+  tagline: { marginTop: 8, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 20 },
   // Two columns: each starts just under half and grows to fill its share of the row.
   tile: {

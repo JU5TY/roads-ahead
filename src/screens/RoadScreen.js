@@ -201,7 +201,7 @@ export default function RoadScreen() {
       <StatRow style={styles.stats} stats={stats} />
 
       <SectionHeader title="About" style={styles.aboutHeader} />
-      <Text style={[type.bodyLarge, styles.muted, styles.blurb]}>{road.blurb}</Text>
+      <Text style={[type.lead, styles.muted, styles.blurb]}>{road.blurb}</Text>
 
       <SectionHeader title="Details" />
       <View style={styles.group}>
@@ -274,7 +274,7 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
   },
   stats: { marginTop: 20 },
-  blurb: { marginHorizontal: 4, lineHeight: 24 },
+  blurb: { marginHorizontal: 4 },
   group: {
     paddingHorizontal: 12,
     borderRadius: radius.card,
