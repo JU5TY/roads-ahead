@@ -217,7 +217,8 @@ const makeStyles = (c) => ({
   title: { color: c.text },
   preview: { marginTop: 12, borderRadius: 16, overflow: 'hidden' },
   choices: { flexDirection: 'row', gap: 16, marginTop: 16 },
-  choiceLabel: { height: 24, marginBottom: 6 },
+  // Route's label sits on the same line as Photos and its taller Premium tag.
+  choiceLabel: { height: 24, marginBottom: 6, textAlignVertical: 'center', lineHeight: 24 },
   photosLabel: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -229,7 +230,8 @@ const makeStyles = (c) => ({
   muted: { color: c.textMuted },
   flex: { flex: 1, minWidth: 0 },
   tile: { width: THUMB_W, height: THUMB_H, borderRadius: 12, overflow: 'hidden' },
-  routeTile: { backgroundColor: '#174EA6' },
+  // Centred so the selected border doesn't push the drawing off-centre.
+  routeTile: { backgroundColor: '#174EA6', alignItems: 'center', justifyContent: 'center' },
   askTile: {
     alignItems: 'center',
     justifyContent: 'center',
