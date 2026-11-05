@@ -203,17 +203,6 @@ export default function RoadScreen() {
       <SectionHeader title="About" style={styles.aboutHeader} />
       <Text style={[type.bodyLarge, styles.muted, styles.blurb]}>{road.blurb}</Text>
 
-      {drives?.length ? (
-        <>
-          <SectionHeader title="Your drives" />
-          <View style={styles.group}>
-            {drives.map((item, i) => (
-              <DriveRow key={item.driveId} item={item} isLast={i === drives.length - 1} />
-            ))}
-          </View>
-        </>
-      ) : null}
-
       <SectionHeader title="Details" />
       <View style={styles.group}>
         {details.map(([icon, title, value], i) => (
@@ -228,6 +217,17 @@ export default function RoadScreen() {
           />
         ))}
       </View>
+
+      {drives?.length ? (
+        <>
+          <SectionHeader title="Your drives" />
+          <View style={styles.group}>
+            {drives.map((item, i) => (
+              <DriveRow key={item.driveId} item={item} isLast={i === drives.length - 1} />
+            ))}
+          </View>
+        </>
+      ) : null}
 
       <View style={styles.note}>
         <Icon name="info" size={20} color={c.textMuted} />
