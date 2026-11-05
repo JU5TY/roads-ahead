@@ -69,7 +69,8 @@ function useAllRoutes(trips) {
 /**
  * The top of Home: every road you've driven on a drawn map (nothing to load),
  * the all-time distance and since when. The latest trip is bold, everything else
- * faint; ferries, tunnels and pauses are dotted. Opens the full map. `trips` newest first.
+ * faint; ferries, tunnels and pauses are dotted. Its expand button opens the full map.
+ * `trips` newest first.
  */
 export default function YourMap({ trips, units }) {
   const styles = useStyles(makeStyles);
@@ -88,16 +89,7 @@ export default function YourMap({ trips, units }) {
   );
 
   return (
-    <Pressable
-      onPress={() => router.push('/your-map')}
-      accessibilityRole="button"
-      accessibilityLabel={`Open your map. ${distance.value} ${distance.unit} driven since ${firstDriveMonth(trips)}.`}
-      style={({ pressed }) => [
-        styles.card,
-        { width, height: width * (HEIGHT / WIDTH) },
-        pressed && styles.pressed,
-      ]}
-    >
+    <View style={[styles.card, { width, height: width * (HEIGHT / WIDTH) }]}>
       <Svg
         width="100%"
         height="100%"
@@ -122,9 +114,15 @@ export default function YourMap({ trips, units }) {
             ))
           : null}
       </Svg>
-      <View style={styles.expand}>
+      <Pressable
+        onPress={() => router.push('/your-map')}
+        hitSlop={4}
+        accessibilityRole="button"
+        accessibilityLabel="Open your map"
+        style={({ pressed }) => [styles.expand, pressed && styles.pressed]}
+      >
         <Icon name="open_in_full" size={20} color="#202124" />
-      </View>
+      </Pressable>
       <View style={styles.footer}>
         <View style={styles.flex}>
           <Text style={styles.total}>
@@ -137,7 +135,7 @@ export default function YourMap({ trips, units }) {
           <AppLogo size={36} />
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
