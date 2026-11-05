@@ -7,8 +7,7 @@ import { type } from '../../theme';
 import Icon from '../ui/Icon';
 
 const SIZE = 36;
-const OVERLAP = 10;
-const MAX_SHOWN = 4; // more than this: the first 3 and a "+n" circle
+const MAX_SHOWN = 5; // more than this: the first 4 and a "+n" circle
 
 /** "England", "England and Wales", "England, Wales and France". */
 const listOf = (names) =>
@@ -16,12 +15,15 @@ const listOf = (names) =>
 
 /**
  * Round, overlapping flags for the countries driven, most distance first:
- * `countries` is [{ code, name, flag }] in that order. Up to four are shown,
- * then three and a "+n" circle for the rest.
+ * `countries` is [{ code, name, flag }] in that order. Up to five are shown,
+ * then four and a "+n" circle for the rest. `colors` ({ ring, more, onMore })
+ * replaces the theme's on a surface that doesn't follow it, like a share card.
  */
-export default function FlagStack({ countries }) {
+export default function FlagStack({ countries, size = SIZE, colors }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
+  const circle = { width: size, height: size, borderRadius: size / 2 };
+  const overlap = { marginLeft: (-size * 10) / SIZE };
   if (countries.length === 0) return null;
   const shown = countries.length > MAX_SHOWN ? countries.slice(0, MAX_SHOWN - 1) : countries;
   const rest = countries.length - shown.length;
@@ -38,8 +40,8 @@ export default function FlagStack({ countries }) {
         // eslint-disable-next-line import/namespace
         const xml = country.flag ? flags[country.flag] : null;
         return (
-          <View key={country.code} style={[styles.hairline, i > 0 && styles.overlap]}>
-            <View style={styles.ring}>
+          <View key={country.code} style={[styles.hairline, circle, i > 0 && overlap]}>
+            <View style={[styles.ring, colors && { borderColor: colors.ring }]}>
               {xml ? (
                 <SvgXml xml={xml} width="100%" height="100%" preserveAspectRatio="xMidYMid slice" />
               ) : (
@@ -50,9 +52,27 @@ export default function FlagStack({ countries }) {
         );
       })}
       {rest > 0 ? (
-        <View style={[styles.hairline, styles.overlap]}>
-          <View style={[styles.ring, styles.more]}>
-            <Text style={styles.moreText}>+{rest}</Text>
+        <View style={[styles.hairline, circle, overlap]}>
+          <View
+            style={[
+              styles.ring,
+              styles.more,
+              colors && { borderColor: colors.ring, backgroundColor: colors.more },
+            ]}
+          >
+            <Text
+              allowFontScaling={!colors}
+              style={[
+                styles.moreText,
+                colors && {
+                  color: colors.onMore,
+                  fontSize: (type.smallStrong.fontSize * size) / SIZE,
+                  lineHeight: (type.smallStrong.lineHeight * size) / SIZE,
+                },
+              ]}
+            >
+              +{rest}
+            </Text>
           </View>
         </View>
       ) : null}
@@ -64,16 +84,12 @@ const makeStyles = (c) => ({
   row: { flexDirection: 'row' },
   // A 1dp hairline round a 2dp ring in the panel colour, so overlapping flags separate.
   hairline: {
-    width: SIZE,
-    height: SIZE,
-    borderRadius: SIZE / 2,
     padding: 1,
     backgroundColor: 'rgba(0,0,0,0.12)',
   },
-  overlap: { marginLeft: -OVERLAP },
   ring: {
     flex: 1,
-    borderRadius: SIZE / 2,
+    borderRadius: 999,
     borderWidth: 2,
     borderColor: c.card,
     overflow: 'hidden',

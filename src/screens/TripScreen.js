@@ -38,7 +38,6 @@ import { driveGaps, routeSegments, withoutCrossings } from '../utils/crossings';
 import { averageMovingSpeed, downsample } from '../utils/geoMath';
 import { getRoad } from '../utils/iconicRoads';
 import { exportTrip } from '../services/exportService';
-import { comingSoon } from '../utils/comingSoon';
 import { countryRows } from '../utils/countries';
 import { buildDriveTimeline, buildTripTimeline } from '../utils/timeline';
 import { vehicleLabel } from '../utils/vehicles';
@@ -379,7 +378,12 @@ export default function TripScreen() {
       map={map}
       // Top right of the map: Share on its own (one tap), the rest in the menu.
       actions={[
-        { icon: 'ios_share', label: 'Share', onPress: () => comingSoon('Sharing') },
+        {
+          icon: 'ios_share',
+          label: 'Share',
+          onPress: () =>
+            router.push(`/share?trip=${trip.id}${selected ? `&drive=${selected.id}` : ''}`),
+        },
         { icon: 'more_vert', label: 'More options', onPress: () => setMenu('options') },
       ]}
     >

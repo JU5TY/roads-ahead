@@ -8,9 +8,9 @@ const POINTS_PER_PREVIEW = 300;
 
 /**
  * Thinned route segments for a trip's map preview, in the accent colour,
- * crossings and pauses dotted. Null while loading.
+ * crossings and pauses dotted. Null while loading. `points` sets how detailed it is.
  */
-export function useTripPreview(trip) {
+export function useTripPreview(trip, { points = POINTS_PER_PREVIEW } = {}) {
   const { c } = useTheme();
   const [result, setResult] = useState(null); // { key, segments }
   const driveKey = trip ? trip.drives.map((d) => `${d.id}:${driveGaps(d).length}`).join(',') : '';
@@ -18,7 +18,7 @@ export function useTripPreview(trip) {
   useEffect(() => {
     if (!trip) return;
     let cancelled = false;
-    const perDrive = Math.max(40, Math.floor(POINTS_PER_PREVIEW / trip.drives.length));
+    const perDrive = Math.max(40, Math.floor(points / trip.drives.length));
     Promise.all(
       trip.drives.map(async (d) =>
         routeSegments(
@@ -36,7 +36,7 @@ export function useTripPreview(trip) {
     };
     // Re-run only when the set of drives (or the theme) changes, not on every new trip object.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [driveKey, c]);
+  }, [driveKey, c, points]);
 
   // Ignore a result that belongs to a previous trip.
   return result && result.key === driveKey ? result.segments : null;

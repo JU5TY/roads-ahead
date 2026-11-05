@@ -19,7 +19,6 @@ import { getTrip } from '../storage/tripStorage';
 import { spacing, type } from '../theme';
 import { driveGaps, routeSegments } from '../utils/crossings';
 import { distanceParts, elevationParts, formatDate, formatDurationShort } from '../utils/format';
-import { comingSoon } from '../utils/comingSoon';
 import { downsample } from '../utils/geoMath';
 import { dayNumberFor, groupIntoDays, routeLabel, tripTitle } from '../utils/tripSummary';
 
@@ -168,7 +167,7 @@ export default function SavedScreen() {
           icon="ios_share"
           label="Share"
           style={styles.flex}
-          onPress={() => comingSoon('Sharing')}
+          onPress={() => router.push(`/share?trip=${trip.id}&drive=${drive.id}`)}
         />
         <Button label="View" style={styles.flex} onPress={view} />
       </View>

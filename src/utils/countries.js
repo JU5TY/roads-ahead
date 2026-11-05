@@ -76,6 +76,44 @@ function ringsOf(country) {
   return decoded.get(country.code);
 }
 
+/** Skip land points closer together than this on a flat map, to keep its path small. */
+const LAND_STEP = 2.4;
+
+/**
+ * Land as SVG path data for a flat map: `project(point)` gives [x, y] on a
+ * `width` x `height` drawing. Points well outside it are pulled to its edge.
+ */
+export function landPath(project, width, height) {
+  const inView = ([minLat, minLng, maxLat, maxLng]) => {
+    const [x0, y0] = project({ latitude: maxLat, longitude: minLng });
+    const [x1, y1] = project({ latitude: minLat, longitude: maxLng });
+    return x1 >= 0 && x0 <= width && y1 >= 0 && y0 <= height;
+  };
+  const edge = 12;
+  const clamp = (n, max) => Math.min(Math.max(n, -edge), max + edge);
+  let path = '';
+  for (const country of data.countries) {
+    if (!inView(country.bbox)) continue;
+    for (const { bbox, ring } of ringsOf(country)) {
+      if (!inView(bbox)) continue;
+      const parts = [];
+      let lastX = Infinity;
+      let lastY = Infinity;
+      for (let i = 0; i < ring.length; i += 2) {
+        const [x, y] = project({ latitude: ring[i], longitude: ring[i + 1] });
+        const cx = clamp(x, width);
+        const cy = clamp(y, height);
+        if (Math.hypot(cx - lastX, cy - lastY) < LAND_STEP) continue;
+        parts.push(`${cx.toFixed(0)},${cy.toFixed(0)}`);
+        lastX = cx;
+        lastY = cy;
+      }
+      if (parts.length > 3) path += `M${parts.join(' ')}Z`;
+    }
+  }
+  return path;
+}
+
 const inBox = ([minLat, minLng, maxLat, maxLng], lat, lng) =>
   lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 

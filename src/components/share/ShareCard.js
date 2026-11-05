@@ -1,0 +1,222 @@
+import { Image as ExpoImage } from 'expo-image';
+import { useMemo } from 'react';
+import { Image, Platform, Text, View } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Path, Polyline, Rect, Stop } from 'react-native-svg';
+
+import { fonts } from '../../theme';
+import { landPath } from '../../utils/countries';
+import { distanceParts, formatDurationShort } from '../../utils/format';
+import { fitInBox } from '../../utils/routeOutline';
+import AppLogo from '../AppLogo';
+import FlagStack from '../countries/FlagStack';
+
+// The card is laid out on a 432 x 540 grid and scaled to `width`, so the preview
+// and the shared image match. Its colours stay the same in light and dark.
+const WIDTH = 432;
+const HEIGHT = 540;
+const PAD = 28;
+const GAP = 20;
+const TEXT_TOP = 304; // where the text starts when it has every line
+const ROUTE_MARGIN = 36; // the padding, plus most of a dot's radius
+// Zoomed in further than this (grid units per degree of latitude, a route under about
+// 65 km), the bundled borders turn blocky and roads can look like they're at sea: no land.
+const MAX_LAND_ZOOM = 400;
+const BLUE = '#174EA6';
+const LAND = '#2F6FD0';
+const WHITE = '#FFFFFF';
+const PALE_ON_BLUE = '#D2E3FC';
+const PALE_ON_PHOTO = '#E8EAED';
+const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
+
+/**
+ * Gallery photos: expo-image on iPhone (its photo library addresses), React Native's
+ * on Android, whose bitmaps can be drawn into the captured image.
+ */
+function Photo({ uri, onLoad, onError }) {
+  const style = { position: 'absolute', width: '100%', height: '100%' };
+  return Platform.OS === 'android' ? (
+    <Image source={{ uri }} style={style} resizeMode="cover" onLoad={onLoad} onError={onError} />
+  ) : (
+    <ExpoImage source={{ uri }} style={style} contentFit="cover" onLoad={onLoad} onError={onError} />
+  );
+}
+
+/** One line of the route and its dots, on the card's grid. */
+function RouteLines({ segments, fit }) {
+  const routes = segments.map((s) => s.coordinates).filter((r) => r.length > 1);
+  if (!fit || !routes.length) return null;
+  const [startX, startY] = fit.project(routes[0][0]);
+  const [endX, endY] = fit.project(routes.at(-1).at(-1));
+  return (
+    <>
+      {segments
+        .filter((s) => s.coordinates.length > 1)
+        .map((s) => (
+          <Polyline
+            key={s.key}
+            points={fit.points(s.coordinates)}
+            fill="none"
+            stroke={WHITE}
+            strokeWidth={4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray={s.dotted ? '0.1 9' : undefined}
+          />
+        ))}
+      <Circle cx={startX} cy={startY} r={8} fill="#1E8E3E" stroke={WHITE} strokeWidth={3} />
+      <Circle cx={endX} cy={endY} r={8} fill="#D93025" stroke={WHITE} strokeWidth={3} />
+    </>
+  );
+}
+
+/**
+ * The image that gets shared: the trip's route on a drawn map, or on `photoUri`
+ * darkened for the text. `content` comes from shareCardContent(), `segments`
+ * from useTripPreview().
+ */
+export default function ShareCard({
+  content,
+  segments,
+  units,
+  width,
+  photoUri,
+  onPhotoLoad,
+  onPhotoError,
+}) {
+  const u = width / WIDTH;
+  const routes = useMemo(
+    () => (segments ?? []).map((s) => s.coordinates).filter((r) => r.length > 1),
+    [segments]
+  );
+  const fit = useMemo(() => fitInBox(routes, WIDTH, TEXT_TOP, ROUTE_MARGIN), [routes]);
+  const land = useMemo(() => {
+    if (!fit) return '';
+    const zoom = fit.project({ latitude: 0, longitude: 0 })[1] - fit.project({ latitude: 1, longitude: 0 })[1];
+    return zoom > MAX_LAND_ZOOM ? '' : landPath(fit.project, WIDTH, HEIGHT);
+  }, [fit]);
+  const pale = photoUri ? PALE_ON_PHOTO : PALE_ON_BLUE;
+  const distance = distanceParts(content.stats.distanceM, units);
+  const line = (fontFamily, fontSize, lineHeight, color, extra) => ({
+    fontFamily,
+    fontSize: fontSize * u,
+    lineHeight: lineHeight * u,
+    color,
+    ...extra,
+  });
+
+  return (
+    <View style={{ width, height: width * (HEIGHT / WIDTH), backgroundColor: BLUE, overflow: 'hidden' }}>
+      {photoUri ? <Photo uri={photoUri} onLoad={onPhotoLoad} onError={onPhotoError} /> : null}
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        style={{ position: 'absolute' }}
+        accessible={false}
+      >
+        <Defs>
+          <LinearGradient id="landFade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={BLUE} stopOpacity={0} />
+            <Stop offset="0.25" stopColor={BLUE} stopOpacity={0.07} />
+            <Stop offset="0.5" stopColor={BLUE} stopOpacity={0.25} />
+            <Stop offset="0.75" stopColor={BLUE} stopOpacity={0.48} />
+            <Stop offset="1" stopColor={BLUE} stopOpacity={0.65} />
+          </LinearGradient>
+          <LinearGradient id="photoShade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#000000" stopOpacity={0.28} />
+            <Stop offset="0.45" stopColor="#000000" stopOpacity={0.22} />
+            <Stop offset="0.68" stopColor="#000000" stopOpacity={0.72} />
+            <Stop offset="1" stopColor="#000000" stopOpacity={0.86} />
+          </LinearGradient>
+        </Defs>
+        {photoUri ? (
+          <Rect width={WIDTH} height={HEIGHT} fill="url(#photoShade)" />
+        ) : (
+          <>
+            {/* The stroke closes hairline gaps where neighbouring countries meet. */}
+            {land ? <Path d={land} fill={LAND} stroke={LAND} strokeWidth={1.2} /> : null}
+            <Rect y={196} width={WIDTH} height={105} fill="url(#landFade)" />
+            <Rect y={301} width={WIDTH} height={HEIGHT - 301} fill={BLUE} fillOpacity={0.65} />
+          </>
+        )}
+        <RouteLines segments={segments ?? []} fit={fit} />
+      </Svg>
+
+      <View style={{ position: 'absolute', left: PAD * u, right: PAD * u, bottom: PAD * u }}>
+        <Text
+          allowFontScaling={false}
+          numberOfLines={1}
+          style={line(fonts.semibold, 13, 18, pale, { letterSpacing: 0.4 * u })}
+        >
+          {content.kicker}
+        </Text>
+        <Text
+          allowFontScaling={false}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.6}
+          style={line(fonts.medium, 36, 42, WHITE, { marginTop: 4 * u })}
+        >
+          {content.title}
+        </Text>
+        {content.subtitle ? (
+          <Text
+            allowFontScaling={false}
+            numberOfLines={1}
+            style={line(fonts.regular, 16, 22, pale, { marginTop: 2 * u })}
+          >
+            {content.subtitle}
+          </Text>
+        ) : null}
+
+        <View style={{ flexDirection: 'row', gap: 24 * u, marginTop: GAP * u }}>
+          <View>
+            <Text allowFontScaling={false} style={line(fonts.medium, 22, 28, WHITE)}>
+              {distance.value}
+              <Text style={line(fonts.medium, 14, 28, pale)}> {distance.unit}</Text>
+            </Text>
+            <Text allowFontScaling={false} style={line(fonts.regular, 12, 16, pale)}>
+              Distance
+            </Text>
+          </View>
+          {content.drivingMs != null ? (
+            <View>
+              <Text allowFontScaling={false} style={line(fonts.medium, 22, 28, WHITE)}>
+                {formatDurationShort(content.drivingMs)}
+              </Text>
+              <Text allowFontScaling={false} style={line(fonts.regular, 12, 16, pale)}>
+                Driving time
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 36 * u,
+            marginTop: GAP * u,
+          }}
+        >
+          <FlagStack countries={content.countries} size={36 * u} colors={FLAG_COLORS} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 * u }}>
+            <View
+              style={{
+                borderRadius: 13 * u,
+                borderWidth: photoUri ? 0 : 1 * u,
+                borderColor: WHITE,
+              }}
+            >
+              <AppLogo size={26 * u} />
+            </View>
+            <Text allowFontScaling={false} style={line(fonts.medium, 14, 20, WHITE)}>
+              Roads Ahead
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}

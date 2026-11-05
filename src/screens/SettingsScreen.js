@@ -9,6 +9,7 @@ import ActionSheet from '../components/ActionSheet';
 import VehicleSheet from '../components/VehicleSheet';
 import Icon from '../components/ui/Icon';
 import ListRow from '../components/ui/ListRow';
+import PremiumTag from '../components/ui/PremiumTag';
 import Switch from '../components/ui/Switch';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
@@ -59,19 +60,6 @@ function PremiumRow() {
         <Text style={[type.label, styles.viewText]}>View</Text>
       </View>
     </Pressable>
-  );
-}
-
-/** The small blue "Premium" tag on rows that need Premium (hidden once it's active). */
-function PremiumTag() {
-  const { c } = useTheme();
-  const styles = useStyles(makeStyles);
-  if (usePremium()) return null;
-  return (
-    <View style={styles.tag}>
-      <Icon name="workspace_premium" size={14} color={c.onAccentContainer} />
-      <Text style={[type.caps, styles.tagText]}>Premium</Text>
-    </View>
   );
 }
 
@@ -361,17 +349,6 @@ const makeStyles = (c) => ({
   addIcon: { width: 40, alignItems: 'center' },
   vehicleRow: { minHeight: 64 },
   addTitle: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 2,
-    paddingLeft: 6,
-    paddingRight: 8,
-    borderRadius: 6,
-    backgroundColor: c.accentContainer,
-  },
-  tagText: { color: c.onAccentContainer, letterSpacing: 0 },
   flex: { flex: 1, minWidth: 0 },
   premium: {
     flexDirection: 'row',
