@@ -180,7 +180,6 @@ export default function ShareCard({
             marginTop: GAP * u,
           }}
         >
-          <FlagStack countries={content.countries} size={36 * u} colors={FLAG_COLORS} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 * u }}>
             <View
               style={{
@@ -195,6 +194,7 @@ export default function ShareCard({
               Roads Ahead
             </Text>
           </View>
+          <FlagStack countries={content.countries} size={36 * u} colors={FLAG_COLORS} />
         </View>
       </View>
     </View>
