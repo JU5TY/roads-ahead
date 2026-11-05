@@ -200,7 +200,6 @@ export default function ShareScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
         <Button
           label="Share"
-          icon="ios_share"
           disabled={!ready}
           onPress={() => shareCardImage(captureRef)}
         />
