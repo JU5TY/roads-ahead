@@ -164,7 +164,6 @@ export default function SavedScreen() {
       <View style={[styles.buttons, { paddingBottom: insets.bottom + 24 }]}>
         <Button
           variant="tonal"
-          icon="ios_share"
           label="Share"
           style={styles.flex}
           onPress={() => router.push(`/share?trip=${trip.id}&drive=${drive.id}`)}
