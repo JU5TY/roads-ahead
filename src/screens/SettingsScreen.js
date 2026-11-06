@@ -1,6 +1,5 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import * as Updates from 'expo-updates';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -318,10 +317,7 @@ export default function SettingsScreen() {
         value={version}
         chevron={false}
         onPress={() =>
-          showMessage(
-            `Roads Ahead ${version}`,
-            `Update ${Updates.updateId ?? 'built in'}${Updates.isEmergencyLaunch ? ` (recovered: ${Updates.emergencyLaunchReason})` : ''}\n\n${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}`
-          )
+          showMessage(`Roads Ahead ${version}`, `${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}`)
         }
         divider={__DEV__}
       />

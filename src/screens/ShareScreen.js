@@ -37,8 +37,8 @@ const CARD_POINTS = 1200;
 const CAPTURE_WIDTH = 1080 / PixelRatio.get(); // 1080 pixels wide once captured
 // Width / height of the card (see ShareCard).
 const FORMATS = [
-  { id: 'story', label: 'Story', ratio: 9 / 16 },
   { id: 'post', label: 'Post', ratio: 4 / 5 },
+  { id: 'story', label: 'Story', ratio: 9 / 16 },
 ];
 // Everything above and below the preview, safe areas aside: it takes what's left.
 const AROUND_PREVIEW = 358;
@@ -82,7 +82,7 @@ export default function ShareScreen() {
   const captureRef = useRef(null);
   const [trip, setTrip] = useState(null);
   const [vehicles, setVehicles] = useState([]); // the Garage
-  const [format, setFormat] = useState('story');
+  const [format, setFormat] = useState('post');
   const [photoUri, setPhotoUri] = useState(null);
   const [loadedUri, setLoadedUri] = useState(null); // the photo the captured card has drawn
 
