@@ -127,6 +127,7 @@ export default function WeekDistance({ trips, units, now }) {
 
 const makeStyles = (c) => ({
   card: {
+    marginTop: 28, // as far under the map as a section title is
     paddingTop: 18,
     paddingHorizontal: 20,
     paddingBottom: 16,

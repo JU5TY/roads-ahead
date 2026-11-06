@@ -6,7 +6,8 @@ import Svg, { Circle, Defs, LinearGradient, Polyline, Rect, Stop } from 'react-n
 import { fonts } from '../../theme';
 import { distanceParts, formatDurationShort } from '../../utils/format';
 import { CENTRED, MAX_ZOOM, coverSize, cropTransform } from '../../utils/photoCrop';
-import { fitInBox } from '../../utils/routeOutline';
+import { countryFrame } from '../../utils/countries';
+import { fitInBox, pinPoint, routeSpanKm } from '../../utils/routeOutline';
 import AppLogo from '../AppLogo';
 import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
 import FlagStack from '../countries/FlagStack';
@@ -17,6 +18,10 @@ const WIDTH = 432;
 const PAD = 28;
 const GAP = 20;
 const ROUTE_MARGIN = 36; // the padding, plus most of a dot's radius
+// On the drawn map, a route shorter than this shows the whole country around it,
+// with a pin instead if its start and end dots would sit on top of each other.
+const SHORT_ROUTE_KM = 100;
+const PIN_BELOW = 24;
 // The route's box ends where the text starts when it has every line, less a Story's
 // wider gap. A Story keeps clear of Instagram's profile bar (the top 10% on a phone
 // test; its controls sat below the image) and leaves room for shorter phones.
@@ -62,10 +67,19 @@ function Photo({ uri, aspect, crop, motion, frameWidth, frameHeight, onLoad, onE
   );
 }
 
-/** One line of the route and its dots, on the card's grid. */
+/** One line of the route and its dots on the card's grid, or a pin when they'd be too small. */
 function RouteLines({ segments, fit }) {
   const routes = segments.map((s) => s.coordinates).filter((r) => r.length > 1);
   if (!fit || !routes.length) return null;
+  const pin = pinPoint(fit, routes, PIN_BELOW);
+  if (pin) {
+    return (
+      <>
+        <Circle cx={pin[0]} cy={pin[1]} r={17} fill={WHITE} fillOpacity={0.25} />
+        <Circle cx={pin[0]} cy={pin[1]} r={7} fill="#D93025" stroke={WHITE} strokeWidth={3} />
+      </>
+    );
+  }
   const [startX, startY] = fit.project(routes[0][0]);
   const [endX, endY] = fit.project(routes.at(-1).at(-1));
   return (
@@ -117,10 +131,12 @@ export default function ShareCard({
     () => (segments ?? []).map((s) => s.coordinates).filter((r) => r.length > 1),
     [segments]
   );
-  const fit = useMemo(
-    () => fitInBox(routes, WIDTH, routeBottom - routeTop, ROUTE_MARGIN, routeTop),
-    [routes, routeBottom, routeTop]
-  );
+  const onMap = !photoUri;
+  const fit = useMemo(() => {
+    const short = onMap && routeSpanKm(routes) < SHORT_ROUTE_KM;
+    const framed = short ? [...routes, countryFrame(routes)] : routes;
+    return fitInBox(framed, WIDTH, routeBottom - routeTop, ROUTE_MARGIN, routeTop);
+  }, [routes, routeBottom, routeTop, onMap]);
   const land = useLandPath(fit, WIDTH, height);
   const pale = photoUri ? PALE_ON_PHOTO : PALE_ON_BLUE;
   const distance = distanceParts(content.stats.distanceM, units);

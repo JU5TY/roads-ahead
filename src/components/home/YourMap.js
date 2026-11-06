@@ -2,14 +2,15 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, G, LinearGradient, Path, Polyline, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, G, LinearGradient, Path, Polyline, Rect, Stop } from 'react-native-svg';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getDriveRoutePreview } from '../../storage/driveStorage';
 import { pressedOpacity, spacing, type } from '../../theme';
+import { countryFrame } from '../../utils/countries';
 import { driveGaps, splitAtCrossings } from '../../utils/crossings';
 import { distanceParts } from '../../utils/format';
-import { fitInBox } from '../../utils/routeOutline';
+import { fitInBox, pinPoint } from '../../utils/routeOutline';
 import { computeTotals, firstDriveMonth, groupIntoDays } from '../../utils/tripSummary';
 import AppLogo from '../AppLogo';
 import { useLandPath } from '../DrawnLand';
@@ -19,8 +20,9 @@ import Icon from '../ui/Icon';
 // the status bar's height is added above it.
 const WIDTH = 358;
 const HEIGHT = 400;
-const TEXT_TOP = 308;
-const ROUTE_MARGIN = 30;
+const ROUTE_BOTTOM = 280; // above the text, and where the fade is still light
+const ROUTE_MARGIN = 20;
+const PIN_BELOW = 10; // routes drawn smaller than this are a pin
 const FADE_TOP = 200; // from here the map fades into the page
 const POINTS_PER_DRIVE = 80;
 
@@ -73,7 +75,8 @@ function useAllRoutes(trips) {
  * The top of Home, edge to edge and fading into the page: every road you've
  * driven on a drawn map (nothing to load), the all-time distance and since when.
  * The latest trip is bold, everything else faint; ferries, tunnels and pauses are
- * dotted. Its expand button opens the full map. `trips` newest first; `scrollY`
+ * dotted. The map always shows the whole of the countries driven in, with a pin
+ * while the routes are too small to see on it. Its expand button opens the full map. `trips` newest first; `scrollY`
  * is the page's scroll position: the land and routes move at half speed (like the
  * Trip page's map, so they seem to stay behind) and the rest moves with the page.
  */
@@ -92,7 +95,11 @@ export default function YourMap({ trips, units, scrollY }) {
   const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
 
   const routes = useMemo(() => parts.map((p) => p.coordinates), [parts]);
-  const fit = useMemo(() => fitInBox(routes, WIDTH, TEXT_TOP, ROUTE_MARGIN), [routes]);
+  const fit = useMemo(
+    () => fitInBox([...routes, countryFrame(routes)], WIDTH, ROUTE_BOTTOM, ROUTE_MARGIN),
+    [routes]
+  );
+  const pin = useMemo(() => pinPoint(fit, routes, PIN_BELOW), [fit, routes]);
   // Land reaches up behind the status bar, so it's drawn from the top of the banner.
   const landFit = useMemo(
     () =>
@@ -120,9 +127,11 @@ export default function YourMap({ trips, units, scrollY }) {
           viewBox={`0 0 ${WIDTH} ${HEIGHT + top}`}
           accessible={false}
         >
-          {/* The stroke closes hairline gaps where neighbouring countries meet. */}
-          {land ? <Path d={land} fill={c.track} stroke={c.track} strokeWidth={1.2} /> : null}
-          {fit ? (
+          {/* The stroke draws the coasts and borders, so a country inland still has a shape. */}
+          {land ? (
+            <Path d={land} fill={c.track} stroke={c.card} strokeWidth={1} strokeLinejoin="round" />
+          ) : null}
+          {fit && !pin ? (
             <G transform={`translate(0 ${top})`}>
               {lines.map((p, i) => (
                 <Polyline
@@ -164,6 +173,20 @@ export default function YourMap({ trips, units, scrollY }) {
           fill="url(#yourMapFade)"
         />
       </Svg>
+      {/* Above the fade, so a pin on a south coast stays bold. */}
+      {pin ? (
+        <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: mapShift }] }]}>
+          <Svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${WIDTH} ${HEIGHT + top}`}
+            accessible={false}
+          >
+            <Circle cx={pin[0]} cy={pin[1] + top} r={15} fill={c.accent} fillOpacity={0.18} />
+            <Circle cx={pin[0]} cy={pin[1] + top} r={6} fill={c.accent} stroke={c.card} strokeWidth={2} />
+          </Svg>
+        </Animated.View>
+      ) : null}
       <Pressable
         onPress={() => router.push('/your-map')}
         hitSlop={4}
@@ -213,10 +236,11 @@ const makeStyles = (c) => ({
   },
   footer: {
     position: 'absolute',
-    // In line with the section titles below, and as far above the card as they are.
+    // In line with the section titles below. What comes next sets the gap under it,
+    // the same 28 with or without the Distance card.
     left: 20,
     right: 20,
-    bottom: 12,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 12,

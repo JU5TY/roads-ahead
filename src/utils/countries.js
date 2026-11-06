@@ -114,6 +114,75 @@ export function landPath(project, width, height) {
   return path;
 }
 
+// A country this size or smaller shows too little around it, and one this size or
+// larger shrinks a whole drive to a dot: both get a window around the drive instead.
+const MIN_VIEW_KM = 200;
+const MAX_VIEW_KM = 2000;
+const WINDOW_KM = 1000;
+const KM_PER_DEGREE = 111.32;
+
+const landmasses = new Map(); // code → bbox
+/** The box around a country's largest landmass, so France leaves out French Guiana. */
+function landmassOf(country) {
+  if (!landmasses.has(country.code)) {
+    const area = ([a, b, c, d]) => (c - a) * (d - b);
+    landmasses.set(
+      country.code,
+      ringsOf(country).reduce((big, { bbox }) => (area(bbox) > area(big) ? bbox : big), [0, 0, 0, 0])
+    );
+  }
+  return landmasses.get(country.code);
+}
+
+/** The box to show for the country at a point: the whole UK for any of its nations. */
+function viewBoxAt(latitude, longitude) {
+  const code = countryAt(latitude, longitude);
+  const members = code?.startsWith('GB-')
+    ? data.countries.filter((c) => c.code.startsWith('GB-'))
+    : code
+      ? [byCode.get(code)]
+      : [];
+  if (members.length) {
+    const boxes = members.map(landmassOf);
+    const box = [
+      Math.min(...boxes.map((b) => b[0])),
+      Math.min(...boxes.map((b) => b[1])),
+      Math.max(...boxes.map((b) => b[2])),
+      Math.max(...boxes.map((b) => b[3])),
+    ];
+    const k = Math.cos((((box[0] + box[2]) / 2) * Math.PI) / 180);
+    const km = Math.max(box[2] - box[0], (box[3] - box[1]) * k) * KM_PER_DEGREE;
+    if (km > MIN_VIEW_KM && km < MAX_VIEW_KM) return box;
+  }
+  const dLat = WINDOW_KM / 2 / KM_PER_DEGREE;
+  const dLng = dLat / Math.cos((latitude * Math.PI) / 180);
+  return [latitude - dLat, longitude - dLng, latitude + dLat, longitude + dLng];
+}
+
+/**
+ * Points that frame the countries `routes` start and end in: add them to what
+ * fitInBox fits, as one more route but not drawn, to show the routes on a map of
+ * the whole country. Empty when there are no routes.
+ */
+export function countryFrame(routes) {
+  const seen = new Set();
+  const frame = [];
+  for (const route of routes) {
+    if (!route.length) continue;
+    for (const { latitude, longitude } of [route[0], route.at(-1)]) {
+      const box = viewBoxAt(latitude, longitude);
+      const key = box.join();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      frame.push(
+        { latitude: box[0], longitude: box[1] },
+        { latitude: box[2], longitude: box[3] }
+      );
+    }
+  }
+  return frame;
+}
+
 const inBox = ([minLat, minLng, maxLat, maxLng], lat, lng) =>
   lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 

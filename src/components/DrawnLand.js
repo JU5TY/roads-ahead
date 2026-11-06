@@ -8,18 +8,11 @@ export const MAP_BLUE = '#174EA6';
 export const MAP_LAND = '#2F6FD0';
 export const MAP_PALE = '#D2E3FC';
 
-// Zoomed in further than this (units per degree of latitude, a route under about
-// 65 km), the bundled borders turn blocky and roads can look like they're at sea: no land.
-const MAX_LAND_ZOOM = 400;
 const FADE_HEIGHT = 105;
 
-/** Land for `fit` (from fitInBox) on a `width` x `height` drawing; '' when zoomed in too far. */
+/** Land for `fit` (from fitInBox) on a `width` x `height` drawing. */
 export function useLandPath(fit, width, height) {
-  return useMemo(() => {
-    if (!fit) return '';
-    const zoom = fit.project({ latitude: 0, longitude: 0 })[1] - fit.project({ latitude: 1, longitude: 0 })[1];
-    return zoom > MAX_LAND_ZOOM ? '' : landPath(fit.project, width, height);
-  }, [fit, width, height]);
+  return useMemo(() => (fit ? landPath(fit.project, width, height) : ''), [fit, width, height]);
 }
 
 /**
@@ -38,8 +31,10 @@ export default function DrawnLand({ path, width, height, fadeEnd }) {
           <Stop offset="1" stopColor={MAP_BLUE} stopOpacity={0.65} />
         </LinearGradient>
       </Defs>
-      {/* The stroke closes hairline gaps where neighbouring countries meet. */}
-      {path ? <Path d={path} fill={MAP_LAND} stroke={MAP_LAND} strokeWidth={1.2} /> : null}
+      {/* The stroke draws the coasts and borders, so a country inland still has a shape. */}
+      {path ? (
+        <Path d={path} fill={MAP_LAND} stroke={MAP_BLUE} strokeWidth={1} strokeLinejoin="round" />
+      ) : null}
       <Rect y={fadeEnd - FADE_HEIGHT} width={width} height={FADE_HEIGHT} fill="url(#landFade)" />
       <Rect y={fadeEnd} width={width} height={height - fadeEnd} fill={MAP_BLUE} fillOpacity={0.65} />
     </>
