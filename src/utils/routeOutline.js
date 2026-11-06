@@ -4,7 +4,7 @@
  * Returns { project, points }: project(p) → [x, y], points(route) → an SVG
  * polyline `points` string. Null when there are fewer than two points to draw.
  */
-export function fitInBox(routes, width, height, margin = 0) {
+export function fitInBox(routes, width, height, margin = 0, top = 0) {
   const all = routes.flat();
   if (all.length < 2) return null;
   const lats = all.map((p) => p.latitude);
@@ -20,7 +20,7 @@ export function fitInBox(routes, width, height, margin = 0) {
     (height - 2 * margin) / Math.max(maxY - minY, 1e-6)
   );
   const cx = width / 2 - ((minX + maxX) / 2) * scale;
-  const cy = height / 2 + ((minY + maxY) / 2) * scale;
+  const cy = top + height / 2 + ((minY + maxY) / 2) * scale;
   const project = (p) => [cx + p.longitude * k * scale, cy - p.latitude * scale];
   const points = (route) =>
     route

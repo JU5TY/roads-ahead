@@ -10,14 +10,19 @@ import AppLogo from '../AppLogo';
 import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
 import FlagStack from '../countries/FlagStack';
 
-// The card is laid out on a 432 x 540 grid and scaled to `width`, so the preview
+// The card is laid out on a grid 432 wide and scaled to `width`, so the preview
 // and the shared image match. Its colours stay the same in light and dark.
 const WIDTH = 432;
-const HEIGHT = 540;
 const PAD = 28;
 const GAP = 20;
-const TEXT_TOP = 304; // where the text starts when it has every line
 const ROUTE_MARGIN = 36; // the padding, plus most of a dot's radius
+// The route's box ends where the text starts when it has every line, less a Story's
+// wider gap. A Story keeps clear of Instagram's profile bar (the top 10% on a phone
+// test; its controls sat below the image) and leaves room for shorter phones.
+const FORMATS = {
+  post: { height: 540, routeTop: 0, routeBottom: 304, textBottom: PAD, fadeEnd: 301, shade: [0.45, 0.68, 1] },
+  story: { height: 768, routeTop: 64, routeBottom: 486, textBottom: 62, fadeEnd: 495, shade: [0.45, 0.65, 0.92] },
+};
 const BLUE = MAP_BLUE;
 const WHITE = '#FFFFFF';
 const PALE_ON_BLUE = MAP_PALE;
@@ -67,25 +72,30 @@ function RouteLines({ segments, fit }) {
 
 /**
  * The image that gets shared: the trip's route on a drawn map, or on `photoUri`
- * darkened for the text. `content` comes from shareCardContent(), `segments`
- * from useTripPreview().
+ * darkened for the text. `format` is its shape: 'post' (4:5) or 'story' (9:16).
+ * `content` comes from shareCardContent(), `segments` from useTripPreview().
  */
 export default function ShareCard({
   content,
   segments,
   units,
   width,
+  format = 'post',
   photoUri,
   onPhotoLoad,
   onPhotoError,
 }) {
+  const { height, routeTop, routeBottom, textBottom, fadeEnd, shade } = FORMATS[format];
   const u = width / WIDTH;
   const routes = useMemo(
     () => (segments ?? []).map((s) => s.coordinates).filter((r) => r.length > 1),
     [segments]
   );
-  const fit = useMemo(() => fitInBox(routes, WIDTH, TEXT_TOP, ROUTE_MARGIN), [routes]);
-  const land = useLandPath(fit, WIDTH, HEIGHT);
+  const fit = useMemo(
+    () => fitInBox(routes, WIDTH, routeBottom - routeTop, ROUTE_MARGIN, routeTop),
+    [routes, routeBottom, routeTop]
+  );
+  const land = useLandPath(fit, WIDTH, height);
   const pale = photoUri ? PALE_ON_PHOTO : PALE_ON_BLUE;
   const distance = distanceParts(content.stats.distanceM, units);
   const line = (fontFamily, fontSize, lineHeight, color, extra) => ({
@@ -97,32 +107,32 @@ export default function ShareCard({
   });
 
   return (
-    <View style={{ width, height: width * (HEIGHT / WIDTH), backgroundColor: BLUE, overflow: 'hidden' }}>
+    <View style={{ width, height: width * (height / WIDTH), backgroundColor: BLUE, overflow: 'hidden' }}>
       {photoUri ? <Photo uri={photoUri} onLoad={onPhotoLoad} onError={onPhotoError} /> : null}
       <Svg
         width="100%"
         height="100%"
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 0 ${WIDTH} ${height}`}
         style={{ position: 'absolute' }}
         accessible={false}
       >
         <Defs>
           <LinearGradient id="photoShade" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#000000" stopOpacity={0.28} />
-            <Stop offset="0.45" stopColor="#000000" stopOpacity={0.22} />
-            <Stop offset="0.68" stopColor="#000000" stopOpacity={0.72} />
-            <Stop offset="1" stopColor="#000000" stopOpacity={0.86} />
+            <Stop offset={shade[0]} stopColor="#000000" stopOpacity={0.22} />
+            <Stop offset={shade[1]} stopColor="#000000" stopOpacity={0.72} />
+            <Stop offset={shade[2]} stopColor="#000000" stopOpacity={0.86} />
           </LinearGradient>
         </Defs>
         {photoUri ? (
-          <Rect width={WIDTH} height={HEIGHT} fill="url(#photoShade)" />
+          <Rect width={WIDTH} height={height} fill="url(#photoShade)" />
         ) : (
-          <DrawnLand path={land} width={WIDTH} height={HEIGHT} fadeEnd={301} />
+          <DrawnLand path={land} width={WIDTH} height={height} fadeEnd={fadeEnd} />
         )}
         <RouteLines segments={segments ?? []} fit={fit} />
       </Svg>
 
-      <View style={{ position: 'absolute', left: PAD * u, right: PAD * u, bottom: PAD * u }}>
+      <View style={{ position: 'absolute', left: PAD * u, right: PAD * u, bottom: textBottom * u }}>
         <Text
           allowFontScaling={false}
           numberOfLines={1}

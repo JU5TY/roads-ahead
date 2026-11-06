@@ -35,6 +35,14 @@ const THUMB_H = 80;
 // A long drive's shape stays true at the shared image's size.
 const CARD_POINTS = 1200;
 const CAPTURE_WIDTH = 1080 / PixelRatio.get(); // 1080 pixels wide once captured
+// Width / height of the card (see ShareCard).
+const FORMATS = [
+  { id: 'story', label: 'Story', ratio: 9 / 16 },
+  { id: 'post', label: 'Post', ratio: 4 / 5 },
+];
+// Everything above and below the preview, safe areas aside: it takes what's left.
+const AROUND_PREVIEW = 358;
+const MIN_PREVIEW_WIDTH = 200;
 
 /** The Route choice: a small drawing of the route on the card's blue. */
 function RouteTile({ segments, selected, onPress }) {
@@ -70,10 +78,11 @@ export default function ShareScreen() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const captureRef = useRef(null);
   const [trip, setTrip] = useState(null);
   const [vehicles, setVehicles] = useState([]); // the Garage
+  const [format, setFormat] = useState('story');
   const [photoUri, setPhotoUri] = useState(null);
   const [loadedUri, setLoadedUri] = useState(null); // the photo the captured card has drawn
 
@@ -113,6 +122,11 @@ export default function ShareScreen() {
   const content = shareCardContent(trip, drive, vehicles);
   const ready = segments !== null && (!photoUri || loadedUri === photoUri);
   const canAsk = access === 'ask' || access === 'blocked';
+  const previewHeight = screenHeight - AROUND_PREVIEW - insets.top - insets.bottom;
+  const previewWidth = Math.min(
+    screenWidth - 2 * spacing.md,
+    Math.max(MIN_PREVIEW_WIDTH, previewHeight * FORMATS.find((f) => f.id === format).ratio)
+  );
 
   return (
     <View style={styles.screen}>
@@ -123,6 +137,7 @@ export default function ShareScreen() {
           segments={segments}
           units={units}
           width={CAPTURE_WIDTH}
+          format={format}
           photoUri={photoUri}
           onPhotoLoad={() => setLoadedUri(photoUri)}
           // A photo that won't open falls back to the route card rather than blocking Share.
@@ -143,12 +158,29 @@ export default function ShareScreen() {
           </Text>
         </View>
 
+        <View style={styles.formats} role="radiogroup" accessibilityLabel="Image shape">
+          {FORMATS.map((f) => (
+            <Pressable
+              key={f.id}
+              onPress={() => setFormat(f.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: format === f.id }}
+              style={[styles.format, format === f.id && styles.formatSelected]}
+            >
+              <Text style={[type.label, format === f.id ? styles.text : styles.muted]}>
+                {f.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <View style={styles.preview}>
           <ShareCard
             content={content}
             segments={segments}
             units={units}
-            width={screenWidth - 2 * spacing.md}
+            width={previewWidth}
+            format={format}
             photoUri={photoUri}
           />
         </View>
@@ -222,7 +254,17 @@ const makeStyles = (c) => ({
   content: { paddingHorizontal: spacing.md, paddingBottom: 16 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: -8 },
   title: { color: c.text },
-  preview: { marginTop: 12, borderRadius: 16, overflow: 'hidden' },
+  formats: {
+    flexDirection: 'row',
+    marginTop: 12,
+    padding: 4,
+    borderRadius: 20,
+    backgroundColor: c.track,
+  },
+  format: { flex: 1, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  formatSelected: { backgroundColor: c.card },
+  text: { color: c.text },
+  preview: { marginTop: 12, alignSelf: 'center', borderRadius: 16, overflow: 'hidden' },
   choices: { flexDirection: 'row', gap: 16, marginTop: 16 },
   // Route's label sits on the same line as Photos and its taller Premium tag.
   choiceLabel: { height: 24, marginBottom: 6, textAlignVertical: 'center', lineHeight: 24 },
