@@ -1,7 +1,8 @@
 // What a share card says about a whole trip or one of its drives.
 import { countryRows } from './countries';
 import { formatDate, tripKicker } from './format';
-import { dayNumberFor, groupIntoDays, routeLabel, summarizeDrives, tripRouteLabel, tripTitle } from './tripSummary';
+import { dayNumberFor, groupIntoDays, oneWayLabel, summarizeDrives, tripOneWayLabel, tripTitle } from './tripSummary';
+import { vehicleLabel } from './vehicles';
 
 const dayWithYear = (ts) =>
   new Date(ts)
@@ -11,9 +12,10 @@ const dayWithYear = (ts) =>
 /**
  * { kicker, title, subtitle, stats, drivingMs, countries } for the card. `drive` is set when
  * one drive of a longer trip is shared; flags only show for two or more countries,
- * and `drivingMs` is null when every drive's times are hidden.
+ * and `drivingMs` is null when every drive's times are hidden. The subtitle ends with
+ * the one vehicle driven, if there is one, from the Garage's `vehicles`.
  */
-export function shareCardContent(trip, drive = null) {
+export function shareCardContent(trip, drive = null, vehicles = []) {
   const drives = drive ? [drive] : trip.drives;
   const multiDay = groupIntoDays(trip.drives).length > 1;
   const name = tripTitle(trip);
@@ -33,14 +35,19 @@ export function shareCardContent(trip, drive = null) {
     kicker = dayWithYear(drives[0].startedAt);
   }
 
-  const route = drive ? routeLabel(drive.places) : tripRouteLabel(trip);
+  const route = drive ? oneWayLabel(drive.places) : tripOneWayLabel(trip);
   const countries = countryRows(drives);
   const timed = drives.filter((d) => !d.stats.timesHidden);
+  const usedVehicleIds = [...new Set(drives.map((d) => d.vehicleId).filter((v) => v != null))];
+  const vehicle = usedVehicleIds.length === 1 ? vehicles.find((v) => v.id === usedVehicleIds[0]) : null;
   return {
     kicker,
     title,
     // An unnamed trip is already titled by its route, so don't say it twice.
-    subtitle: route === title ? null : route,
+    subtitle:
+      [route === title ? null : route, vehicle ? vehicleLabel(vehicle) : null]
+        .filter(Boolean)
+        .join(' · ') || null,
     stats: summarizeDrives(drives),
     drivingMs: timed.length ? summarizeDrives(timed).movingTimeMs : null,
     countries: countries.length > 1 ? countries : [],

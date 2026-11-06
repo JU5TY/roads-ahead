@@ -7,16 +7,16 @@ import { type } from '../../theme';
 import Icon from '../ui/Icon';
 
 const SIZE = 36;
-const MAX_SHOWN = 5; // more than this: the first 4 and a "+n" circle
+const MAX_SHOWN = 8; // more than this: the first 7 and a "+n" circle
 
 /** "England", "England and Wales", "England, Wales and France". */
 const listOf = (names) =>
   names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
 
 /**
- * Round, overlapping flags for the countries driven, most distance first:
- * `countries` is [{ code, name, flag }] in that order. Up to five are shown,
- * then four and a "+n" circle for the rest. `colors` ({ ring, more, onMore })
+ * Round, overlapping flags for the countries driven, first driven first:
+ * `countries` is [{ code, name, flag }] in that order. Up to eight are shown,
+ * then seven and a "+n" circle for the rest. `colors` ({ ring, more, onMore })
  * replaces the theme's on a surface that doesn't follow it, like a share card.
  */
 export default function FlagStack({ countries, size = SIZE, colors }) {

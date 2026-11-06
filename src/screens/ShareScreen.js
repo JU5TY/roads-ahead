@@ -25,6 +25,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { useTripPreview } from '../hooks/useTripPreview';
 import { shareCardImage } from '../services/shareService';
 import { getTrip } from '../storage/tripStorage';
+import { listVehicles } from '../storage/vehicleStorage';
 import { pressedOpacity, spacing, type } from '../theme';
 import { fitInBox } from '../utils/routeOutline';
 import { shareCardContent } from '../utils/shareCard';
@@ -72,13 +73,19 @@ export default function ShareScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const captureRef = useRef(null);
   const [trip, setTrip] = useState(null);
+  const [vehicles, setVehicles] = useState([]); // the Garage
   const [photoUri, setPhotoUri] = useState(null);
   const [loadedUri, setLoadedUri] = useState(null); // the photo the captured card has drawn
 
   useEffect(() => {
     let cancelled = false;
-    getTrip(Number(tripParam))
-      .then((t) => !cancelled && setTrip(t))
+    // A Garage that won't load only leaves the vehicle off the card.
+    Promise.all([getTrip(Number(tripParam)), listVehicles().catch(() => [])])
+      .then(([t, garage]) => {
+        if (cancelled) return;
+        setVehicles(garage);
+        setTrip(t);
+      })
       .catch((err) => console.warn('[share] load failed', err));
     return () => {
       cancelled = true;
@@ -103,7 +110,7 @@ export default function ShareScreen() {
     );
   }
 
-  const content = shareCardContent(trip, drive);
+  const content = shareCardContent(trip, drive, vehicles);
   const ready = segments !== null && (!photoUri || loadedUri === photoUri);
   const canAsk = access === 'ask' || access === 'blocked';
 

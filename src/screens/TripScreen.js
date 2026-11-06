@@ -45,9 +45,9 @@ import {
   deleteTripMessage,
   driveElapsedMs,
   groupIntoDays,
-  routeLabel,
+  oneWayLabel,
   summarizeDrives,
-  tripRouteLabel,
+  tripOneWayLabel,
   tripTitle,
 } from '../utils/tripSummary';
 
@@ -239,7 +239,7 @@ export default function TripScreen() {
   const last = trip.drives.at(-1);
   const title = tripTitle(trip) ?? formatDate(first.startedAt);
   // Show the route under the title when the user's own name is the title.
-  const subtitle = trip.name ? tripRouteLabel(trip) : null;
+  const subtitle = trip.name ? tripOneWayLabel(trip) : null;
 
   const allHidden = hiddenCount === trip.drives.length;
   const roadsShown = showIconicRoads ? completions : [];
@@ -379,7 +379,7 @@ export default function TripScreen() {
       // Top right of the map: Share on its own (one tap), the rest in the menu.
       actions={[
         {
-          icon: 'ios_share',
+          icon: 'share',
           label: 'Share',
           onPress: () =>
             router.push(`/share?trip=${trip.id}${selected ? `&drive=${selected.id}` : ''}`),
@@ -487,7 +487,7 @@ export default function TripScreen() {
       {selected && !single ? (
         <View style={styles.picked}>
           <Text style={[type.section, styles.text]} numberOfLines={1}>
-            {routeLabel(selected.places) ?? `Drive ${trip.drives.indexOf(selected) + 1}`}
+            {oneWayLabel(selected.places) ?? `Drive ${trip.drives.indexOf(selected) + 1}`}
           </Text>
           <Text style={[type.body, styles.muted]} numberOfLines={1}>
             {[

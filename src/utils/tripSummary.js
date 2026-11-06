@@ -69,12 +69,22 @@ export function routeLabel(places) {
   return start || end;
 }
 
-/** Route of a whole trip: first drive's start to the latest drive's end. */
-export function tripRouteLabel(trip) {
-  const first = trip.drives[0];
-  const last = trip.drives.at(-1);
-  return routeLabel({ start: first?.places.start, end: last?.places.end });
+/** routeLabel for showing beside a title: null for a round trip, which has nothing to add. */
+export function oneWayLabel(places) {
+  return places?.start && places.start === places.end ? null : routeLabel(places);
 }
+
+/** Where a whole trip went: first drive's start to the latest drive's end. */
+const tripPlaces = (trip) => ({
+  start: trip.drives[0]?.places.start,
+  end: trip.drives.at(-1)?.places.end,
+});
+
+/** Route of a whole trip. */
+export const tripRouteLabel = (trip) => routeLabel(tripPlaces(trip));
+
+/** oneWayLabel of a whole trip. */
+export const tripOneWayLabel = (trip) => oneWayLabel(tripPlaces(trip));
 
 /** Display title: the user's name, else the route, else null (caller falls back to a date). */
 export function tripTitle(trip) {
