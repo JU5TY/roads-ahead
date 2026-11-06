@@ -25,7 +25,7 @@ import { usePhotoCrop } from '../hooks/usePhotoCrop';
 import { usePhotos } from '../hooks/usePhotos';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { useTripPreview } from '../hooks/useTripPreview';
-import { shareCardImage } from '../services/shareService';
+import { clearShareCard, shareCardImage } from '../services/shareService';
 import { getTrip } from '../storage/tripStorage';
 import { listVehicles } from '../storage/vehicleStorage';
 import { pressedOpacity, spacing, type } from '../theme';
@@ -105,6 +105,8 @@ export default function ShareScreen() {
       cancelled = true;
     };
   }, [tripParam]);
+
+  useEffect(() => clearShareCard, []);
 
   // A lone drive is the whole trip, so it's shared as the trip.
   const drive =

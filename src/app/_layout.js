@@ -13,6 +13,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import DialogHost from '../components/ui/DialogHost';
 import { SettingsProvider, useSettings } from '../context/SettingsContext';
 import { useTheme } from '../hooks/useTheme';
+import { clearShareCard } from '../services/shareService';
 import { checkAllCountriesIfNeeded } from '../storage/countryStorage';
 import { checkAllCrossingsIfNeeded } from '../storage/crossingStorage';
 import { checkAllDrivesIfNeeded } from '../storage/roadStorage';
@@ -27,6 +28,8 @@ function AppStack() {
   useEffect(() => {
     if (fontError) console.warn('[app] fonts failed to load', fontError);
   }, [fontError]);
+
+  useEffect(clearShareCard, []);
 
   // On launch: if a drive was left recording (app killed, phone rebooted), make
   // sure tracking is running again and open the Record tab instead of Home.

@@ -75,3 +75,15 @@ export function getRecordMapHidden() {
 export function setRecordMapHidden(hidden) {
   return Storage.setItemAsync(RECORD_MAP_HIDDEN_KEY, String(hidden));
 }
+
+const SHARE_CARD_KEY = 'shareCardFile';
+
+/** The share image still on the phone, if any, so it's found again after the app is killed. */
+export function getShareCardFile() {
+  return Storage.getItemSync(SHARE_CARD_KEY);
+}
+
+export function setShareCardFile(uri) {
+  if (uri == null) Storage.removeItemSync(SHARE_CARD_KEY);
+  else Storage.setItemSync(SHARE_CARD_KEY, uri);
+}
