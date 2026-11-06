@@ -7,7 +7,7 @@ import { fonts } from '../../theme';
 import { distanceParts, formatDurationShort } from '../../utils/format';
 import { CENTRED, MAX_ZOOM, coverSize, cropTransform } from '../../utils/photoCrop';
 import { countryFrame } from '../../utils/countries';
-import { fitInBox, fitInCircle, pinPoint, routeSpanKm } from '../../utils/routeOutline';
+import { fitInBox, pinPoint, routeSpanKm } from '../../utils/routeOutline';
 import AppLogo from '../AppLogo';
 import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
 import FlagStack from '../countries/FlagStack';
@@ -22,7 +22,6 @@ const ROUTE_MARGIN = 36; // the padding, plus most of a dot's radius
 // with a pin instead if its start and end dots would sit on top of each other.
 const SHORT_ROUTE_KM = 100;
 const PIN_BELOW = 24;
-const PHOTO_ROUTE_SIZE = 72; // on a photo: a small round drawing above the text
 // The route's box ends where the text starts when it has every line, less a Story's
 // wider gap. A Story keeps clear of Instagram's profile bar (the top 10% on a phone
 // test; its controls sat below the image) and leaves room for shorter phones.
@@ -68,14 +67,11 @@ function Photo({ uri, aspect, crop, motion, frameWidth, frameHeight, onLoad, onE
   );
 }
 
-/**
- * One line of the route and its dots on the card's grid, or a pin when they'd be too
- * small. `small` draws them finer, for the photo card's round drawing; never a pin.
- */
-function RouteLines({ segments, fit, small = false }) {
+/** One line of the route and its dots on the card's grid, or a pin when they'd be too small. */
+function RouteLines({ segments, fit }) {
   const routes = segments.map((s) => s.coordinates).filter((r) => r.length > 1);
   if (!fit || !routes.length) return null;
-  const pin = small ? null : pinPoint(fit, routes, PIN_BELOW);
+  const pin = pinPoint(fit, routes, PIN_BELOW);
   if (pin) {
     return (
       <>
@@ -86,7 +82,6 @@ function RouteLines({ segments, fit, small = false }) {
   }
   const [startX, startY] = fit.project(routes[0][0]);
   const [endX, endY] = fit.project(routes.at(-1).at(-1));
-  const dot = small ? { r: 3.5, strokeWidth: 1.5 } : { r: 8, strokeWidth: 3 };
   return (
     <>
       {segments
@@ -97,21 +92,21 @@ function RouteLines({ segments, fit, small = false }) {
             points={fit.points(s.coordinates)}
             fill="none"
             stroke={WHITE}
-            strokeWidth={small ? 2.5 : 4}
+            strokeWidth={4}
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeDasharray={s.dotted ? (small ? '0.1 6' : '0.1 9') : undefined}
+            strokeDasharray={s.dotted ? '0.1 9' : undefined}
           />
         ))}
-      <Circle cx={startX} cy={startY} fill="#1E8E3E" stroke={WHITE} {...dot} />
-      <Circle cx={endX} cy={endY} fill="#D93025" stroke={WHITE} {...dot} />
+      <Circle cx={startX} cy={startY} r={8} fill="#1E8E3E" stroke={WHITE} strokeWidth={3} />
+      <Circle cx={endX} cy={endY} r={8} fill="#D93025" stroke={WHITE} strokeWidth={3} />
     </>
   );
 }
 
 /**
  * The image that gets shared: the trip's route on a drawn map, or `photoUri` darkened
- * for the text with the route small above it, clear of the photo's subject. `format` is its shape: 'post' (4:5) or 'story' (9:16).
+ * for the text. `format` is its shape: 'post' (4:5) or 'story' (9:16).
  * `content` comes from shareCardContent(), `segments` from useTripPreview().
  * `photoAspect` and `photoCrop` place the photo (see photoCrop.js); `photoMotion`
  * moves it instead, from usePhotoCrop().
@@ -143,10 +138,6 @@ export default function ShareCard({
     const framed = short ? [...routes, countryFrame(routes)] : routes;
     return fitInBox(framed, WIDTH, routeBottom - routeTop, ROUTE_MARGIN, routeTop);
   }, [routes, routeBottom, routeTop, onMap]);
-  const photoFit = useMemo(
-    () => (onMap ? null : fitInCircle(routes, PHOTO_ROUTE_SIZE)),
-    [routes, onMap]
-  );
   const land = useLandPath(fit, WIDTH, height);
   const pale = photoUri ? PALE_ON_PHOTO : PALE_ON_BLUE;
   const distance = distanceParts(content.stats.distanceM, units);
@@ -196,24 +187,6 @@ export default function ShareCard({
       </Svg>
 
       <View style={{ position: 'absolute', left: PAD * u, right: PAD * u, bottom: textBottom * u }}>
-        {photoFit ? (
-          <Svg
-            width={PHOTO_ROUTE_SIZE * u}
-            height={PHOTO_ROUTE_SIZE * u}
-            viewBox={`0 0 ${PHOTO_ROUTE_SIZE} ${PHOTO_ROUTE_SIZE}`}
-            style={{ marginBottom: GAP * u }}
-            accessible={false}
-          >
-            <Circle
-              cx={PHOTO_ROUTE_SIZE / 2}
-              cy={PHOTO_ROUTE_SIZE / 2}
-              r={PHOTO_ROUTE_SIZE / 2}
-              fill="#000000"
-              fillOpacity={0.6}
-            />
-            <RouteLines segments={segments ?? []} fit={photoFit} small />
-          </Svg>
-        ) : null}
         <Text
           allowFontScaling={false}
           numberOfLines={1}
