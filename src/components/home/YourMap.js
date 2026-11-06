@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, G, LinearGradient, Path, Polyline, Rect, Stop } from 'react-native-svg';
 
@@ -73,15 +73,22 @@ function useAllRoutes(trips) {
  * The top of Home, edge to edge and fading into the page: every road you've
  * driven on a drawn map (nothing to load), the all-time distance and since when.
  * The latest trip is bold, everything else faint; ferries, tunnels and pauses are
- * dotted. Its expand button opens the full map. `trips` newest first.
+ * dotted. Its expand button opens the full map. `trips` newest first; `scrollY`
+ * is the page's scroll position: the land and routes move at half speed (like the
+ * Trip page's map, so they seem to stay behind) and the rest moves with the page.
  */
-export default function YourMap({ trips, units }) {
+export default function YourMap({ trips, units, scrollY }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const parts = useAllRoutes(trips);
   const top = insets.top * (WIDTH / width); // the status bar, in grid units
+  const mapShift = scrollY.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.5],
+    extrapolateLeft: 'clamp',
+  });
   const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
 
   const routes = useMemo(() => parts.map((p) => p.coordinates), [parts]);
@@ -106,6 +113,34 @@ export default function YourMap({ trips, units }) {
 
   return (
     <View style={[styles.banner, { height: width * (HEIGHT / WIDTH) + insets.top }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: mapShift }] }]}>
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${WIDTH} ${HEIGHT + top}`}
+          accessible={false}
+        >
+          {/* The stroke closes hairline gaps where neighbouring countries meet. */}
+          {land ? <Path d={land} fill={c.track} stroke={c.track} strokeWidth={1.2} /> : null}
+          {fit ? (
+            <G transform={`translate(0 ${top})`}>
+              {lines.map((p, i) => (
+                <Polyline
+                  key={i}
+                  points={fit.points(p.coordinates)}
+                  fill="none"
+                  stroke={c.accent}
+                  strokeOpacity={p.day === null ? 0.55 : 1}
+                  strokeWidth={p.day === null ? 2.5 : 4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray={p.crossing !== null ? '0.1 7' : undefined}
+                />
+              ))}
+            </G>
+          ) : null}
+        </Svg>
+      </Animated.View>
       <Svg
         width="100%"
         height="100%"
@@ -122,31 +157,12 @@ export default function YourMap({ trips, units }) {
             <Stop offset="1" stopColor={c.background} stopOpacity={1} />
           </LinearGradient>
         </Defs>
-        {/* The stroke closes hairline gaps where neighbouring countries meet. */}
-        {land ? <Path d={land} fill={c.track} stroke={c.track} strokeWidth={1.2} /> : null}
         <Rect
           y={FADE_TOP + top}
           width={WIDTH}
           height={HEIGHT - FADE_TOP}
           fill="url(#yourMapFade)"
         />
-        {fit ? (
-          <G transform={`translate(0 ${top})`}>
-            {lines.map((p, i) => (
-              <Polyline
-                key={i}
-                points={fit.points(p.coordinates)}
-                fill="none"
-                stroke={c.accent}
-                strokeOpacity={p.day === null ? 0.55 : 1}
-                strokeWidth={p.day === null ? 2.5 : 4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray={p.crossing !== null ? '0.1 7' : undefined}
-              />
-            ))}
-          </G>
-        ) : null}
       </Svg>
       <Pressable
         onPress={() => router.push('/your-map')}
@@ -197,10 +213,10 @@ const makeStyles = (c) => ({
   },
   footer: {
     position: 'absolute',
-    // In line with the section titles below.
+    // In line with the section titles below, and as far above the card as they are.
     left: 20,
     right: 20,
-    bottom: 24,
+    bottom: 12,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 12,

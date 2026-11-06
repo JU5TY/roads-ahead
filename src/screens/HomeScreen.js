@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import WeekDistance from '../components/home/WeekDistance';
@@ -48,6 +48,7 @@ export default function HomeScreen() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  const [scrollY] = useState(() => new Animated.Value(0));
   // Only keep the map preview alive while Home is showing, to save memory.
   const focused = useIsFocused();
   // Trips plus the time they were loaded, so "today" is stable while open.
@@ -88,8 +89,15 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <YourMap trips={trips} units={units} />
+    <Animated.ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      scrollEventThrottle={16}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: true,
+      })}
+    >
+      <YourMap trips={trips} units={units} scrollY={scrollY} />
       <WeekDistance trips={trips} units={units} now={now} />
       <SectionHeader
         variant="overline"
@@ -106,7 +114,7 @@ export default function HomeScreen() {
       />
       {showIconicRoads ? <RoadsCard /> : null}
       <CountriesCard trips={trips} />
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
