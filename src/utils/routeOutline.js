@@ -1,3 +1,13 @@
+/** An SVG polyline `points` string for `route`, placed by `project`. */
+const pointsWith = (project) => (route) =>
+  route
+    .map((p) =>
+      project(p)
+        .map((n) => n.toFixed(1))
+        .join(',')
+    )
+    .join(' ');
+
 /**
  * Fit routes (arrays of { latitude, longitude }) inside a `width` × `height`
  * box, `margin` px in from each edge, for flat drawings that need no map.
@@ -22,15 +32,7 @@ export function fitInBox(routes, width, height, margin = 0, top = 0) {
   const cx = width / 2 - ((minX + maxX) / 2) * scale;
   const cy = top + height / 2 + ((minY + maxY) / 2) * scale;
   const project = (p) => [cx + p.longitude * k * scale, cy - p.latitude * scale];
-  const points = (route) =>
-    route
-      .map((p) =>
-        project(p)
-          .map((n) => n.toFixed(1))
-          .join(',')
-      )
-      .join(' ');
-  return { project, points };
+  return { project, points: pointsWith(project) };
 }
 
 /** How far `routes` reach, in km, north-south or east-west, whichever is further. */
@@ -61,8 +63,25 @@ export function pinPoint(fit, routes, minSpan) {
   return [(minX + maxX) / 2, (minY + maxY) / 2];
 }
 
-/** fitInBox for a circle `size` px across: the routes fill a square inscribed in it, plus a margin. */
+/**
+ * fitInBox for a circle `size` px across: the routes are centred, and their furthest
+ * point stops this share of the size from the edge, whichever way they run.
+ */
+const CIRCLE_INSET = 0.15;
 export function fitInCircle(routes, size) {
-  const box = (size / Math.SQRT2) * 0.92;
-  return fitInBox(routes, size, size, (size - box) / 2);
+  const fit = fitInBox(routes, size, size);
+  if (!fit) return null;
+  const mid = size / 2;
+  const furthest = Math.max(
+    ...routes.flat().map((p) => {
+      const [x, y] = fit.project(p);
+      return Math.hypot(x - mid, y - mid);
+    })
+  );
+  const scale = (mid - size * CIRCLE_INSET) / Math.max(furthest, 1e-6);
+  const project = (p) => {
+    const [x, y] = fit.project(p);
+    return [mid + (x - mid) * scale, mid + (y - mid) * scale];
+  };
+  return { project, points: pointsWith(project) };
 }
