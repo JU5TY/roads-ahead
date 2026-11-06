@@ -208,7 +208,8 @@ export default function ShareCard({
               cx={PHOTO_ROUTE_SIZE / 2}
               cy={PHOTO_ROUTE_SIZE / 2}
               r={PHOTO_ROUTE_SIZE / 2}
-              fill={BLUE}
+              fill="#000000"
+              fillOpacity={0.6}
             />
             <RouteLines segments={segments ?? []} fit={photoFit} small />
           </Svg>
