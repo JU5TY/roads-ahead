@@ -80,7 +80,7 @@ function RouteLines({ segments, fit, small = false }) {
     return (
       <>
         <Circle cx={pin[0]} cy={pin[1]} r={17} fill={WHITE} fillOpacity={0.25} />
-        <Circle cx={pin[0]} cy={pin[1]} r={7} fill="#D93025" stroke={WHITE} strokeWidth={3} />
+        <Circle cx={pin[0]} cy={pin[1]} r={7} fill="#1A73E8" stroke={WHITE} strokeWidth={3} />
       </>
     );
   }
