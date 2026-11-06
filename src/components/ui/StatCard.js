@@ -6,7 +6,7 @@ import Icon from './Icon';
 
 /**
  * Stat tile from the Trip/Record bento grid.
- * tone: 'surface' (white, blue number) | 'accent' (wide card, blue icon well) | 'warning' (amber, break due).
+ * tone: 'surface' (white, grey icon) | 'accent' (wide card, blue icon well) | 'warning' (amber, break due).
  * layout: 'tile' (icon over value over label) | 'wide' (icon well left, label
  * over the value: the full-width Driving time card).
  */
@@ -22,10 +22,10 @@ export default function StatCard({
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const tc = {
-    // White card: grey icon, blue number.
-    surface: { bg: c.card, fg: c.accent, muted: c.textMuted, icon: c.textMuted },
+    // White card: grey icon.
+    surface: { bg: c.card, fg: c.text, muted: c.textMuted, icon: c.textMuted },
     // Wide Driving time card: blue icon in a round blue well.
-    accent: { bg: c.card, fg: c.accent, muted: c.textMuted, icon: c.accent },
+    accent: { bg: c.card, fg: c.text, muted: c.textMuted, icon: c.accent },
     warning: {
       bg: c.warningContainer,
       fg: c.onWarningContainer,

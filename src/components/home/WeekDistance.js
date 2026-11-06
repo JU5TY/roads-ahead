@@ -143,6 +143,6 @@ const makeStyles = (c) => ({
   body: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: 14 },
   today: { width: 92, paddingBottom: 20 },
   chart: { flex: 1, height: CHART_H },
-  value: { color: c.accent },
+  value: { color: c.text },
   todayLabel: { fontFamily: type.body.fontFamily, marginTop: 6 },
 });

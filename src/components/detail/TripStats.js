@@ -182,7 +182,7 @@ const makeStyles = (c) => ({
     marginTop: 18,
     marginHorizontal: 4,
   },
-  heroValue: { ...type.total, color: c.accent },
+  heroValue: { ...type.total, color: c.text },
   heroUnit: { ...type.totalUnit, color: c.textMuted },
   chips: { flexDirection: 'row', gap: 8, marginTop: 16 },
   chip: {
