@@ -12,7 +12,7 @@ const dayWithYear = (ts) =>
 /**
  * { kicker, title, subtitle, stats, drivingMs, countries } for the card. `drive` is set when
  * one drive of a longer trip is shared; flags only show for two or more countries,
- * and `drivingMs` is null when every drive's times are hidden. The subtitle ends with
+ * and `drivingMs` is null when every drive's times are hidden. The subtitle starts with
  * the one vehicle driven, if there is one, from the Garage's `vehicles`.
  */
 export function shareCardContent(trip, drive = null, vehicles = []) {
@@ -45,7 +45,7 @@ export function shareCardContent(trip, drive = null, vehicles = []) {
     title,
     // An unnamed trip is already titled by its route, so don't say it twice.
     subtitle:
-      [route === title ? null : route, vehicle ? vehicleLabel(vehicle) : null]
+      [vehicle ? vehicleLabel(vehicle) : null, route === title ? null : route]
         .filter(Boolean)
         .join(' · ') || null,
     stats: summarizeDrives(drives),
