@@ -16,10 +16,10 @@ import AppLogo from '../AppLogo';
 import { useLandPath } from '../DrawnLand';
 import Icon from '../ui/Icon';
 
-// Laid out on a 358 x 400 grid, like the share card's, and scaled to the screen;
+// Laid out on a 358 x 372 grid, like the share card's, and scaled to the screen;
 // the status bar's height is added above it.
 const WIDTH = 358;
-const HEIGHT = 400;
+const HEIGHT = 372;
 const ROUTE_BOTTOM = 280; // above the text, and where the fade is still light
 const ROUTE_MARGIN = 20;
 const PIN_BELOW = 10; // routes drawn smaller than this are a pin
