@@ -89,9 +89,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={{ paddingTop: insets.top + spacing.md }}>
-        <YourMap trips={trips} units={units} />
-      </View>
+      <YourMap trips={trips} units={units} />
       <WeekDistance trips={trips} units={units} now={now} />
       <SectionHeader
         variant="overline"

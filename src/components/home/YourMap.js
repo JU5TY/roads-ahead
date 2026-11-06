@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Svg, { Polyline } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, G, LinearGradient, Path, Polyline, Rect, Stop } from 'react-native-svg';
 
-import { useStyles } from '../../hooks/useTheme';
+import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getDriveRoutePreview } from '../../storage/driveStorage';
 import { pressedOpacity, spacing, type } from '../../theme';
 import { driveGaps, splitAtCrossings } from '../../utils/crossings';
@@ -11,14 +12,16 @@ import { distanceParts } from '../../utils/format';
 import { fitInBox } from '../../utils/routeOutline';
 import { computeTotals, firstDriveMonth, groupIntoDays } from '../../utils/tripSummary';
 import AppLogo from '../AppLogo';
-import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
+import { useLandPath } from '../DrawnLand';
 import Icon from '../ui/Icon';
 
-// Laid out on a 358 x 400 grid, like the share card's, and scaled to the screen.
+// Laid out on a 358 x 400 grid, like the share card's, and scaled to the screen;
+// the status bar's height is added above it.
 const WIDTH = 358;
 const HEIGHT = 400;
 const TEXT_TOP = 308;
 const ROUTE_MARGIN = 30;
+const FADE_TOP = 200; // from here the map fades into the page
 const POINTS_PER_DRIVE = 80;
 
 // The last routes drawn, so coming back to Home doesn't reload every drive.
@@ -67,21 +70,34 @@ function useAllRoutes(trips) {
 }
 
 /**
- * The top of Home: every road you've driven on a drawn map (nothing to load),
- * the all-time distance and since when. The latest trip is bold, everything else
- * faint; ferries, tunnels and pauses are dotted. Its expand button opens the full map.
- * `trips` newest first.
+ * The top of Home, edge to edge and fading into the page: every road you've
+ * driven on a drawn map (nothing to load), the all-time distance and since when.
+ * The latest trip is bold, everything else faint; ferries, tunnels and pauses are
+ * dotted. Its expand button opens the full map. `trips` newest first.
  */
 export default function YourMap({ trips, units }) {
+  const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const parts = useAllRoutes(trips);
-  const width = screenWidth - 2 * spacing.md;
+  const top = insets.top * (WIDTH / width); // the status bar, in grid units
   const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
 
   const routes = useMemo(() => parts.map((p) => p.coordinates), [parts]);
   const fit = useMemo(() => fitInBox(routes, WIDTH, TEXT_TOP, ROUTE_MARGIN), [routes]);
-  const land = useLandPath(fit, WIDTH, HEIGHT);
+  // Land reaches up behind the status bar, so it's drawn from the top of the banner.
+  const landFit = useMemo(
+    () =>
+      fit && {
+        project: (p) => {
+          const [x, y] = fit.project(p);
+          return [x, y + top];
+        },
+      },
+    [fit, top]
+  );
+  const land = useLandPath(landFit, WIDTH, HEIGHT + top);
   // Older routes first, so the latest trip is drawn on top.
   const lines = useMemo(
     () => [...parts.filter((p) => p.day === null), ...parts.filter((p) => p.day !== null)],
@@ -89,39 +105,61 @@ export default function YourMap({ trips, units }) {
   );
 
   return (
-    <View style={[styles.card, { width, height: width * (HEIGHT / WIDTH) }]}>
+    <View style={[styles.banner, { height: width * (HEIGHT / WIDTH) + insets.top }]}>
       <Svg
         width="100%"
         height="100%"
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 0 ${WIDTH} ${HEIGHT + top}`}
         style={StyleSheet.absoluteFill}
         accessible={false}
       >
-        <DrawnLand path={land} width={WIDTH} height={HEIGHT} fadeEnd={305} />
-        {fit
-          ? lines.map((p, i) => (
+        <Defs>
+          <LinearGradient id="yourMapFade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={c.background} stopOpacity={0} />
+            <Stop offset="0.25" stopColor={c.background} stopOpacity={0.15} />
+            <Stop offset="0.5" stopColor={c.background} stopOpacity={0.45} />
+            <Stop offset="0.75" stopColor={c.background} stopOpacity={0.8} />
+            <Stop offset="1" stopColor={c.background} stopOpacity={1} />
+          </LinearGradient>
+        </Defs>
+        {/* The stroke closes hairline gaps where neighbouring countries meet. */}
+        {land ? <Path d={land} fill={c.track} stroke={c.track} strokeWidth={1.2} /> : null}
+        <Rect
+          y={FADE_TOP + top}
+          width={WIDTH}
+          height={HEIGHT - FADE_TOP}
+          fill="url(#yourMapFade)"
+        />
+        {fit ? (
+          <G transform={`translate(0 ${top})`}>
+            {lines.map((p, i) => (
               <Polyline
                 key={i}
                 points={fit.points(p.coordinates)}
                 fill="none"
-                stroke="#FFFFFF"
+                stroke={c.accent}
                 strokeOpacity={p.day === null ? 0.55 : 1}
                 strokeWidth={p.day === null ? 2.5 : 4}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeDasharray={p.crossing !== null ? '0.1 7' : undefined}
               />
-            ))
-          : null}
+            ))}
+          </G>
+        ) : null}
       </Svg>
       <Pressable
         onPress={() => router.push('/your-map')}
         hitSlop={4}
         accessibilityRole="button"
         accessibilityLabel="Open your map"
-        style={({ pressed }) => [styles.expand, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.expand,
+          { top: insets.top + spacing.md },
+          pressed && styles.pressed,
+        ]}
       >
-        <Icon name="open_in_full" size={20} color="#202124" />
+        <Icon name="open_in_full" size={20} color={c.text} />
       </Pressable>
       <View style={styles.footer}>
         <View style={styles.flex}>
@@ -140,18 +178,17 @@ export default function YourMap({ trips, units }) {
 }
 
 const makeStyles = (c) => ({
-  card: { borderRadius: 16, overflow: 'hidden', backgroundColor: MAP_BLUE },
+  banner: { marginHorizontal: -spacing.md, overflow: 'hidden', backgroundColor: c.card },
   pressed: { opacity: pressedOpacity },
   expand: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    right: spacing.md,
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.floating,
     shadowColor: c.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -160,16 +197,17 @@ const makeStyles = (c) => ({
   },
   footer: {
     position: 'absolute',
-    left: 24,
-    right: 24,
+    // In line with the section titles below.
+    left: 20,
+    right: 20,
     bottom: 24,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 12,
   },
   flex: { flex: 1, minWidth: 0 },
-  total: { ...type.total, color: '#FFFFFF' },
-  totalUnit: { ...type.totalUnit, color: MAP_PALE },
-  since: { color: MAP_PALE, marginTop: 2 },
+  total: { ...type.total, color: c.text },
+  totalUnit: { ...type.totalUnit, color: c.textMuted },
+  since: { color: c.textMuted, marginTop: 2 },
   logo: { borderRadius: 18, borderWidth: 1, borderColor: '#FFFFFF' },
 });
