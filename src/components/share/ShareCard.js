@@ -1,10 +1,11 @@
 import { Image as ExpoImage } from 'expo-image';
 import { useMemo } from 'react';
-import { Image, Platform, Text, View } from 'react-native';
+import { Animated, Image, Platform, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Polyline, Rect, Stop } from 'react-native-svg';
 
 import { fonts } from '../../theme';
 import { distanceParts, formatDurationShort } from '../../utils/format';
+import { CENTRED, MAX_ZOOM, coverSize, cropTransform } from '../../utils/photoCrop';
 import { fitInBox } from '../../utils/routeOutline';
 import AppLogo from '../AppLogo';
 import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
@@ -31,14 +32,33 @@ const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
 
 /**
  * Gallery photos: expo-image on iPhone (its photo library addresses), React Native's
- * on Android, whose bitmaps can be drawn into the captured image.
+ * on Android, whose bitmaps can be drawn into the captured image. Placed by `crop`, or
+ * by `motion` while it's being dragged, once its `aspect` is known; centred until then.
  */
-function Photo({ uri, onLoad, onError }) {
-  const style = { position: 'absolute', width: '100%', height: '100%' };
-  return Platform.OS === 'android' ? (
-    <Image source={{ uri }} style={style} resizeMode="cover" onLoad={onLoad} onError={onError} />
-  ) : (
-    <ExpoImage source={{ uri }} style={style} contentFit="cover" onLoad={onLoad} onError={onError} />
+function Photo({ uri, aspect, crop, motion, frameWidth, frameHeight, onLoad, onError }) {
+  const style = { width: '100%', height: '100%' };
+  const image =
+    Platform.OS === 'android' ? (
+      <Image source={{ uri }} style={style} resizeMode="cover" onLoad={onLoad} onError={onError} />
+    ) : (
+      <ExpoImage source={{ uri }} style={style} contentFit="cover" onLoad={onLoad} onError={onError} />
+    );
+  if (!aspect) return <View style={{ position: 'absolute', ...style }}>{image}</View>;
+  const cover = coverSize(aspect, frameWidth, frameHeight);
+  const { translateX, translateY, scale } =
+    motion ?? cropTransform(crop, aspect, frameWidth, frameHeight);
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: cover.width * MAX_ZOOM,
+        height: cover.height * MAX_ZOOM,
+        transformOrigin: 'left top',
+        transform: [{ translateX }, { translateY }, { scale }],
+      }}
+    >
+      {image}
+    </Animated.View>
   );
 }
 
@@ -74,6 +94,8 @@ function RouteLines({ segments, fit }) {
  * The image that gets shared: the trip's route on a drawn map, or on `photoUri`
  * darkened for the text. `format` is its shape: 'post' (4:5) or 'story' (9:16).
  * `content` comes from shareCardContent(), `segments` from useTripPreview().
+ * `photoAspect` and `photoCrop` place the photo (see photoCrop.js); `photoMotion`
+ * moves it instead, from usePhotoCrop().
  */
 export default function ShareCard({
   content,
@@ -82,11 +104,15 @@ export default function ShareCard({
   width,
   format = 'post',
   photoUri,
+  photoAspect,
+  photoCrop = CENTRED,
+  photoMotion,
   onPhotoLoad,
   onPhotoError,
 }) {
   const { height, routeTop, routeBottom, textBottom, fadeEnd, shade } = FORMATS[format];
   const u = width / WIDTH;
+  const frameHeight = width * (height / WIDTH);
   const routes = useMemo(
     () => (segments ?? []).map((s) => s.coordinates).filter((r) => r.length > 1),
     [segments]
@@ -107,8 +133,19 @@ export default function ShareCard({
   });
 
   return (
-    <View style={{ width, height: width * (height / WIDTH), backgroundColor: BLUE, overflow: 'hidden' }}>
-      {photoUri ? <Photo uri={photoUri} onLoad={onPhotoLoad} onError={onPhotoError} /> : null}
+    <View style={{ width, height: frameHeight, backgroundColor: BLUE, overflow: 'hidden' }}>
+      {photoUri ? (
+        <Photo
+          uri={photoUri}
+          aspect={photoAspect}
+          crop={photoCrop}
+          motion={photoMotion}
+          frameWidth={width}
+          frameHeight={frameHeight}
+          onLoad={onPhotoLoad}
+          onError={onPhotoError}
+        />
+      ) : null}
       <Svg
         width="100%"
         height="100%"

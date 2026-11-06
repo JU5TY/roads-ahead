@@ -6,6 +6,7 @@ import {
   PixelRatio,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
   useWindowDimensions,
@@ -20,6 +21,7 @@ import Icon from '../components/ui/Icon';
 import IconButton from '../components/ui/IconButton';
 import PremiumTag from '../components/ui/PremiumTag';
 import { useSettings } from '../context/SettingsContext';
+import { usePhotoCrop } from '../hooks/usePhotoCrop';
 import { usePhotos } from '../hooks/usePhotos';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { useTripPreview } from '../hooks/useTripPreview';
@@ -27,6 +29,7 @@ import { shareCardImage } from '../services/shareService';
 import { getTrip } from '../storage/tripStorage';
 import { listVehicles } from '../storage/vehicleStorage';
 import { pressedOpacity, spacing, type } from '../theme';
+import { CENTRED, fitCrop } from '../utils/photoCrop';
 import { fitInBox } from '../utils/routeOutline';
 import { shareCardContent } from '../utils/shareCard';
 
@@ -85,6 +88,8 @@ export default function ShareScreen() {
   const [format, setFormat] = useState('post');
   const [photoUri, setPhotoUri] = useState(null);
   const [loadedUri, setLoadedUri] = useState(null); // the photo the captured card has drawn
+  const [crops, setCrops] = useState({}); // the photo's framing in each format
+  const [framed, setFramed] = useState(false); // they've moved a photo, so know they can
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +116,26 @@ export default function ShareScreen() {
   const segments = useTripPreview(previewOf, { points: CARD_POINTS });
   const { photos, access, allow } = usePhotos([[drives?.[0]?.startedAt, drives?.at(-1)?.endedAt]]);
 
+  const { ratio } = FORMATS.find((f) => f.id === format);
+  const previewHeight = screenHeight - AROUND_PREVIEW - insets.top - insets.bottom;
+  const previewWidth = Math.min(
+    screenWidth - 2 * spacing.md,
+    Math.max(MIN_PREVIEW_WIDTH, previewHeight * ratio)
+  );
+  const photo = photoUri ? photos.find((p) => p.id === photoUri) : null;
+  const photoAspect = photo?.width && photo?.height ? photo.width / photo.height : null;
+  const crop = crops[format] ?? CENTRED;
+  const cropper = usePhotoCrop({
+    aspect: photoAspect,
+    width: previewWidth,
+    height: previewWidth / ratio,
+    crop,
+    onChange: (next) => {
+      setCrops((all) => ({ ...all, [format]: next }));
+      setFramed(true);
+    },
+  });
+
   if (!trip) {
     return (
       <View style={[styles.screen, styles.center]}>
@@ -122,11 +147,6 @@ export default function ShareScreen() {
   const content = shareCardContent(trip, drive, vehicles);
   const ready = segments !== null && (!photoUri || loadedUri === photoUri);
   const canAsk = access === 'ask' || access === 'blocked';
-  const previewHeight = screenHeight - AROUND_PREVIEW - insets.top - insets.bottom;
-  const previewWidth = Math.min(
-    screenWidth - 2 * spacing.md,
-    Math.max(MIN_PREVIEW_WIDTH, previewHeight * FORMATS.find((f) => f.id === format).ratio)
-  );
 
   return (
     <View style={styles.screen}>
@@ -139,6 +159,8 @@ export default function ShareScreen() {
           width={CAPTURE_WIDTH}
           format={format}
           photoUri={photoUri}
+          photoAspect={photoAspect}
+          photoCrop={photoAspect ? fitCrop(crop, photoAspect, 1, 1 / ratio) : CENTRED}
           onPhotoLoad={() => setLoadedUri(photoUri)}
           // A photo that won't open falls back to the route card rather than blocking Share.
           onPhotoError={() => setPhotoUri(null)}
@@ -182,7 +204,19 @@ export default function ShareScreen() {
             width={previewWidth}
             format={format}
             photoUri={photoUri}
+            photoAspect={photoAspect}
+            photoMotion={cropper.transform}
           />
+          {photoAspect ? (
+            <>
+              <View {...cropper.panHandlers} style={StyleSheet.absoluteFill} />
+              {framed ? null : (
+                <View style={styles.hint} pointerEvents="none">
+                  <Text style={[type.label, styles.hintText]}>Pinch and drag to frame</Text>
+                </View>
+              )}
+            </>
+          ) : null}
         </View>
 
         <View style={styles.choices}>
@@ -225,6 +259,7 @@ export default function ShareScreen() {
                       onPress={() => {
                         if (item.id === photoUri) return;
                         setLoadedUri(null);
+                        setCrops({});
                         setPhotoUri(item.id);
                       }}
                     />
@@ -265,6 +300,17 @@ const makeStyles = (c) => ({
   formatSelected: { backgroundColor: c.card },
   text: { color: c.text },
   preview: { marginTop: 12, alignSelf: 'center', borderRadius: 16, overflow: 'hidden' },
+  // On the card's photo, so its colours stay the same in light and dark.
+  hint: {
+    position: 'absolute',
+    top: 12,
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  hintText: { color: '#FFFFFF' },
   choices: { flexDirection: 'row', gap: 16, marginTop: 16 },
   // Route's label sits on the same line as Photos and its taller Premium tag.
   choiceLabel: { height: 24, marginBottom: 6, textAlignVertical: 'center', lineHeight: 24 },
