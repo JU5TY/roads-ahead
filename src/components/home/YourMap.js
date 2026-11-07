@@ -21,6 +21,12 @@ const WIDTH = 358;
 const HEIGHT = 348;
 const ROUTE_BOTTOM = 280; // above the text, and where the fade is still light
 const ROUTE_MARGIN = 20;
+// The share card's proportions: the latest trip's line, the older ones finer, and
+// solid dots the colour of the line at its start and finish.
+const LINE = 3.3;
+const OLDER_LINE = 2;
+const DOT = 5;
+const HALO = 14;
 const FADE_TOP = 200; // from here the map fades into the page
 const POINTS_PER_DRIVE = 80;
 
@@ -107,6 +113,12 @@ export default function YourMap({ trips, units, scrollY }) {
     [fit, top]
   );
   const land = useLandPath(landFit, WIDTH, HEIGHT + top);
+  // The latest trip's start and finish, where its dots go.
+  const ends = useMemo(() => {
+    const latest = parts.filter((p) => p.day !== null && p.coordinates.length);
+    if (!fit || !latest.length) return [];
+    return [latest[0].coordinates[0], latest.at(-1).coordinates.at(-1)].map(fit.project);
+  }, [parts, fit]);
   // Older routes first, so the latest trip is drawn on top.
   const lines = useMemo(
     () => [...parts.filter((p) => p.day === null), ...parts.filter((p) => p.day !== null)],
@@ -135,7 +147,7 @@ export default function YourMap({ trips, units, scrollY }) {
                   fill="none"
                   stroke={c.accent}
                   strokeOpacity={p.day === null ? 0.55 : 1}
-                  strokeWidth={p.day === null ? 2.5 : 4}
+                  strokeWidth={p.day === null ? OLDER_LINE : LINE}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeDasharray={p.crossing !== null ? '0.1 7' : undefined}
@@ -168,8 +180,8 @@ export default function YourMap({ trips, units, scrollY }) {
           fill="url(#yourMapFade)"
         />
       </Svg>
-      {/* Above the fade, so a pin on a south coast stays bold. */}
-      {pin ? (
+      {/* Above the fade, so a dot on a south coast stays bold. */}
+      {pin || ends.length ? (
         <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: mapShift }] }]}>
           <Svg
             width="100%"
@@ -177,8 +189,14 @@ export default function YourMap({ trips, units, scrollY }) {
             viewBox={`0 0 ${WIDTH} ${HEIGHT + top}`}
             accessible={false}
           >
-            <Circle cx={pin[0]} cy={pin[1] + top} r={15} fill={c.accent} fillOpacity={0.18} />
-            <Circle cx={pin[0]} cy={pin[1] + top} r={6} fill={c.accent} stroke={c.card} strokeWidth={2} />
+            {pin ? (
+              <>
+                <Circle cx={pin[0]} cy={pin[1] + top} r={HALO} fill={c.accent} fillOpacity={0.18} />
+                <Circle cx={pin[0]} cy={pin[1] + top} r={DOT} fill={c.accent} />
+              </>
+            ) : (
+              ends.map(([x, y], i) => <Circle key={i} cx={x} cy={y + top} r={DOT} fill={c.accent} />)
+            )}
           </Svg>
         </Animated.View>
       ) : null}
