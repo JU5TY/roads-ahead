@@ -18,7 +18,7 @@ export const COLORS = {
   sea: '#174EA6',
   land: '#2F6FD0',
   line: '#FFFFFF',
-  dot: '#1A73E8', // the app's blue: start, finish, and a short drive's dot
+  dot: '#174EA6', // the sea's blue, darker than land: start, finish, and a short drive's dot
 };
 
 // The route on the map, and in the circle (both drawn in their own box's units).

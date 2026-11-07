@@ -26,7 +26,6 @@ const FORMATS = {
 };
 const BLUE = MAP_BLUE;
 const WHITE = '#FFFFFF';
-const APP_BLUE = '#1A73E8'; // the start, finish and short-drive dots
 const PALE_ON_BLUE = MAP_PALE;
 const PALE_ON_PHOTO = '#E8EAED';
 const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
@@ -40,7 +39,7 @@ function RouteLines({ segments, fit }) {
     return (
       <>
         <Circle cx={pin[0]} cy={pin[1]} r={17} fill={WHITE} fillOpacity={0.25} />
-        <Circle cx={pin[0]} cy={pin[1]} r={7} fill={APP_BLUE} stroke={WHITE} strokeWidth={3} />
+        <Circle cx={pin[0]} cy={pin[1]} r={7} fill={BLUE} stroke={WHITE} strokeWidth={3} />
       </>
     );
   }
@@ -62,8 +61,8 @@ function RouteLines({ segments, fit }) {
             strokeDasharray={s.dotted ? '0.1 9' : undefined}
           />
         ))}
-      <Circle cx={startX} cy={startY} r={8} fill={APP_BLUE} stroke={WHITE} strokeWidth={3} />
-      <Circle cx={endX} cy={endY} r={8} fill={APP_BLUE} stroke={WHITE} strokeWidth={3} />
+      <Circle cx={startX} cy={startY} r={8} fill={BLUE} stroke={WHITE} strokeWidth={3} />
+      <Circle cx={endX} cy={endY} r={8} fill={BLUE} stroke={WHITE} strokeWidth={3} />
     </>
   );
 }
