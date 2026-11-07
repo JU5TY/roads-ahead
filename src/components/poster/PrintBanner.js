@@ -42,7 +42,6 @@ export default function PrintBanner({ trip, drive, vehicles, units }) {
     >
       <View style={styles.thumb}>{spec ? <PosterCard spec={spec} width={THUMB_WIDTH} /> : null}</View>
       <View style={styles.flex}>
-        <Text style={[type.smallStrong, styles.kicker]}>NEW</Text>
         <Text style={[type.section, styles.text]}>Print this {what}</Text>
         <Text style={[type.bodySmall, styles.muted]}>
           An A3 or A2 poster of your route or photo, from {SIZES.A3.price}
@@ -79,7 +78,6 @@ const makeStyles = (c) => ({
     elevation: 3,
   },
   flex: { flex: 1, gap: 2 },
-  kicker: { color: c.accent, letterSpacing: 0.4 },
   text: { color: c.text },
   muted: { color: c.textMuted },
 });
