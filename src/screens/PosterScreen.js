@@ -211,6 +211,11 @@ export default function PosterScreen() {
             >
               <Text style={[type.label, size === s.label ? styles.text : styles.muted]}>
                 {s.label}
+                {/* Paper sizes mean more in millimetres than in A numbers. */}
+                <Text style={type.bodySmall}>
+                  {' '}
+                  · {s.mm[0]} × {s.mm[1]} mm
+                </Text>
               </Text>
             </Pressable>
           ))}
