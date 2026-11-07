@@ -33,7 +33,7 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
           <View style={styles.flex}>
             <Text style={[type.bodyStrong, styles.text]}>{"We'll find your trip photos"}</Text>
             <Text style={[type.bodySmall, styles.muted]}>
-              We match them using the time they were taken, and they stay in your gallery.
+              We match them using the time they were taken.
             </Text>
             <Button
               size="small"
