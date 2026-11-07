@@ -302,7 +302,7 @@ export default function PosterScreen() {
           </Text>
         )}
         <Button
-          label={ordering ? 'Opening checkout…' : `Order print · ${SIZES[size].price}`}
+          label={ordering ? 'Preparing your poster…' : `Order print · ${SIZES[size].price}`}
           disabled={ordering || (!!photoId && !photoAspect)}
           onPress={order}
         />

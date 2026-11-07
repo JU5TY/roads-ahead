@@ -1,31 +1,19 @@
-// The Roads Ahead print server, a Cloudflare Worker. The app sends a poster's spec
-// (and photo), pays on Stripe's page, and once Stripe says it's paid a queue renders
-// the PDF to R2 and hands it to Prodigi, whose dispatch webhook emails the tracking.
-import Stripe from 'stripe';
-
+// The Roads Ahead print server, a Cloudflare Worker on the free plan. The app sends
+// the poster's PDF and gets back a Stripe page for the address and payment. When
+// Stripe says it's paid, the order goes straight to Prodigi to print and post.
+// Stripe and Prodigi keep the records, R2 keeps the PDFs for 14 days, and Stripe
+// retries its webhook (and emails us) if Prodigi can't be reached.
 import { SIZES } from '../../../src/utils/posterLayout.js';
-import lightFont from '../fonts/GoogleSansFlex-Light.ttf';
-import regularFont from '../fonts/GoogleSansFlex-Regular.ttf';
-import { problemEmail, sendEmail, shippedEmail } from './email.js';
-import {
-  createOrder,
-  files,
-  forgetOldCustomers,
-  getOrder,
-  getOrderByProdigiId,
-  randomId,
-  updateOrder,
-} from './orders.js';
-import { getShipments, submitPrint, verifyWebhook } from './prodigi.js';
-import { renderPoster } from './render.js';
-import { specProblem } from './validate.js';
+import { submitPrint } from './prodigi.js';
+import { createCheckout, verifiedEvent } from './stripe.js';
 
-const MAX_SPEC_BYTES = 1_500_000;
-const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
-const MAX_RENDER_TRIES = 5; // the queue's max_retries, plus the first go
-const FORGET_CUSTOMERS_AFTER_MS = 60 * 24 * 60 * 60 * 1000;
-const PHOTO_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png' };
+const MAX_PDF_BYTES = 30 * 1024 * 1024; // an A2 photo poster is about the photo's size
+const MAX_TITLE = 120;
 const ORDER_ID = /^[0-9a-f]{32}$/;
+// Easy to read out over the phone: no 0/O, 1/I/L, U.
+const REF_LETTERS = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+const pdfFile = (id) => `orders/${id}/poster.pdf`;
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -34,8 +22,11 @@ const json = (body, status = 200) =>
   });
 const problem = (message, status = 400) => json({ error: message, message }, status);
 
-const stripeFor = (env) =>
-  new Stripe(env.STRIPE_SECRET_KEY, { httpClient: Stripe.createFetchHttpClient() });
+const random = (n) => crypto.getRandomValues(new Uint8Array(n));
+const newOrder = () => ({
+  id: [...random(16)].map((b) => b.toString(16).padStart(2, '0')).join(''),
+  ref: `RA-${[...random(5)].map((b) => REF_LETTERS[b % REF_LETTERS.length]).join('')}`,
+});
 
 /** The token in a PDF's address, so only Prodigi (who's given it) can fetch it. */
 async function assetToken(env, id) {
@@ -53,74 +44,32 @@ async function assetToken(env, id) {
     .join('');
 }
 
-// --- The app -----------------------------------------------------------------
-
-/** POST /orders { spec } -> { orderId, ref, uploadUrl } (uploadUrl for a photo poster). */
-async function postOrder(request, env) {
-  if (Number(request.headers.get('Content-Length') ?? 0) > MAX_SPEC_BYTES) {
-    return problem('Poster too large', 413);
+/**
+ * POST /orders?size=A3&title=… with the poster's PDF as the body
+ * -> { orderId, ref, checkoutUrl }. The price comes from the size, here.
+ */
+async function postOrder(request, env, url) {
+  const size = SIZES[url.searchParams.get('size')];
+  if (!size) return problem('Unknown size');
+  const title = (url.searchParams.get('title') ?? '').slice(0, MAX_TITLE);
+  if ((request.headers.get('Content-Type') ?? '').split(';')[0].trim() !== 'application/pdf') {
+    return problem('Expected a PDF', 415);
   }
-  const text = await request.text();
-  if (text.length > MAX_SPEC_BYTES) return problem('Poster too large', 413);
-  let spec;
-  try {
-    ({ spec } = JSON.parse(text));
-  } catch {
-    return problem('Bad request');
-  }
-  const why = specProblem(spec);
-  if (why) return problem(why);
-
-  const id = randomId();
-  await env.POSTERS.put(files.spec(id), JSON.stringify(spec), {
-    httpMetadata: { contentType: 'application/json' },
-  });
-  const ref = await createOrder(env.DB, {
-    id,
-    size: spec.size,
-    edition: spec.edition,
-    title: spec.lines.title.text,
-  });
-  return json({
-    orderId: id,
-    ref,
-    uploadUrl: spec.edition === 'photo' ? `/orders/${id}/photo` : null,
-  });
-}
-
-/** PUT /orders/:id/photo with a JPEG or PNG body. */
-async function putPhoto(request, env, id) {
-  const order = await getOrder(env.DB, id);
-  if (!order || order.edition !== 'photo') return problem('No such order', 404);
-  if (order.status !== 'pending') return problem('This order is already paid for', 409);
-  const type = (request.headers.get('Content-Type') ?? '').split(';')[0].trim();
-  if (!PHOTO_TYPES[type]) return problem("This photo's format can't be printed yet", 415);
   const length = Number(request.headers.get('Content-Length') ?? 0);
-  if (!length || length > MAX_PHOTO_BYTES) return problem('This photo is too large to send', 413);
+  if (!length || length > MAX_PDF_BYTES) return problem('This poster is too large to send', 413);
 
-  await env.POSTERS.put(files.photo(id), request.body, { httpMetadata: { contentType: type } });
-  // Check it's really the image it says it is before taking money for it.
-  const head = await env.POSTERS.get(files.photo(id), { range: { offset: 0, length: 8 } });
-  const bytes = new Uint8Array(await head.arrayBuffer());
-  const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8;
-  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
-  if ((type === 'image/jpeg' && !isJpeg) || (type === 'image/png' && !isPng)) {
-    await env.POSTERS.delete(files.photo(id));
-    return problem("This photo's format can't be printed yet", 415);
+  const order = newOrder();
+  await env.POSTERS.put(pdfFile(order.id), request.body, {
+    httpMetadata: { contentType: 'application/pdf' },
+  });
+  const head = await env.POSTERS.get(pdfFile(order.id), { range: { offset: 0, length: 5 } });
+  if (new TextDecoder().decode(await head.arrayBuffer()) !== '%PDF-') {
+    await env.POSTERS.delete(pdfFile(order.id));
+    return problem('Expected a PDF', 415);
   }
-  await updateOrder(env.DB, id, { has_photo: 1 }, { from: ['pending'] });
-  return json({ ok: true });
-}
 
-/** POST /orders/:id/checkout -> { checkoutUrl }: Stripe's page for the address and payment. */
-async function postCheckout(env, id) {
-  const order = await getOrder(env.DB, id);
-  if (!order) return problem('No such order', 404);
-  if (order.status !== 'pending') return problem('This order is already paid for', 409);
-  if (order.edition === 'photo' && !order.has_photo) return problem('The photo is missing');
-
-  const size = SIZES[order.size];
-  const session = await stripeFor(env).checkout.sessions.create(
+  const session = await createCheckout(
+    env,
     {
       mode: 'payment',
       line_items: [
@@ -130,7 +79,7 @@ async function postCheckout(env, id) {
             currency: 'gbp',
             unit_amount: size.pence,
             product_data: {
-              name: `${size.label} poster${order.title ? `: ${order.title}` : ''}`,
+              name: `${size.label} poster${title ? `: ${title}` : ''}`,
               description: `Fine-art print, ${size.mm[0]} × ${size.mm[1]} mm. Free UK delivery.`,
             },
           },
@@ -138,23 +87,67 @@ async function postCheckout(env, id) {
       ],
       shipping_address_collection: { allowed_countries: ['GB'] },
       phone_number_collection: { enabled: true },
-      client_reference_id: id,
-      metadata: { orderId: id, ref: order.ref },
-      success_url: `${env.PUBLIC_URL}/done?order=${id}`,
+      client_reference_id: order.ref,
+      metadata: { orderId: order.id, ref: order.ref, size: size.label },
+      success_url: `${env.PUBLIC_URL}/done?order=${order.id}`,
       cancel_url: `${env.PUBLIC_URL}/cancelled`,
     },
-    // Tapping Order twice opens the same page rather than a second one.
-    { idempotencyKey: `checkout-${id}` }
-  );
-  await updateOrder(env.DB, id, { stripe_session: session.id }, { from: ['pending'] });
-  return json({ checkoutUrl: session.url });
+    `checkout-${order.id}`
+  ).catch(async (err) => {
+    await env.POSTERS.delete(pdfFile(order.id));
+    throw err;
+  });
+  return json({ orderId: order.id, ref: order.ref, checkoutUrl: session.url });
 }
 
-/** GET /orders/:id -> what the Order placed screen shows, nothing personal. */
-async function getOrderSummary(env, id) {
-  const order = await getOrder(env.DB, id);
-  if (!order) return problem('No such order', 404);
-  return json({ ref: order.ref, size: order.size, title: order.title, status: order.status });
+/**
+ * POST /stripe/webhook: a paid checkout is sent to Prodigi. If that fails, the
+ * error tells Stripe to try again later; Stripe emails us if it keeps failing.
+ */
+async function stripeWebhook(request, env) {
+  const event = await verifiedEvent(env, request.headers.get('Stripe-Signature'), await request.text());
+  if (!event) return new Response('Bad signature', { status: 400 });
+  const paidEvents = ['checkout.session.completed', 'checkout.session.async_payment_succeeded'];
+  const session = event.data.object;
+  if (!paidEvents.includes(event.type) || session.payment_status !== 'paid') {
+    return new Response('ok');
+  }
+  const { orderId: id, ref, size } = session.metadata ?? {};
+  if (!ORDER_ID.test(id ?? '') || !SIZES[size]) return new Response('Not a poster order');
+
+  if (!(await env.POSTERS.head(pdfFile(id)))) throw new Error(`No PDF for paid order ${ref}`);
+  const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
+  const address = shipping?.address;
+  if (!address?.line1) throw new Error(`No delivery address for order ${ref}`);
+  const customer = session.customer_details ?? {};
+  // Their email and phone let the courier send delivery updates.
+  const recipient = {
+    name: shipping.name ?? customer.name,
+    email: customer.email ?? undefined,
+    phoneNumber: customer.phone ?? undefined,
+    address: {
+      line1: address.line1,
+      line2: address.line2 ?? undefined,
+      townOrCity: address.city,
+      stateOrCounty: address.state ?? undefined,
+      postalOrZipCode: address.postal_code,
+      countryCode: address.country,
+    },
+  };
+  const assetUrl = `${env.PUBLIC_URL}/assets/${id}/${await assetToken(env, id)}.pdf`;
+  const prodigiId = await submitPrint(env, { id, ref, size }, recipient, assetUrl);
+  console.log('[order] sent to Prodigi', ref, prodigiId);
+  return new Response('ok');
+}
+
+/** GET /assets/:id/:token.pdf: the print file, for Prodigi. */
+async function getAsset(env, id, token) {
+  if (!ORDER_ID.test(id) || token !== (await assetToken(env, id))) {
+    return new Response('Not found', { status: 404 });
+  }
+  const pdf = await env.POSTERS.get(pdfFile(id));
+  if (!pdf) return new Response('Not found', { status: 404 });
+  return new Response(pdf.body, { headers: { 'Content-Type': 'application/pdf' } });
 }
 
 // --- Pages Stripe sends the browser back to ----------------------------------
@@ -192,161 +185,23 @@ const cancelledPage = () =>
     '<h1>No payment taken</h1><p>You can close this page and go back to Roads Ahead.</p>'
   );
 
-/** GET /assets/:id/:token.pdf: the print file, for Prodigi. */
-async function getAsset(env, id, token) {
-  if (!ORDER_ID.test(id) || token !== (await assetToken(env, id))) {
-    return new Response('Not found', { status: 404 });
-  }
-  const pdf = await env.POSTERS.get(files.pdf(id));
-  if (!pdf) return new Response('Not found', { status: 404 });
-  return new Response(pdf.body, { headers: { 'Content-Type': 'application/pdf' } });
-}
-
-// --- Stripe and Prodigi ------------------------------------------------------
-
-/** POST /stripe/webhook: a paid checkout queues the poster for printing. */
-async function stripeWebhook(request, env) {
-  const body = await request.text();
-  let event;
-  try {
-    event = await stripeFor(env).webhooks.constructEventAsync(
-      body,
-      request.headers.get('Stripe-Signature'),
-      env.STRIPE_WEBHOOK_SECRET,
-      undefined,
-      Stripe.createSubtleCryptoProvider()
-    );
-  } catch (err) {
-    console.warn('[stripe] bad signature', err.message);
-    return new Response('Bad signature', { status: 400 });
-  }
-  if (
-    event.type === 'checkout.session.completed' ||
-    event.type === 'checkout.session.async_payment_succeeded'
-  ) {
-    const session = event.data.object;
-    const id = session.metadata?.orderId;
-    if (session.payment_status === 'paid' && id) {
-      // Stripe can send an event more than once: only the first moves the order on.
-      const moved = await updateOrder(
-        env.DB,
-        id,
-        {
-          status: 'paid',
-          stripe_session: session.id,
-          email: session.customer_details?.email ?? null,
-          name: session.customer_details?.name ?? null,
-        },
-        { from: ['pending'] }
-      );
-      if (moved) await env.RENDER_QUEUE.send({ orderId: id });
-    }
-  }
-  return new Response('ok');
-}
-
-/** Stripe's delivery address, as Prodigi's recipient. */
-async function recipientFor(env, order) {
-  const session = await stripeFor(env).checkout.sessions.retrieve(order.stripe_session);
-  const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
-  const address = shipping?.address;
-  if (!address?.line1) throw new Error('No delivery address on the Stripe session');
-  return {
-    name: shipping.name ?? session.customer_details?.name,
-    email: session.customer_details?.email ?? undefined,
-    phoneNumber: session.customer_details?.phone ?? undefined,
-    address: {
-      line1: address.line1,
-      line2: address.line2 ?? undefined,
-      townOrCity: address.city,
-      stateOrCounty: address.state ?? undefined,
-      postalOrZipCode: address.postal_code,
-      countryCode: address.country,
-    },
-  };
-}
-
-/** The queue's work for one paid order: draw the PDF, store it, send it to Prodigi. */
-async function renderAndSubmit(env, id) {
-  const order = await getOrder(env.DB, id);
-  if (!order || order.status !== 'paid') return; // already sent, or not paid
-  const spec = await (await env.POSTERS.get(files.spec(id))).json();
-  let photo = null;
-  if (order.edition === 'photo') {
-    const file = await env.POSTERS.get(files.photo(id));
-    if (!file) throw new Error('The photo has gone');
-    photo = {
-      bytes: new Uint8Array(await file.arrayBuffer()),
-      type: PHOTO_TYPES[file.httpMetadata?.contentType] ?? 'jpg',
-    };
-  }
-  const pdf = await renderPoster({
-    spec,
-    fonts: { light: lightFont, regular: regularFont },
-    photo,
-  });
-  await env.POSTERS.put(files.pdf(id), pdf, { httpMetadata: { contentType: 'application/pdf' } });
-
-  const assetUrl = `${env.PUBLIC_URL}/assets/${id}/${await assetToken(env, id)}.pdf`;
-  const prodigiId = await submitPrint(env, order, await recipientFor(env, order), assetUrl);
-  await updateOrder(env.DB, id, { status: 'submitted', prodigi_id: prodigiId }, { from: ['paid'] });
-}
-
-/** POST /prodigi/webhook: dispatched emails the tracking; a failure asks us to step in. */
-async function prodigiWebhook(request, env) {
-  const body = await request.text();
-  if (!(await verifyWebhook(env, request.headers.get('X-Prodigi-Signature'), body))) {
-    return new Response('Bad signature', { status: 400 });
-  }
-  const event = JSON.parse(body);
-  const order = event.data?.orderId ? await getOrderByProdigiId(env.DB, event.data.orderId) : null;
-  if (!order) return new Response('ok'); // a ping, or not one of ours
-
-  if (event.type === 'shipment.dispatched') {
-    const shipments = await getShipments(env, order.prodigi_id);
-    const trackingUrl = shipments.find((s) => s.trackingUrl)?.trackingUrl ?? null;
-    const moved = await updateOrder(
-      env.DB,
-      order.id,
-      { status: 'shipped', tracking_url: trackingUrl },
-      { from: ['submitted'] }
-    );
-    if (moved) await sendEmail(env, shippedEmail(order, trackingUrl));
-  } else if (event.type === 'order.failed' || event.type === 'order.cancelled') {
-    await updateOrder(env.DB, order.id, { status: 'failed', error: event.type });
-    await sendEmail(env, problemEmail(env, order, `Prodigi says: ${event.type}.`));
-  }
-  return new Response('ok');
-}
-
 // --- The Worker --------------------------------------------------------------
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const parts = url.pathname.split('/').filter(Boolean);
-    const route = `${request.method} /${parts.map((p, i) => (i === 1 && parts[0] === 'orders' ? ':id' : p)).join('/')}`;
-    const id = parts[0] === 'orders' ? parts[1] : null;
-    if (id && !ORDER_ID.test(id)) return problem('No such order', 404);
-
+    const route = `${request.method} /${parts.join('/')}`;
     try {
       switch (route) {
         case 'POST /orders':
-          return await postOrder(request, env);
-        case 'PUT /orders/:id/photo':
-          return await putPhoto(request, env, id);
-        case 'POST /orders/:id/checkout':
-          return await postCheckout(env, id);
-        case 'GET /orders/:id':
-          return await getOrderSummary(env, id);
+          return await postOrder(request, env, url);
+        case 'POST /stripe/webhook':
+          return await stripeWebhook(request, env);
         case 'GET /done':
           return donePage(env, url);
         case 'GET /cancelled':
           return cancelledPage();
-        case 'POST /stripe/webhook':
-          return await stripeWebhook(request, env);
-        case 'POST /prodigi/webhook':
-          return await prodigiWebhook(request, env);
       }
       if (request.method === 'GET' && parts[0] === 'assets' && parts.length === 3) {
         return await getAsset(env, parts[1], parts[2].replace(/\.pdf$/, ''));
@@ -356,30 +211,5 @@ export default {
       console.error('[poster]', route, err);
       return problem('Something went wrong. Please try again.', 500);
     }
-  },
-
-  async queue(batch, env) {
-    for (const message of batch.messages) {
-      const { orderId } = message.body;
-      try {
-        await renderAndSubmit(env, orderId);
-        message.ack();
-      } catch (err) {
-        console.error('[render]', orderId, err);
-        if (message.attempts >= MAX_RENDER_TRIES) {
-          // Paid for but not printing: we sort it out by hand.
-          await updateOrder(env.DB, orderId, { status: 'failed', error: String(err).slice(0, 500) });
-          const order = await getOrder(env.DB, orderId);
-          if (order) await sendEmail(env, problemEmail(env, order, String(err)));
-          message.ack();
-        } else {
-          message.retry({ delaySeconds: 60 * message.attempts });
-        }
-      }
-    }
-  },
-
-  async scheduled(_controller, env) {
-    await forgetOldCustomers(env.DB, Date.now() - FORGET_CUSTOMERS_AFTER_MS);
   },
 };

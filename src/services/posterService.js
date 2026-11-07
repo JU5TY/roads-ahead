@@ -1,41 +1,34 @@
-// Ordering a printed poster: the print server (server/poster) takes the poster's
-// spec and, for a photo poster, the photo, then hands back a Stripe page for the
-// address and payment. Nothing else about the trip is sent.
-import { File } from 'expo-file-system';
-import { Asset } from 'expo-media-library';
+// Ordering a printed poster. The phone draws the print-ready PDF and sends it to the
+// print server (server/poster), which hands back a Stripe page for the address and
+// payment. Nothing else about the trip is sent.
+import { Asset as BundledAsset } from 'expo-asset';
+import { File, Paths } from 'expo-file-system';
+import { Asset as PhotoAsset } from 'expo-media-library';
 import { Linking } from 'react-native';
+
+import { fontFiles, fonts } from '../theme';
+import { renderPoster } from '../utils/posterPdf';
 
 // Set per build or update; without it the print page shows but can't take orders.
 const API = process.env.EXPO_PUBLIC_POSTER_API;
 export const printingOpen = !!API;
 
-// Formats the print server can put on paper as they are.
-const PHOTO_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
+// Formats that can go into the PDF as they are.
+const PHOTO_TYPES = { jpg: 'jpg', jpeg: 'jpg', png: 'png' };
 
 /** An error whose message can be shown as it is. */
 export class PosterOrderError extends Error {}
 
-async function call(path, options = {}) {
-  let res;
-  try {
-    res = await fetch(`${API}${path}`, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-    });
-  } catch {
-    throw new PosterOrderError("Couldn't reach the printer. Check your connection and try again.");
-  }
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.warn('[poster] request failed', path, res.status, body.error);
-    throw new PosterOrderError(body.message ?? 'Something went wrong. Please try again.');
-  }
-  return body;
+/** A file bundled with the app, such as a font, as bytes. */
+async function bundledBytes(module) {
+  const asset = BundledAsset.fromModule(module);
+  await asset.downloadAsync();
+  return new File(asset.localUri).bytes();
 }
 
-/** The photo's file and its content type, or an error for a format we can't print. */
-async function photoFile(photoId) {
-  const asset = new Asset(photoId);
+/** The gallery photo as { bytes, type }, or an error for a format that can't be printed. */
+async function photoBytes(photoId) {
+  const asset = new PhotoAsset(photoId);
   const [uri, filename] = await Promise.all([asset.getUri(), asset.getFilename()]);
   const type = PHOTO_TYPES[filename.split('.').pop()?.toLowerCase()];
   if (!type) {
@@ -43,7 +36,7 @@ async function photoFile(photoId) {
       "This photo's format can't be printed yet. Please choose another photo."
     );
   }
-  return { file: new File(uri), type };
+  return { bytes: await new File(uri).bytes(), type };
 }
 
 // The order waiting on Stripe, for the Order placed screen when the app comes back.
@@ -51,29 +44,44 @@ let pending = null;
 export const pendingPosterOrder = () => pending;
 
 /**
- * Start an order for `spec` (from posterSpec()), with `photoId` for a photo poster,
- * and open Stripe's checkout. Resolves once the page is open. `tripId` is where Done
- * goes back to.
+ * Draw `spec` (from posterSpec()) as a PDF, with `photoId` for a photo poster, send
+ * it, and open Stripe's checkout. Resolves once the page is open. `tripId` is where
+ * Done goes back to.
  */
 export async function startPosterOrder({ spec, photoId, tripId }) {
-  const photo = photoId ? await photoFile(photoId) : null;
-  const { orderId, ref, uploadUrl } = await call('/orders', {
-    method: 'POST',
-    body: JSON.stringify({ spec }),
-  });
-  if (photo) {
-    const res = await photo.file
-      .upload(`${API}${uploadUrl}`, { httpMethod: 'PUT', headers: { 'Content-Type': photo.type } })
-      .catch(() => null);
-    if (!res || res.status >= 300) {
-      console.warn('[poster] photo upload failed', res?.status, res?.body);
-      throw new PosterOrderError("Couldn't send the photo. Check your connection and try again.");
-    }
-  }
-  const { checkoutUrl } = await call(`/orders/${orderId}/checkout`, { method: 'POST' });
-  pending = { orderId, ref, tripId, spec };
-  await Linking.openURL(checkoutUrl);
-}
+  const [light, regular, photo] = await Promise.all([
+    bundledBytes(fontFiles[fonts.light]),
+    bundledBytes(fontFiles[fonts.regular]),
+    photoId ? photoBytes(photoId) : null,
+  ]);
+  const pdf = await renderPoster({ spec, fonts: { light, regular }, photo });
 
-/** What the server knows about an order: { ref, size, title, status, amount }. */
-export const getPosterOrder = (orderId) => call(`/orders/${orderId}`);
+  const file = new File(Paths.cache, `poster-${Date.now()}.pdf`);
+  try {
+    await file.write(pdf);
+    const query = new URLSearchParams({ size: spec.size, title: spec.lines.title.text });
+    const res = await file
+      .upload(`${API}/orders?${query}`, {
+        httpMethod: 'POST',
+        headers: { 'Content-Type': 'application/pdf' },
+      })
+      .catch(() => null);
+    if (!res) {
+      throw new PosterOrderError("Couldn't reach the printer. Check your connection and try again.");
+    }
+    let body = {};
+    try {
+      body = JSON.parse(res.body);
+    } catch {
+      // Not the server's JSON: reported below.
+    }
+    if (res.status >= 300 || !body.checkoutUrl) {
+      console.warn('[poster] order failed', res.status, res.body);
+      throw new PosterOrderError(body.message ?? 'Something went wrong. Please try again.');
+    }
+    pending = { orderId: body.orderId, ref: body.ref, tripId, spec };
+    await Linking.openURL(body.checkoutUrl);
+  } finally {
+    if (file.exists) file.delete();
+  }
+}

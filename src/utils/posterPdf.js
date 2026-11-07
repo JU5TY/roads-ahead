@@ -1,6 +1,7 @@
-// Draws a poster spec (from the app's posterSpec()) as a print-ready PDF at the
-// paper's exact size: shapes and text as vectors, the photo at its own resolution.
-// Laid out from the same file as the app's preview, so the two match.
+// Draws a poster spec (from posterSpec()) as a print-ready PDF at the paper's exact
+// size: shapes and text as vectors, the photo at its own resolution. Laid out from
+// the same file as the preview, so the two match. Imports name their files in full
+// so server/poster/scripts/render-sample.mjs can run this in Node too.
 import fontkit from '@pdf-lib/fontkit';
 import {
   LineCapStyle,
@@ -34,7 +35,7 @@ import {
   stroke,
 } from 'pdf-lib';
 
-import { coverSize } from '../../../src/utils/photoCrop.js';
+import { coverSize } from './photoCrop.js';
 import {
   ARROW_EM,
   CIRCLE,
@@ -48,7 +49,7 @@ import {
   posterLines,
   textLayout,
   textWidth,
-} from '../../../src/utils/posterLayout.js';
+} from './posterLayout.js';
 import { jpegInfo } from './jpeg.js';
 
 const POINTS_PER_MM = 72 / 25.4;
@@ -270,7 +271,7 @@ export async function renderPoster({ spec, fonts, photo }) {
     popGraphicsState()
   );
 
-  // The text, laid out again here from its words rather than trusting the app's sizes.
+  // The text, laid out from its words.
   const lines = posterLines({
     title: spec.lines.title.text,
     route: spec.lines.route.text,

@@ -1,5 +1,4 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,7 +6,7 @@ import PosterCard from '../components/poster/PosterCard';
 import Button from '../components/ui/Button';
 import Icon from '../components/ui/Icon';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { getPosterOrder, pendingPosterOrder } from '../services/posterService';
+import { pendingPosterOrder } from '../services/posterService';
 import { spacing, type } from '../theme';
 import { SIZES } from '../utils/posterLayout';
 
@@ -23,32 +22,19 @@ export default function PosterOrderedScreen() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  // Still in memory unless the phone closed the app while Stripe's page was open.
+  // Still in memory unless the phone closed the app while Stripe's page was open;
+  // Stripe's receipt email has the details either way.
   const pending = pendingPosterOrder()?.orderId === orderId ? pendingPosterOrder() : null;
-  const [order, setOrder] = useState(
-    pending ? { ref: pending.ref, size: pending.spec.size, title: pending.spec.lines.title.text } : null
-  );
-
-  useEffect(() => {
-    if (pending || !orderId) return;
-    let cancelled = false;
-    getPosterOrder(orderId)
-      .then((o) => !cancelled && setOrder(o))
-      .catch((err) => console.warn('[poster] order lookup failed', err));
-    return () => {
-      cancelled = true;
-    };
-  }, [orderId, pending]);
 
   const done = () => {
     if (pending?.tripId) router.dismissTo(`/trips/${pending.tripId}`);
     else router.navigate('/');
   };
-  const rows = order
+  const rows = pending
     ? [
-        ['Order', order.ref],
-        ['Poster', [order.size, order.title].filter(Boolean).join(' · ')],
-        ['Paid', SIZES[order.size]?.price],
+        ['Order', pending.ref],
+        ['Poster', [pending.spec.size, pending.spec.lines.title.text].filter(Boolean).join(' · ')],
+        ['Paid', SIZES[pending.spec.size].price],
       ].filter(([, value]) => value)
     : [];
 
