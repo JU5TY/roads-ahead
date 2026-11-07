@@ -4,13 +4,13 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { useTripPreview } from '../../hooks/useTripPreview';
-import { pressedOpacity, type } from '../../theme';
+import { pressedOpacity, radius, type } from '../../theme';
 import { posterSpec, posterText } from '../../utils/poster';
 import { PAGE, SIZES } from '../../utils/posterLayout';
 import Icon from '../ui/Icon';
 import PosterCard from './PosterCard';
 
-const THUMB_WIDTH = 66;
+const THUMB_WIDTH = 48; // as wide as the icon wells above, so the text lines up
 const THUMB_POINTS = 600; // plenty for a poster this small
 
 /**
@@ -42,7 +42,7 @@ export default function PrintBanner({ trip, drive, vehicles, units }) {
     >
       <View style={styles.thumb}>{spec ? <PosterCard spec={spec} width={THUMB_WIDTH} /> : null}</View>
       <View style={styles.flex}>
-        <Text style={[type.section, styles.text]}>Print this {what}</Text>
+        <Text style={[type.bodyStrong, styles.text]}>Print this {what}</Text>
         <Text style={[type.bodySmall, styles.muted]}>
           An A3 or A2 poster of your route or photo, from {SIZES.A3.price}
         </Text>
@@ -59,9 +59,9 @@ const makeStyles = (c) => ({
     gap: 16,
     marginTop: 28,
     paddingVertical: 16,
-    paddingLeft: 16,
+    paddingLeft: 20,
     paddingRight: 12,
-    borderRadius: 16,
+    borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },

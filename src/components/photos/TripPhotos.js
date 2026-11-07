@@ -28,11 +28,11 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
         <SectionHeader title="Photos" />
         <View style={styles.card}>
           <View style={styles.well}>
-            <Icon name="photo_library" size={24} color={c.onAccentContainer} />
+            <Icon name="photo_library" size={26} color={c.onAccentContainer} />
           </View>
           <View style={styles.flex}>
             <Text style={[type.bodyStrong, styles.text]}>{"We'll find your trip photos"}</Text>
-            <Text style={[type.small, styles.muted]}>
+            <Text style={[type.bodySmall, styles.muted]}>
               We match them using the time they were taken, and they stay in your gallery.
             </Text>
             <Button
@@ -99,15 +99,17 @@ const makeStyles = (c) => ({
   card: {
     flexDirection: 'row',
     gap: 16,
-    padding: 16,
+    // Its text lines up with the Driving time card's and the print banner's.
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },
   well: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: c.accentContainer,
