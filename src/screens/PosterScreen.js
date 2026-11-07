@@ -195,6 +195,22 @@ export default function PosterScreen() {
           </Text>
         </View>
 
+        <View style={styles.sizes} role="radiogroup" accessibilityLabel="Poster size">
+          {Object.values(SIZES).map((s) => (
+            <Pressable
+              key={s.label}
+              onPress={() => setSize(s.label)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: size === s.label }}
+              style={[styles.size, size === s.label && styles.sizeSelected]}
+            >
+              <Text style={[type.label, size === s.label ? styles.text : styles.muted]}>
+                {s.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <View style={[styles.preview, { height: previewHeight }]}>
           <View style={styles.poster} accessibilityLabel={`Preview of the ${size} poster`}>
             <PosterCard
@@ -269,22 +285,6 @@ export default function PosterScreen() {
             </View>
           ) : null}
         </View>
-
-        <View style={styles.sizes} role="radiogroup" accessibilityLabel="Poster size">
-          {Object.values(SIZES).map((s) => (
-            <Pressable
-              key={s.label}
-              onPress={() => setSize(s.label)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: size === s.label }}
-              style={[styles.size, size === s.label && styles.sizeSelected]}
-            >
-              <Text style={[type.label, size === s.label ? styles.text : styles.muted]}>
-                {s.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
@@ -321,7 +321,7 @@ const makeStyles = (c) => ({
   muted: { color: c.textMuted },
   flex: { flex: 1, minWidth: 0 },
   preview: {
-    marginTop: 8,
+    marginTop: 12,
     borderRadius: 16,
     backgroundColor: c.track,
     alignItems: 'center',
@@ -361,7 +361,7 @@ const makeStyles = (c) => ({
   pressed: { opacity: pressedOpacity },
   sizes: {
     flexDirection: 'row',
-    marginTop: 16,
+    marginTop: 12,
     padding: 4,
     borderRadius: 20,
     backgroundColor: c.track,
