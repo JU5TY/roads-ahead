@@ -1,16 +1,16 @@
-import { Image as ExpoImage } from 'expo-image';
 import { useMemo } from 'react';
-import { Animated, Image, Platform, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Polyline, Rect, Stop } from 'react-native-svg';
 
 import { fonts } from '../../theme';
 import { distanceParts, formatDurationShort } from '../../utils/format';
-import { CENTRED, MAX_ZOOM, coverSize, cropTransform } from '../../utils/photoCrop';
+import { CENTRED } from '../../utils/photoCrop';
 import { countryFrame } from '../../utils/countries';
 import { fitInBox, pinPoint, routeSpanKm } from '../../utils/routeOutline';
 import AppLogo from '../AppLogo';
 import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
 import FlagStack from '../countries/FlagStack';
+import FramedPhoto from '../photos/FramedPhoto';
 
 // The card is laid out on a grid 432 wide and scaled to `width`, so the preview
 // and the shared image match. Its colours stay the same in light and dark.
@@ -34,38 +34,6 @@ const WHITE = '#FFFFFF';
 const PALE_ON_BLUE = MAP_PALE;
 const PALE_ON_PHOTO = '#E8EAED';
 const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
-
-/**
- * Gallery photos: expo-image on iPhone (its photo library addresses), React Native's
- * on Android, whose bitmaps can be drawn into the captured image. Placed by `crop`, or
- * by `motion` while it's being dragged, once its `aspect` is known; centred until then.
- */
-function Photo({ uri, aspect, crop, motion, frameWidth, frameHeight, onLoad, onError }) {
-  const style = { width: '100%', height: '100%' };
-  const image =
-    Platform.OS === 'android' ? (
-      <Image source={{ uri }} style={style} resizeMode="cover" onLoad={onLoad} onError={onError} />
-    ) : (
-      <ExpoImage source={{ uri }} style={style} contentFit="cover" onLoad={onLoad} onError={onError} />
-    );
-  if (!aspect) return <View style={{ position: 'absolute', ...style }}>{image}</View>;
-  const cover = coverSize(aspect, frameWidth, frameHeight);
-  const { translateX, translateY, scale } =
-    motion ?? cropTransform(crop, aspect, frameWidth, frameHeight);
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        width: cover.width * MAX_ZOOM,
-        height: cover.height * MAX_ZOOM,
-        transformOrigin: 'left top',
-        transform: [{ translateX }, { translateY }, { scale }],
-      }}
-    >
-      {image}
-    </Animated.View>
-  );
-}
 
 /** One line of the route and its dots on the card's grid, or a pin when they'd be too small. */
 function RouteLines({ segments, fit }) {
@@ -152,7 +120,7 @@ export default function ShareCard({
   return (
     <View style={{ width, height: frameHeight, backgroundColor: BLUE, overflow: 'hidden' }}>
       {photoUri ? (
-        <Photo
+        <FramedPhoto
           uri={photoUri}
           aspect={photoAspect}
           crop={photoCrop}

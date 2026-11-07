@@ -72,6 +72,8 @@ function AppStack() {
           <Stack.Screen name="roads/index" />
           <Stack.Screen name="roads/[id]" />
           <Stack.Screen name="share" />
+          <Stack.Screen name="poster/index" />
+          <Stack.Screen name="poster/done" options={{ gestureEnabled: false }} />
           <Stack.Screen name="premium" />
           <Stack.Screen name="your-map" />
         </Stack.Protected>

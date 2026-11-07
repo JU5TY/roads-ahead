@@ -16,7 +16,7 @@ import { PROMPT_CHOICE } from '../utils/locationChoices';
 const REASONS = [
   ['route', 'Maps your route', 'With distance, time and climb'],
   ['notifications', 'Works with the screen off', 'A notification shows while recording'],
-  ['lock', 'Stays on your phone', 'Your drives are never sent to us'],
+  ['lock', 'Stays on your phone', 'Only sent to us if you order a print'],
 ];
 
 /**

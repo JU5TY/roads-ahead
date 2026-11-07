@@ -7,6 +7,7 @@ import ActionSheet from '../components/ActionSheet';
 import ChartsCard from '../components/charts/ChartsCard';
 import TripPhotos from '../components/photos/TripPhotos';
 import CountriesSection from '../components/countries/CountriesSection';
+import PrintBanner from '../components/poster/PrintBanner';
 import DetailLayout from '../components/detail/DetailLayout';
 import { routeMarkers, stopMarkerKey, stopMarkers } from '../components/detail/mapMarkers';
 import Timeline from '../components/detail/Timeline';
@@ -536,6 +537,8 @@ export default function TripScreen() {
         allow={allowPhotos}
         hideTimes={selected ? hideTimes : hiddenCount > 0}
       />
+      {/* Under Photos, whose picture of the trip it follows; under Timeline when there are none. */}
+      <PrintBanner trip={trip} drive={single ? null : selected} vehicles={vehicles} units={units} />
       <CountriesSection rows={viewCountries} units={units} scope={selected ? 'drive' : 'trip'} />
       <ChartsCard
         tracks={

@@ -1,0 +1,48 @@
+# The Roads Ahead print server. Setup steps are in README.md.
+name = "roads-ahead-poster"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The fonts are drawn into every PDF.
+rules = [{ type = "Data", globs = ["**/*.ttf"], fallthrough = false }]
+
+[vars]
+# Where this Worker is reached: Stripe sends the browser back here, and Prodigi
+# fetches the PDFs from here.
+PUBLIC_URL = "https://print.example.com"
+APP_SCHEME = "roadtrip"
+# Fine-art prints. Check them in Prodigi's sandbox catalogue before going live.
+PRODIGI_SKU_A3 = "GLOBAL-FAP-A3"
+PRODIGI_SKU_A2 = "GLOBAL-FAP-A2"
+PRODIGI_SHIPPING = "standard"
+EMAIL_FROM = "Roads Ahead <prints@example.com>"
+ALERT_EMAIL = "you@example.com" # orders that need a hand
+# Secrets, set with `npx wrangler secret put <NAME>`:
+# STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PRODIGI_API_KEY, PRODIGI_WEBHOOK_SECRET,
+# EMAIL_API_KEY, ASSET_SECRET
+
+[[r2_buckets]]
+binding = "POSTERS"
+bucket_name = "poster-pipeline-production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "poster_orders"
+database_id = "00000000-0000-0000-0000-000000000000" # from `npx wrangler d1 create poster_orders`
+
+[[queues.producers]]
+binding = "RENDER_QUEUE"
+queue = "poster-render"
+
+[[queues.consumers]]
+queue = "poster-render"
+max_batch_size = 1
+max_retries = 4
+
+# Daily: forget customers' names and emails 60 days after they ordered.
+[triggers]
+crons = ["0 3 * * *"]
+
+[observability]
+enabled = true

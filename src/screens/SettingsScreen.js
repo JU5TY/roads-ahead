@@ -306,7 +306,7 @@ export default function SettingsScreen() {
         onPress={() =>
           showMessage(
             'Privacy',
-            'Your trips stay on this phone and are never sent to us. Maps and place names come from Apple or Google.'
+            'Your trips stay on this phone. Only if you order a printed poster is it sent to us: its route, words and photo, which go to our printer and are deleted 14 days later. Maps and place names come from Apple or Google.'
           )
         }
         divider
