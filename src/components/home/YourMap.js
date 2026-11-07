@@ -21,8 +21,8 @@ const WIDTH = 358;
 const HEIGHT = 348;
 const ROUTE_BOTTOM = 280; // above the text, and where the fade is still light
 const ROUTE_MARGIN = 20;
-// The share card's proportions: the latest trip's line, the older ones finer, and
-// solid dots the colour of the line at its start and finish.
+// The share card's proportions: the latest trip's line, the older ones finer. No
+// dots at the ends; only driving too short to draw becomes a dot.
 const LINE = 3.3;
 const OLDER_LINE = 2;
 const DOT = 5;
@@ -113,12 +113,6 @@ export default function YourMap({ trips, units, scrollY }) {
     [fit, top]
   );
   const land = useLandPath(landFit, WIDTH, HEIGHT + top);
-  // The latest trip's start and finish, where its dots go.
-  const ends = useMemo(() => {
-    const latest = parts.filter((p) => p.day !== null && p.coordinates.length);
-    if (!fit || !latest.length) return [];
-    return [latest[0].coordinates[0], latest.at(-1).coordinates.at(-1)].map(fit.project);
-  }, [parts, fit]);
   // Older routes first, so the latest trip is drawn on top.
   const lines = useMemo(
     () => [...parts.filter((p) => p.day === null), ...parts.filter((p) => p.day !== null)],
@@ -181,7 +175,7 @@ export default function YourMap({ trips, units, scrollY }) {
         />
       </Svg>
       {/* Above the fade, so a dot on a south coast stays bold. */}
-      {pin || ends.length ? (
+      {pin ? (
         <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: mapShift }] }]}>
           <Svg
             width="100%"
@@ -189,14 +183,8 @@ export default function YourMap({ trips, units, scrollY }) {
             viewBox={`0 0 ${WIDTH} ${HEIGHT + top}`}
             accessible={false}
           >
-            {pin ? (
-              <>
-                <Circle cx={pin[0]} cy={pin[1] + top} r={HALO} fill={c.accent} fillOpacity={0.18} />
-                <Circle cx={pin[0]} cy={pin[1] + top} r={DOT} fill={c.accent} />
-              </>
-            ) : (
-              ends.map(([x, y], i) => <Circle key={i} cx={x} cy={y + top} r={DOT} fill={c.accent} />)
-            )}
+            <Circle cx={pin[0]} cy={pin[1] + top} r={HALO} fill={c.accent} fillOpacity={0.18} />
+            <Circle cx={pin[0]} cy={pin[1] + top} r={DOT} fill={c.accent} />
           </Svg>
         </Animated.View>
       ) : null}
