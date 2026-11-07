@@ -18,12 +18,12 @@ export const COLORS = {
   sea: '#174EA6',
   land: '#2F6FD0',
   line: '#FFFFFF',
-  dot: '#174EA6', // the sea's blue, darker than land: start, finish, and a short drive's dot
 };
 
-// The route on the map, and in the circle (both drawn in their own box's units).
-export const MAP_LINE = { width: 3.7, dot: 8.65, ring: 3.7, halo: 21 };
-export const CIRCLE_LINE = { width: 2.5, dot: 3.5, ring: 1.8, halo: 8 };
+// The route on the map, and in the circle (both drawn in their own box's units). Its
+// start and finish, and a short drive's dot, are solid white like the line.
+export const MAP_LINE = { width: 3.7, dot: 7, halo: 21 };
+export const CIRCLE_LINE = { width: 2.5, dot: 3, halo: 8 };
 
 // Prices are in pence. The server charges its own copy of these, never the app's.
 export const SIZES = {

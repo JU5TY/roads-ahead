@@ -39,29 +39,12 @@ function RouteDrawing({ map, look, box }) {
         />
       ))}
       {[map.start, map.end].map((at, i) =>
-        at ? (
-          <Circle
-            key={i}
-            cx={at[0]}
-            cy={at[1]}
-            r={look.dot}
-            fill={COLORS.dot}
-            stroke={COLORS.line}
-            strokeWidth={look.ring}
-          />
-        ) : null
+        at ? <Circle key={i} cx={at[0]} cy={at[1]} r={look.dot} fill={COLORS.line} /> : null
       )}
       {map.pin ? (
         <>
           <Circle cx={map.pin[0]} cy={map.pin[1]} r={look.halo} fill={COLORS.line} fillOpacity={0.25} />
-          <Circle
-            cx={map.pin[0]}
-            cy={map.pin[1]}
-            r={look.dot}
-            fill={COLORS.dot}
-            stroke={COLORS.line}
-            strokeWidth={look.ring}
-          />
+          <Circle cx={map.pin[0]} cy={map.pin[1]} r={look.dot} fill={COLORS.line} />
         </>
       ) : null}
     </>
