@@ -165,7 +165,6 @@ export default function PosterScreen() {
   const canAsk = access === 'ask' || access === 'blocked';
   const dpi = photoAspect ? photoDpi(photo, fitCrop(crop, photoAspect, IMAGE.width, IMAGE.height), size) : null;
   const soft = dpi !== null && dpi < MIN_PHOTO_DPI;
-  const [widthMm, heightMm] = SIZES[size].mm;
 
   const order = async () => {
     if (!printingOpen) {
@@ -302,11 +301,8 @@ export default function PosterScreen() {
               {size === 'A2' ? 'A3, or a sharper photo' : 'a sharper photo'}.
             </Text>
           </View>
-        ) : (
-          <Text style={[type.bodySmall, styles.muted, styles.delivery]}>
-            Fine-art print, {widthMm} × {heightMm} mm · Free UK delivery
-          </Text>
-        )}
+        ) : null}
+        {/* The paper and free delivery are spelt out on Stripe's page, keeping this one to Share's height. */}
         <Button
           label={ordering ? 'Preparing your poster…' : `Order print · ${SIZES[size].price}`}
           disabled={ordering || (!!photoId && !photoAspect)}
@@ -375,7 +371,6 @@ const makeStyles = (c) => ({
   size: { flex: 1, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   sizeSelected: { backgroundColor: c.card },
   footer: { paddingHorizontal: spacing.md, paddingTop: 12, gap: 10 },
-  delivery: { textAlign: 'center' },
   warning: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   warningText: { flex: 1, color: c.warning },
 });
