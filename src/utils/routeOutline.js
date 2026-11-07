@@ -48,32 +48,58 @@ export function routeSpanKm(routes) {
   );
 }
 
-/**
- * Where to put a pin for `routes` on `fit`: [x, y] at their middle when they'd be
- * drawn less than `minSpan` across, too small to read as a line. Otherwise null.
- */
-export function pinPoint(fit, routes, minSpan) {
+// One rule for every drawn map (Home, the share card, the poster): show the
+// routes as large as they'll go, but never on less than MIN_MAP_KM of land, so a
+// short drive keeps its shape and the coast round it. A drive spanning less than
+// DOT_BELOW_KM has no shape worth drawing, so it's a dot.
+export const MIN_MAP_KM = 60;
+const DOT_BELOW_KM = 3;
+const KM_PER_DEGREE = 111.32;
+
+/** Two points `km` apart each way around the middle of `routes`: fitted, not drawn. */
+function spanAround(routes, km) {
   const all = routes.flat();
-  if (!fit || !all.length) return null;
+  const lats = all.map((p) => p.latitude);
+  const lngs = all.map((p) => p.longitude);
+  const latitude = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const longitude = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+  const dLat = km / 2 / KM_PER_DEGREE;
+  const dLng = dLat / Math.cos((latitude * Math.PI) / 180);
+  return [
+    { latitude: latitude - dLat, longitude: longitude - dLng },
+    { latitude: latitude + dLat, longitude: longitude + dLng },
+  ];
+}
+
+/** fitInBox for a map: the routes as large as they'll go, on at least MIN_MAP_KM of land. */
+export function fitMap(routes, width, height, margin = 0, top = 0) {
+  if (!routes.flat().length) return null;
+  return fitInBox([...routes, spanAround(routes, MIN_MAP_KM)], width, height, margin, top);
+}
+
+/** Where to draw `routes` as a dot on `fit`, [x, y] at their middle, when they're too short to draw. */
+export function pinPoint(fit, routes) {
+  const all = routes.flat();
+  if (!fit || !all.length || routeSpanKm(routes) >= DOT_BELOW_KM) return null;
   const drawn = all.map(fit.project);
   const xs = drawn.map((p) => p[0]);
   const ys = drawn.map((p) => p[1]);
-  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  if (Math.max(maxX - minX, maxY - minY) >= minSpan) return null;
-  return [(minX + maxX) / 2, (minY + maxY) / 2];
+  return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
 }
 
 /**
  * fitInBox for a circle `size` px across: the routes are centred, and their furthest
- * point stops this share of the size from the edge, whichever way they run.
+ * point stops this share of the size from the edge, whichever way they run. With
+ * `map`, it keeps fitMap's rule: never less than MIN_MAP_KM across.
  */
 const CIRCLE_INSET = 0.15;
-export function fitInCircle(routes, size) {
+export function fitInCircle(routes, size, { map = false } = {}) {
   const fit = fitInBox(routes, size, size);
   if (!fit) return null;
   const mid = size / 2;
+  const reach = map ? [...routes.flat(), ...spanAround(routes, MIN_MAP_KM / Math.SQRT2)] : routes.flat();
   const furthest = Math.max(
-    ...routes.flat().map((p) => {
+    ...reach.map((p) => {
       const [x, y] = fit.project(p);
       return Math.hypot(x - mid, y - mid);
     })

@@ -5,8 +5,7 @@ import Svg, { Circle, Defs, LinearGradient, Polyline, Rect, Stop } from 'react-n
 import { fonts } from '../../theme';
 import { distanceParts, formatDurationShort } from '../../utils/format';
 import { CENTRED } from '../../utils/photoCrop';
-import { countryFrame } from '../../utils/countries';
-import { fitInBox, pinPoint, routeSpanKm } from '../../utils/routeOutline';
+import { fitMap, pinPoint } from '../../utils/routeOutline';
 import AppLogo from '../AppLogo';
 import DrawnLand, { MAP_BLUE, MAP_PALE, useLandPath } from '../DrawnLand';
 import FlagStack from '../countries/FlagStack';
@@ -18,10 +17,6 @@ const WIDTH = 432;
 const PAD = 28;
 const GAP = 20;
 const ROUTE_MARGIN = 36; // the padding, plus most of a dot's radius
-// On the drawn map, a route shorter than this shows the whole country around it,
-// with a pin instead if its start and end dots would sit on top of each other.
-const SHORT_ROUTE_KM = 100;
-const PIN_BELOW = 24;
 // The route's box ends where the text starts when it has every line, less a Story's
 // wider gap. A Story keeps clear of Instagram's profile bar (the top 10% on a phone
 // test; its controls sat below the image) and leaves room for shorter phones.
@@ -39,7 +34,7 @@ const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
 function RouteLines({ segments, fit }) {
   const routes = segments.map((s) => s.coordinates).filter((r) => r.length > 1);
   if (!fit || !routes.length) return null;
-  const pin = pinPoint(fit, routes, PIN_BELOW);
+  const pin = pinPoint(fit, routes);
   if (pin) {
     return (
       <>
@@ -102,9 +97,7 @@ export default function ShareCard({
   const onMap = !photoUri;
   const fit = useMemo(() => {
     if (!onMap) return null;
-    const short = routeSpanKm(routes) < SHORT_ROUTE_KM;
-    const framed = short ? [...routes, countryFrame(routes)] : routes;
-    return fitInBox(framed, WIDTH, routeBottom - routeTop, ROUTE_MARGIN, routeTop);
+    return fitMap(routes, WIDTH, routeBottom - routeTop, ROUTE_MARGIN, routeTop);
   }, [routes, routeBottom, routeTop, onMap]);
   const land = useLandPath(fit, WIDTH, height);
   const pale = photoUri ? PALE_ON_PHOTO : PALE_ON_BLUE;

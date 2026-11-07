@@ -7,10 +7,9 @@ import Svg, { Circle, Defs, G, LinearGradient, Path, Polyline, Rect, Stop } from
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getDriveRoutePreview } from '../../storage/driveStorage';
 import { pressedOpacity, spacing, type } from '../../theme';
-import { countryFrame } from '../../utils/countries';
 import { driveGaps, splitAtCrossings } from '../../utils/crossings';
 import { distanceParts } from '../../utils/format';
-import { fitInBox, pinPoint } from '../../utils/routeOutline';
+import { fitMap, pinPoint } from '../../utils/routeOutline';
 import { computeTotals, firstDriveMonth, groupIntoDays } from '../../utils/tripSummary';
 import AppLogo from '../AppLogo';
 import { useLandPath } from '../DrawnLand';
@@ -22,7 +21,6 @@ const WIDTH = 358;
 const HEIGHT = 348;
 const ROUTE_BOTTOM = 280; // above the text, and where the fade is still light
 const ROUTE_MARGIN = 20;
-const PIN_BELOW = 10; // routes drawn smaller than this are a pin
 const FADE_TOP = 200; // from here the map fades into the page
 const POINTS_PER_DRIVE = 80;
 
@@ -95,11 +93,8 @@ export default function YourMap({ trips, units, scrollY }) {
   const distance = distanceParts(computeTotals(trips).distanceM, units, { whole: true });
 
   const routes = useMemo(() => parts.map((p) => p.coordinates), [parts]);
-  const fit = useMemo(
-    () => fitInBox([...routes, countryFrame(routes)], WIDTH, ROUTE_BOTTOM, ROUTE_MARGIN),
-    [routes]
-  );
-  const pin = useMemo(() => pinPoint(fit, routes, PIN_BELOW), [fit, routes]);
+  const fit = useMemo(() => fitMap(routes, WIDTH, ROUTE_BOTTOM, ROUTE_MARGIN), [routes]);
+  const pin = useMemo(() => pinPoint(fit, routes), [fit, routes]);
   // Land reaches up behind the status bar, so it's drawn from the top of the banner.
   const landFit = useMemo(
     () =>

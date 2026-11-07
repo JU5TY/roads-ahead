@@ -1,17 +1,15 @@
 // What goes on a printed poster of a trip or one of its drives: its words, and its
 // route already drawn into the poster's own units (see posterLayout.js), so the
 // print server only has to draw what the preview shows.
-import { countryFrame, landPath } from './countries';
+import { landPath } from './countries';
 import { distanceUnit, toDistance } from './format';
 import { CENTRED, coverSize } from './photoCrop';
-import { CIRCLE, CIRCLE_LINE, IMAGE, MAP_LINE, mmPerUnit, posterLines } from './posterLayout';
-import { fitInBox, fitInCircle, pinPoint, routeSpanKm } from './routeOutline';
+import { CIRCLE, IMAGE, mmPerUnit, posterLines } from './posterLayout';
+import { fitInCircle, fitMap, pinPoint } from './routeOutline';
 import { groupIntoDays, oneWayLabel, summarizeDrives, tripOneWayLabel, tripTitle } from './tripSummary';
 import { vehicleLabel } from './vehicles';
 
 export const SPEC_VERSION = 1;
-// A route shorter than this is shown on its whole country, as on the share card.
-const SHORT_ROUTE_KM = 100;
 const MAP_MARGIN = 48; // keeps the end dots well inside the image
 // Below this, a photo starts to look soft on paper.
 export const MIN_PHOTO_DPI = 150;
@@ -69,11 +67,11 @@ export function posterText(trip, drive, vehicles, units) {
 }
 
 /** The route's lines, ends (or a pin) and land, placed by `fit` in a `width` x `height` box. */
-function drawnRoute(segments, fit, width, height, pinBelow) {
+function drawnRoute(segments, fit, width, height) {
   const routes = segments.map((s) => s.coordinates).filter((r) => r.length > 1);
   if (!fit || !routes.length) return null;
   const round = ([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
-  const pin = pinPoint(fit, routes, pinBelow);
+  const pin = pinPoint(fit, routes);
   return {
     land: landPath(fit.project, width, height),
     lines: pin
@@ -97,12 +95,10 @@ export function posterSpec({ text, segments, size, photo = null, crop = CENTRED 
   let map;
   if (photo) {
     const d = CIRCLE.r * 2;
-    map = drawnRoute(segments, fitInCircle(routes, d), d, d, CIRCLE_LINE.halo * 2);
+    map = drawnRoute(segments, fitInCircle(routes, d, { map: true }), d, d);
   } else {
-    const short = routeSpanKm(routes) < SHORT_ROUTE_KM;
-    const framed = short ? [...routes, countryFrame(routes)] : routes;
-    const fit = fitInBox(framed, IMAGE.width, IMAGE.height, MAP_MARGIN);
-    map = drawnRoute(segments, fit, IMAGE.width, IMAGE.height, MAP_LINE.halo * 2);
+    const fit = fitMap(routes, IMAGE.width, IMAGE.height, MAP_MARGIN);
+    map = drawnRoute(segments, fit, IMAGE.width, IMAGE.height);
   }
   return {
     v: SPEC_VERSION,
