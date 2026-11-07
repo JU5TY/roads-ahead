@@ -38,10 +38,12 @@ const THUMB_W = 57;
 const THUMB_H = 80;
 // A long trip's shape stays true at A2.
 const POSTER_POINTS = 4000;
-// Everything above and below the preview, safe areas aside: it takes what's left.
-const AROUND_PREVIEW = 420;
-const PREVIEW_PAD = 20; // grey round the poster
-const MIN_PREVIEW_HEIGHT = 240;
+// The preview is as tall as Share's Post card on the same phone (see ShareScreen),
+// so the poster's text is as easy to read.
+const SHARE_AROUND_PREVIEW = 358;
+const SHARE_MIN_WIDTH = 200;
+const SHARE_POST_RATIO = 4 / 5;
+const PREVIEW_PAD = 12; // grey above and below the poster
 
 /** The Route choice: a small drawing of the route on the map's blue. */
 function RouteTile({ segments, selected, onPress }) {
@@ -111,10 +113,14 @@ export default function PosterScreen() {
   const segments = useTripPreview(previewOf, { points: POSTER_POINTS });
   const { photos, access, allow } = usePhotos([[drives?.[0]?.startedAt, drives?.at(-1)?.endedAt]]);
 
-  const previewHeight = Math.max(
-    MIN_PREVIEW_HEIGHT,
-    screenHeight - AROUND_PREVIEW - insets.top - insets.bottom
+  const shareWidth = Math.min(
+    screenWidth - 2 * spacing.md,
+    Math.max(
+      SHARE_MIN_WIDTH,
+      (screenHeight - SHARE_AROUND_PREVIEW - insets.top - insets.bottom) * SHARE_POST_RATIO
+    )
   );
+  const previewHeight = shareWidth / SHARE_POST_RATIO;
   const posterWidth = Math.min(
     screenWidth - 2 * spacing.md - 2 * PREVIEW_PAD,
     ((previewHeight - 2 * PREVIEW_PAD) * PAGE.width) / PAGE.height
