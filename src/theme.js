@@ -31,7 +31,6 @@ const light = {
   warningContainer: '#FEEFC3',
   onWarningContainer: '#5F3B00',
   breakDue: '#E8710A', // Record's break bar once a break is due
-  warning: '#B06000', // a caution in running text (a photo too soft to print)
   danger: '#C5221F', // destructive menu rows (Delete trip)
   dangerContainer: '#FCE8E6', // their icon well
   onDanger: '#FFFFFF', // the confirm dialog's red button
@@ -112,7 +111,6 @@ const dark = {
   warningContainer: '#3D3214',
   onWarningContainer: '#FDD663',
   breakDue: '#FCAD70',
-  warning: '#FDD663',
   danger: '#F28B82',
   dangerContainer: '#4A1C1A',
   onDanger: '#601410',

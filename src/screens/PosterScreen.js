@@ -44,6 +44,7 @@ const SHARE_AROUND_PREVIEW = 358;
 const SHARE_MIN_WIDTH = 200;
 const SHARE_POST_RATIO = 4 / 5;
 const PREVIEW_PAD = 12; // grey above and below the poster
+const SOFT_ICON = '#FDD663'; // amber that reads on the photo's dark label, in light and dark
 
 /** The Route choice: a small drawing of the route on the map's blue. */
 function RouteTile({ segments, selected, onPress }) {
@@ -165,6 +166,12 @@ export default function PosterScreen() {
   const canAsk = access === 'ask' || access === 'blocked';
   const dpi = photoAspect ? photoDpi(photo, fitCrop(crop, photoAspect, IMAGE.width, IMAGE.height), size) : null;
   const soft = dpi !== null && dpi < MIN_PHOTO_DPI;
+  const softAdvice =
+    size === 'A2'
+      ? 'May look soft at A2. Try A3'
+      : crop.zoom > 1
+        ? 'May look soft. Zoom out a little'
+        : 'This photo may print soft';
 
   const order = async () => {
     if (!printingOpen) {
@@ -244,7 +251,13 @@ export default function PosterScreen() {
                   },
                 ]}
               >
-                {framed ? null : (
+                {/* A soft photo is warned about where it shows, in place of the framing hint. */}
+                {soft ? (
+                  <View style={[styles.hint, styles.softHint]} pointerEvents="none">
+                    <Icon name="warning" size={18} color={SOFT_ICON} />
+                    <Text style={[type.label, styles.hintText]}>{softAdvice}</Text>
+                  </View>
+                ) : framed ? null : (
                   <View style={styles.hint} pointerEvents="none">
                     <Text style={[type.label, styles.hintText]}>Pinch and drag to frame</Text>
                   </View>
@@ -298,15 +311,6 @@ export default function PosterScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-        {soft ? (
-          <View style={styles.warning}>
-            <Icon name="warning" size={20} color={c.warning} />
-            <Text style={[type.bodySmall, styles.warningText]}>
-              This photo may look soft at {size}. Choose{' '}
-              {size === 'A2' ? 'A3, or a sharper photo' : 'a sharper photo'}.
-            </Text>
-          </View>
-        ) : null}
         {/* The paper and free delivery are spelt out on Stripe's page, keeping this one to Share's height. */}
         <Button
           label={ordering ? 'Preparing your poster…' : `Order print · ${SIZES[size].price}`}
@@ -352,6 +356,7 @@ const makeStyles = (c) => ({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   hintText: { color: '#FFFFFF' },
+  softHint: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 8 },
   choices: { flexDirection: 'row', gap: 16, marginTop: 16 },
   choiceLabel: { height: 24, marginBottom: 6, textAlignVertical: 'center', lineHeight: 24 },
   tile: { width: THUMB_W, height: THUMB_H, borderRadius: 12, overflow: 'hidden' },
@@ -376,6 +381,4 @@ const makeStyles = (c) => ({
   size: { flex: 1, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   sizeSelected: { backgroundColor: c.card },
   footer: { paddingHorizontal: spacing.md, paddingTop: 12, gap: 10 },
-  warning: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  warningText: { flex: 1, color: c.warning },
 });
