@@ -21,8 +21,9 @@ export const COLORS = {
 };
 
 // The route on the map, and in the circle (both drawn in their own box's units). Its
-// start and finish, and a short drive's dot, are solid white like the line.
-export const MAP_LINE = { width: 3.7, dot: 7, halo: 21 };
+// start and finish, and a short drive's dot, are solid white like the line, with a
+// radius 1.25 times the line's width (as on the share card).
+export const MAP_LINE = { width: 3.7, dot: 4.6, halo: 21 };
 export const CIRCLE_LINE = { width: 2.5, dot: 3, halo: 8 };
 
 // Prices are in pence. The server charges its own copy of these, never the app's.

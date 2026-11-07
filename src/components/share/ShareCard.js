@@ -26,7 +26,7 @@ const FORMATS = {
 };
 const BLUE = MAP_BLUE;
 const WHITE = '#FFFFFF';
-const DOT = 6; // the route's start and finish, solid white like the line
+const DOT = 5; // the route's start and finish: solid white like the line, 1.25 times its width
 const PALE_ON_BLUE = MAP_PALE;
 const PALE_ON_PHOTO = '#E8EAED';
 const FLAG_COLORS = { ring: WHITE, more: '#E8F0FE', onMore: BLUE };
