@@ -126,16 +126,16 @@ function routeOps(map, look, box) {
     );
   }
   ops.push(setDashPattern([], 0));
-  if (map.start) {
+  for (const at of [map.start, map.end]) {
+    if (!at) continue;
     ops.push(
-      fillColor(COLORS.sea),
+      fillColor(COLORS.dot),
       strokeColor(COLORS.line),
       setLineWidth(look.ring),
-      ...circle(map.start[0], map.start[1], look.start),
+      ...circle(at[0], at[1], look.dot),
       fillAndStroke()
     );
   }
-  if (map.end) ops.push(fillColor(COLORS.line), ...circle(map.end[0], map.end[1], look.end), fill());
   if (map.pin) {
     ops.push(
       pushGraphicsState(),
@@ -143,10 +143,10 @@ function routeOps(map, look, box) {
       ...circle(map.pin[0], map.pin[1], look.halo),
       fill(),
       popGraphicsState(),
-      fillColor(COLORS.pin),
+      fillColor(COLORS.dot),
       strokeColor(COLORS.line),
       setLineWidth(look.ring),
-      ...circle(map.pin[0], map.pin[1], look.pin),
+      ...circle(map.pin[0], map.pin[1], look.dot),
       fillAndStroke()
     );
   }
