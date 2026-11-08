@@ -540,7 +540,7 @@ export default function TripScreen() {
         what={selected && !single ? 'drive' : 'trip'}
       />
       {/* Under Photos, whose picture of the trip it follows; under Timeline when there are none. */}
-      <PrintBanner trip={trip} drive={single ? null : selected} vehicles={vehicles} units={units} />
+      <PrintBanner trip={trip} drive={single ? null : selected} />
       <CountriesSection rows={viewCountries} units={units} scope={selected ? 'drive' : 'trip'} />
       <ChartsCard
         tracks={

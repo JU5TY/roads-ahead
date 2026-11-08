@@ -1,34 +1,18 @@
 import { router } from 'expo-router';
-import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { useTripPreview } from '../../hooks/useTripPreview';
 import { pressedOpacity, radius, type } from '../../theme';
-import { posterSpec, posterText } from '../../utils/poster';
-import { PAGE, SIZES } from '../../utils/posterLayout';
+import { SIZES } from '../../utils/posterLayout';
 import Icon from '../ui/Icon';
-import PosterCard from './PosterCard';
-
-const THUMB_WIDTH = 48; // as wide as the icon wells above, so the text lines up
-const THUMB_POINTS = 600; // plenty for a poster this small
 
 /**
- * The Trip page's way in to printing: the poster of the whole trip, or of `drive`
- * alone when one is picked, shrunk beside a line about it. Opens the print page.
+ * The Trip page's way in to printing the whole trip, or `drive` alone when one is
+ * picked. Matches the Photos card above it. Opens the print page.
  */
-export default function PrintBanner({ trip, drive, vehicles, units }) {
+export default function PrintBanner({ trip, drive }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const previewOf = useMemo(() => ({ drives: drive ? [drive] : trip.drives }), [trip, drive]);
-  const segments = useTripPreview(previewOf, { points: THUMB_POINTS });
-  const spec = useMemo(
-    () =>
-      segments
-        ? posterSpec({ text: posterText(trip, drive, vehicles, units), segments, size: 'A3' })
-        : null,
-    [segments, trip, drive, vehicles, units]
-  );
   const what = drive ? 'drive' : 'trip';
 
   return (
@@ -40,7 +24,9 @@ export default function PrintBanner({ trip, drive, vehicles, units }) {
       accessibilityLabel={`Print this ${what}`}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={styles.thumb}>{spec ? <PosterCard spec={spec} width={THUMB_WIDTH} /> : null}</View>
+      <View style={styles.well}>
+        <Icon name="wall_art" size={26} color={c.onAccentContainer} />
+      </View>
       <View style={styles.flex}>
         <Text style={[type.bodyStrong, styles.text]}>Print this {what}</Text>
         <Text style={[type.bodySmall, styles.muted]}>
@@ -66,16 +52,13 @@ const makeStyles = (c) => ({
     ...c.cardShadow,
   },
   pressed: { opacity: pressedOpacity },
-  // Paper casts a shadow in dark mode too.
-  thumb: {
-    width: THUMB_WIDTH,
-    height: (THUMB_WIDTH * PAGE.height) / PAGE.width,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 3,
+  well: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.accentContainer,
   },
   flex: { flex: 1, gap: 2 },
   text: { color: c.text },
