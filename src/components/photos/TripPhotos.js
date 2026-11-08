@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
-import Button from '../ui/Button';
+import { pressedOpacity, radius, type } from '../../theme';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
 import PhotoGallery from './PhotoGallery';
@@ -13,7 +12,8 @@ const GAP = 6;
 
 /**
  * "Photos" section of a trip: the first three gallery photos taken during it,
- * "+N" on the last, and See all. Asks for gallery access first. `photos`,
+ * "+N" on the last, and See all. Asks for gallery access first, the whole card
+ * the button, like the print banner's. `photos`,
  * `access` and `allow` come from usePhotos().
  */
 export default function TripPhotos({ photos, access, allow, hideTimes }) {
@@ -26,24 +26,24 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
     return (
       <>
         <SectionHeader title="Photos" />
-        <View style={styles.card}>
+        <Pressable
+          onPress={allow}
+          accessibilityRole="button"
+          accessibilityLabel="Allow access to trip photos"
+          accessibilityHint={access === 'blocked' ? 'Opens Settings' : undefined}
+          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        >
           <View style={styles.well}>
             <Icon name="photo_library" size={26} color={c.onAccentContainer} />
           </View>
           <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.text]}>{"We'll find your trip photos"}</Text>
+            <Text style={[type.bodyStrong, styles.text]}>Allow access to trip photos</Text>
             <Text style={[type.bodySmall, styles.muted]}>
-              Matched by the time they were taken
+              Matched by when they were taken, kept on your phone
             </Text>
-            <Button
-              size="small"
-              variant="tonal"
-              label={access === 'blocked' ? 'Open Settings' : 'Allow access'}
-              onPress={allow}
-              style={styles.allow}
-            />
           </View>
-        </View>
+          <Icon name="chevron_right" size={24} color={c.textMuted} />
+        </Pressable>
       </>
     );
   }
@@ -98,14 +98,17 @@ const makeStyles = (c) => ({
   moreText: { color: c.onPhoto },
   card: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 16,
     // Its text lines up with the Driving time card's and the print banner's.
     paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingLeft: 20,
+    paddingRight: 12,
     borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },
+  pressed: { opacity: pressedOpacity },
   well: {
     width: 48,
     height: 48,
@@ -117,5 +120,4 @@ const makeStyles = (c) => ({
   flex: { flex: 1, gap: 2 },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  allow: { alignSelf: 'flex-start', marginTop: 10 },
 });

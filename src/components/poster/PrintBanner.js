@@ -44,7 +44,7 @@ export default function PrintBanner({ trip, drive, vehicles, units }) {
       <View style={styles.flex}>
         <Text style={[type.bodyStrong, styles.text]}>Print this {what}</Text>
         <Text style={[type.bodySmall, styles.muted]}>
-          An A3 or A2 poster of your route or photo, from {SIZES.A3.price}
+          Turn your route into gallery art for your wall, from {SIZES.A3.price}
         </Text>
       </View>
       <Icon name="chevron_right" size={24} color={c.textMuted} />
