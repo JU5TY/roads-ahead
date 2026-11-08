@@ -97,15 +97,15 @@ export default function TripScreen() {
           setMissing(true);
           return;
         }
-        const [all, roads, garage] = await Promise.all([
-          Promise.all(t.drives.map((d) => getDrivePoints(d.id))),
-          getTripCompletions(t.id),
-          listVehicles(),
-        ]);
+        const [roads, garage] = await Promise.all([getTripCompletions(t.id), listVehicles()]);
         if (cancelled) return;
         setVehicles(garage);
         setTrip(t);
         setCompletions(roads);
+        // The page shows now; the map, Timeline and charts follow once the
+        // GPS points (the slow part) are read.
+        const all = await Promise.all(t.drives.map((d) => getDrivePoints(d.id)));
+        if (cancelled) return;
         setPointsByDrive(new Map(t.drives.map((d, i) => [d.id, all[i]])));
         // Fill in place names that couldn't be looked up when the drive ended.
         const oneDay = groupIntoDays(t.drives).length === 1;
@@ -223,7 +223,7 @@ export default function TripScreen() {
     [days, pointsByDrive, dayColorOf]
   );
 
-  if (missing || !trip || !pointsByDrive) {
+  if (missing || !trip) {
     return (
       <View style={[styles.screen, styles.center]}>
         {missing ? (
@@ -339,7 +339,10 @@ export default function TripScreen() {
       )
     : [];
 
-  const map = (
+  // Until the points are read, the map's blank background where it will be.
+  const map = !pointsByDrive ? (
+    <View style={styles.mapWaiting} />
+  ) : (
     <RouteMap
       ref={mapRef}
       flat
@@ -518,19 +521,21 @@ export default function TripScreen() {
       ) : (
         <IconicRoadsSection completions={viewRoads} dayOf={dayOf} />
       )}
-      <Timeline
-        items={selected ? driveTimeline : timeline}
-        color={selected ? driveColors.get(selected.id) : c.accent}
-        colorOfDay={selected || days.length === 1 ? undefined : dayColorOf}
-        units={units}
-        onStopPress={selected ? showDriveStop : showTripStop}
-        roads={viewRoads.map((r) => ({
-          name: getRoad(r.roadId)?.name,
-          completedAt: r.completedAt,
-        }))}
-        hideTimes={selected ? hideTimes : hiddenCount > 0}
-        photos={viewPhotos}
-      />
+      {pointsByDrive ? (
+        <Timeline
+          items={selected ? driveTimeline : timeline}
+          color={selected ? driveColors.get(selected.id) : c.accent}
+          colorOfDay={selected || days.length === 1 ? undefined : dayColorOf}
+          units={units}
+          onStopPress={selected ? showDriveStop : showTripStop}
+          roads={viewRoads.map((r) => ({
+            name: getRoad(r.roadId)?.name,
+            completedAt: r.completedAt,
+          }))}
+          hideTimes={selected ? hideTimes : hiddenCount > 0}
+          photos={viewPhotos}
+        />
+      ) : null}
       <TripPhotos
         photos={viewPhotos}
         access={photoAccess}
@@ -542,32 +547,34 @@ export default function TripScreen() {
       {/* Under Photos, whose picture of the trip it follows; under Timeline when there are none. */}
       <PrintBanner trip={trip} drive={single ? null : selected} />
       <CountriesSection rows={viewCountries} units={units} scope={selected ? 'drive' : 'trip'} />
-      <ChartsCard
-        tracks={
-          selected
-            ? [
-                {
-                  key: 'route',
-                  color: driveColors.get(selected.id),
-                  points: withoutCrossings(
-                    pointsByDrive.get(selected.id) ?? [],
-                    driveGaps(selected)
-                  ),
-                },
-              ]
-            : tracks
-        }
-        units={units}
-        avgSpeedMps={averageMovingSpeed(selected ? selected.stats : timeSummary)}
-        speedHidden={selected ? hideTimes : hiddenCount > 0}
-        markers={
-          selected
-            ? (selected.countries ?? [])
-                .slice(1)
-                .map((v) => ({ time: v.enteredAt, label: 'Border' }))
-            : undefined
-        }
-      />
+      {pointsByDrive ? (
+        <ChartsCard
+          tracks={
+            selected
+              ? [
+                  {
+                    key: 'route',
+                    color: driveColors.get(selected.id),
+                    points: withoutCrossings(
+                      pointsByDrive.get(selected.id) ?? [],
+                      driveGaps(selected)
+                    ),
+                  },
+                ]
+              : tracks
+          }
+          units={units}
+          avgSpeedMps={averageMovingSpeed(selected ? selected.stats : timeSummary)}
+          speedHidden={selected ? hideTimes : hiddenCount > 0}
+          markers={
+            selected
+              ? (selected.countries ?? [])
+                  .slice(1)
+                  .map((v) => ({ time: v.enteredAt, label: 'Border' }))
+              : undefined
+          }
+        />
+      ) : null}
       <DetailsRows
         // Elevations aren't times, so a trip's count every drive.
         stats={
@@ -606,6 +613,7 @@ export default function TripScreen() {
 const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   center: { alignItems: 'center', justifyContent: 'center' },
+  mapWaiting: { flex: 1, backgroundColor: c.card }, // RouteMap's own, so nothing flashes
   pillScroll: { marginHorizontal: -16, marginTop: 16, flexGrow: 0 },
   pills: { gap: 8, paddingHorizontal: 16 },
   picked: { marginTop: 16, marginHorizontal: 4 },
