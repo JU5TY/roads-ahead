@@ -12,8 +12,8 @@ export default function PrintBanner({ trip, drive }) {
   return (
     <BannerCard
       icon="wall_art"
-      title={`Print this ${what}`}
-      subtitle={`Turn your route into gallery art for your wall, from ${SIZES.A3.price}`}
+      title={`Frame this ${what}`}
+      subtitle={`Your route as a gallery print, A3 or A2, from ${SIZES.A3.price}`}
       onPress={() =>
         router.push(drive ? `/poster?trip=${trip.id}&drive=${drive.id}` : `/poster?trip=${trip.id}`)
       }
