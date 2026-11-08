@@ -39,7 +39,7 @@ export default function TripPhotos({ photos, access, allow, hideTimes, what = 't
           <View style={styles.flex}>
             <Text style={[type.bodyStrong, styles.text]}>Photos from your {what}</Text>
             <Text style={[type.bodySmall, styles.muted]}>
-              Allow access to see the photos you took on this {what}
+              Allow access to see the photos taken on this {what}
             </Text>
           </View>
           <Icon name="chevron_right" size={24} color={c.textMuted} />
