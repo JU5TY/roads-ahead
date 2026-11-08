@@ -29,7 +29,7 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
         <Pressable
           onPress={allow}
           accessibilityRole="button"
-          accessibilityLabel="Allow access to trip photos"
+          accessibilityLabel="Photos from your trip"
           accessibilityHint={access === 'blocked' ? 'Opens Settings' : undefined}
           style={({ pressed }) => [styles.card, pressed && styles.pressed]}
         >
@@ -37,9 +37,9 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
             <Icon name="photo_library" size={26} color={c.onAccentContainer} />
           </View>
           <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.text]}>Allow access to trip photos</Text>
+            <Text style={[type.bodyStrong, styles.text]}>Photos from your trip</Text>
             <Text style={[type.bodySmall, styles.muted]}>
-              Matched by when they were taken, kept on your phone
+              Allow access to see the photos you took on this trip
             </Text>
           </View>
           <Icon name="chevron_right" size={24} color={c.textMuted} />
