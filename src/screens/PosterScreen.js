@@ -203,7 +203,7 @@ export default function PosterScreen() {
             onPress={() => router.back()}
           />
           <Text style={[type.section, styles.title]} role="heading">
-            Print poster
+            Your gallery print
           </Text>
         </View>
 
