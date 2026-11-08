@@ -56,13 +56,13 @@ function AppStack() {
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      {/* Every screen draws its own title or back button. Pages slide fully in from
-          the right: Android's default part-slide-and-fade stutters on heavy pages. */}
+      {/* Every screen draws its own title or back button. Pages change instantly,
+          like the tabs: Android's default part-slide-and-fade looked glitchy. */}
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: c.background },
-          animation: 'slide_from_right',
+          animation: 'none',
         }}
       >
         {/* First launch only: Welcome, then the location explainer. */}
