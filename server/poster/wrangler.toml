@@ -11,7 +11,8 @@ APP_SCHEME = "roadtrip"
 # Fine-art prints. Check them in Prodigi's sandbox catalogue before going live.
 PRODIGI_SKU_A3 = "GLOBAL-FAP-A3"
 PRODIGI_SKU_A2 = "GLOBAL-FAP-A2"
-PRODIGI_SHIPPING = "standard"
+# Express: tracked, and the same £5.90 as untracked Standard (UK price list, Nov 2026).
+PRODIGI_SHIPPING = "Express"
 # Secrets, set with `npx wrangler secret put <NAME>`:
 # STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PRODIGI_API_KEY, ASSET_SECRET
 

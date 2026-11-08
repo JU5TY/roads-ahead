@@ -29,7 +29,7 @@ npx wrangler dev                                               # with a .dev.var
 2. **Stripe:**
    - Turn on receipt emails for successful payments under Settings › Customer emails.
    - Add a webhook endpoint at `<PUBLIC_URL>/stripe/webhook` for `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
-3. **Prodigi:** in the sandbox dashboard, confirm the A3 and A2 fine-art SKUs in `wrangler.toml`. Check which shipping method gives the customer tracking: `standard` may be an untracked service.
+3. **Prodigi:** in the sandbox dashboard, confirm the A3 and A2 fine-art SKUs in `wrangler.toml`. Shipping is `Express`: tracked, and the same price as untracked `Standard` in the UK.
 4. **Secrets:** set each with `npx wrangler secret put <NAME>`:
    - `STRIPE_SECRET_KEY`
    - `STRIPE_WEBHOOK_SECRET`

@@ -20,7 +20,7 @@ export async function submitPrint(env, order, recipient, assetUrl) {
     },
     body: JSON.stringify({
       merchantReference: order.ref,
-      shippingMethod: env.PRODIGI_SHIPPING ?? 'standard',
+      shippingMethod: env.PRODIGI_SHIPPING ?? 'Express',
       recipient,
       items: [
         {
