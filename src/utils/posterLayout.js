@@ -28,7 +28,7 @@ export const CIRCLE_LINE = { width: 2.5, dot: 3, halo: 8 };
 
 // Prices are in pence. The server charges its own copy of these, never the app's.
 export const SIZES = {
-  A3: { label: 'A3', pence: 3999, price: '£39.99', mm: [297, 420] },
+  A3: { label: 'A3', pence: 3499, price: '£34.99', mm: [297, 420] },
   A2: { label: 'A2', pence: 4999, price: '£49.99', mm: [420, 594] },
 };
 
