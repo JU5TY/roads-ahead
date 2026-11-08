@@ -13,11 +13,10 @@ const light = {
   textMuted: '#5F6368',
   accent: '#1A73E8',
   onAccent: '#FFFFFF',
-  accentContainer: '#E8F0FE', // blue tint: icon wells, Recording row, Premium
+  accentContainer: '#E8F0FE', // blue tint: icon wells, Recording row
   halo: '#C6DAFC', // the ring round the logo, Location pin, No trips and Home's map
   onAccentContainer: '#174EA6',
   accentContainerMuted: '#3B5BA0',
-  accentWell: '#D2E3FC', // icon circles on the blue Premium card
   // Iconic Roads keep their own teal so completions stand out from the blue UI.
   roadContainer: '#CDEFE9',
   onRoadContainer: '#00201C',
@@ -99,7 +98,6 @@ const dark = {
   halo: '#33476A',
   onAccentContainer: '#D2E3FC',
   accentContainerMuted: '#A8C7FA',
-  accentWell: '#2F4A73',
   roadContainer: '#0F3B36',
   onRoadContainer: '#A6F2E5',
   roadContainerMuted: '#7FD3C6',

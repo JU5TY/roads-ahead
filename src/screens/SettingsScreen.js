@@ -1,9 +1,10 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import BannerCard from '../components/ui/BannerCard';
 import { showDialog, showMessage } from '../components/ui/DialogHost';
 import ActionSheet from '../components/ActionSheet';
 import VehicleSheet from '../components/VehicleSheet';
@@ -23,7 +24,7 @@ import { getExampleTripId } from '../storage/exampleTrip';
 import { BREAK_REMINDER_OPTIONS } from '../storage/settingsStorage';
 import { listTrips } from '../storage/tripStorage';
 import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
-import { pressedOpacity, radius, spacing, type } from '../theme';
+import { spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
@@ -38,28 +39,19 @@ const THEMES = [
   ['dark', 'Dark'],
 ];
 
-/** The blue Premium card near the top of You (until Premium is bought); opens the Premium screen. */
+/** The Premium card near the top of You (until Premium is bought); opens the Premium screen. */
 function PremiumRow() {
-  const { c } = useTheme();
   const styles = useStyles(makeStyles);
   return (
-    <Pressable
+    <BannerCard
+      icon="workspace_premium"
+      filled
+      title="Premium"
+      subtitle={PREMIUM_TAGLINE}
       onPress={openPremium}
-      accessibilityRole="button"
       accessibilityLabel={`Premium. ${PREMIUM_TAGLINE}`}
-      style={({ pressed }) => [styles.premium, pressed && styles.pressed]}
-    >
-      <View style={styles.premiumWell}>
-        <Icon name="workspace_premium" filled size={26} color={c.onAccentContainer} />
-      </View>
-      <View style={styles.flex}>
-        <Text style={[type.bodyStrong, styles.premiumTitle]}>Premium</Text>
-        <Text style={[type.small, styles.premiumText]}>{PREMIUM_TAGLINE}</Text>
-      </View>
-      <View style={styles.view}>
-        <Text style={[type.label, styles.viewText]}>View</Text>
-      </View>
-    </Pressable>
+      style={styles.premium}
+    />
   );
 }
 
@@ -350,34 +342,5 @@ const makeStyles = (c) => ({
   vehicleRow: { minHeight: 64 },
   addTitle: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
   flex: { flex: 1, minWidth: 0 },
-  premium: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 12,
-    paddingVertical: 14,
-    paddingLeft: 16,
-    paddingRight: 14,
-    borderRadius: radius.card,
-    backgroundColor: c.accentContainer,
-  },
-  premiumWell: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.accentWell,
-  },
-  premiumTitle: { color: c.onAccentContainer },
-  premiumText: { color: c.accentContainerMuted },
-  view: {
-    height: 36,
-    paddingHorizontal: 14,
-    borderRadius: 18,
-    justifyContent: 'center',
-    backgroundColor: c.accent,
-  },
-  viewText: { color: c.onAccent },
-  pressed: { opacity: pressedOpacity },
+  premium: { marginTop: 12 },
 });

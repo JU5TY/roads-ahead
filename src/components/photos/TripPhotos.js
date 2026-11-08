@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 
-import { useStyles, useTheme } from '../../hooks/useTheme';
-import { pressedOpacity, radius, type } from '../../theme';
-import Icon from '../ui/Icon';
+import { useStyles } from '../../hooks/useTheme';
+import { type } from '../../theme';
+import BannerCard from '../ui/BannerCard';
 import SectionHeader from '../ui/SectionHeader';
 import PhotoGallery from './PhotoGallery';
 import PhotoThumb from './PhotoThumb';
@@ -12,12 +12,11 @@ const GAP = 6;
 
 /**
  * "Photos" section of a trip: the first three gallery photos taken during it,
- * "+N" on the last, and See all. Asks for gallery access first, the whole card
- * the button, like the print banner's. `photos`,
- * `access` and `allow` come from usePhotos(); `what` is 'trip' or 'drive'.
+ * "+N" on the last, and See all. Asks for gallery access first with a BannerCard,
+ * like the print banner's. `photos`, `access` and `allow` come from usePhotos();
+ * `what` is 'trip' or 'drive'.
  */
 export default function TripPhotos({ photos, access, allow, hideTimes, what = 'trip' }) {
-  const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const { width } = useWindowDimensions();
   const [open, setOpen] = useState(null); // null | { start: index or null for the grid }
@@ -26,24 +25,13 @@ export default function TripPhotos({ photos, access, allow, hideTimes, what = 't
     return (
       <>
         <SectionHeader title="Photos" />
-        <Pressable
+        <BannerCard
+          icon="photo_library"
+          title={`Photos from your ${what}`}
+          subtitle={`Allow access to see the photos taken on this ${what}`}
           onPress={allow}
-          accessibilityRole="button"
-          accessibilityLabel={`Photos from your ${what}`}
           accessibilityHint={access === 'blocked' ? 'Opens Settings' : undefined}
-          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-        >
-          <View style={styles.well}>
-            <Icon name="photo_library" size={26} color={c.onAccentContainer} />
-          </View>
-          <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.text]}>Photos from your {what}</Text>
-            <Text style={[type.bodySmall, styles.muted]}>
-              Allow access to see the photos taken on this {what}
-            </Text>
-          </View>
-          <Icon name="chevron_right" size={24} color={c.textMuted} />
-        </Pressable>
+        />
       </>
     );
   }
@@ -96,28 +84,4 @@ const makeStyles = (c) => ({
     backgroundColor: c.photoScrim,
   },
   moreText: { color: c.onPhoto },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    // Its text lines up with the Driving time card's and the print banner's.
-    paddingVertical: 16,
-    paddingLeft: 20,
-    paddingRight: 12,
-    borderRadius: radius.card,
-    backgroundColor: c.card,
-    ...c.cardShadow,
-  },
-  pressed: { opacity: pressedOpacity },
-  well: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.accentContainer,
-  },
-  flex: { flex: 1, gap: 2 },
-  text: { color: c.text },
-  muted: { color: c.textMuted },
 });
