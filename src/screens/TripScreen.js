@@ -536,6 +536,8 @@ export default function TripScreen() {
         access={photoAccess}
         allow={allowPhotos}
         hideTimes={selected ? hideTimes : hiddenCount > 0}
+        // Like the print banner: "drive" only when one of several is picked.
+        what={selected && !single ? 'drive' : 'trip'}
       />
       {/* Under Photos, whose picture of the trip it follows; under Timeline when there are none. */}
       <PrintBanner trip={trip} drive={single ? null : selected} vehicles={vehicles} units={units} />

@@ -14,9 +14,9 @@ const GAP = 6;
  * "Photos" section of a trip: the first three gallery photos taken during it,
  * "+N" on the last, and See all. Asks for gallery access first, the whole card
  * the button, like the print banner's. `photos`,
- * `access` and `allow` come from usePhotos().
+ * `access` and `allow` come from usePhotos(); `what` is 'trip' or 'drive'.
  */
-export default function TripPhotos({ photos, access, allow, hideTimes }) {
+export default function TripPhotos({ photos, access, allow, hideTimes, what = 'trip' }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const { width } = useWindowDimensions();
@@ -29,7 +29,7 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
         <Pressable
           onPress={allow}
           accessibilityRole="button"
-          accessibilityLabel="Photos from your trip"
+          accessibilityLabel={`Photos from your ${what}`}
           accessibilityHint={access === 'blocked' ? 'Opens Settings' : undefined}
           style={({ pressed }) => [styles.card, pressed && styles.pressed]}
         >
@@ -37,9 +37,9 @@ export default function TripPhotos({ photos, access, allow, hideTimes }) {
             <Icon name="photo_library" size={26} color={c.onAccentContainer} />
           </View>
           <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.text]}>Photos from your trip</Text>
+            <Text style={[type.bodyStrong, styles.text]}>Photos from your {what}</Text>
             <Text style={[type.bodySmall, styles.muted]}>
-              Allow access to see the photos you took on this trip
+              Allow access to see the photos you took on this {what}
             </Text>
           </View>
           <Icon name="chevron_right" size={24} color={c.textMuted} />
