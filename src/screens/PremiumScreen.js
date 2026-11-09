@@ -10,14 +10,14 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
 
-// Backup first: it's the main reason to buy.
+// In pairs, as the grid shows them: photos first, the trip's data last.
 const FEATURES = [
-  ['cloud_upload', 'Automatic backup', 'Trips safe if you change phone'],
-  ['share', 'Photo sharing', 'Your photos with your route and stats'],
-  ['garage', 'More vehicles', 'Your whole garage in one place'],
-  ['download', 'Export', 'Take routes into other apps'],
-  ['map', 'Satellite maps', 'Satellite and terrain views of your trips'],
-  ['landscape', 'Map posters', 'Your trip map as a digital wallpaper'],
+  ['share', 'Photo sharing', 'Your route and stats on your own photos'],
+  ['wall_art', 'Photo wall art', 'Your own trip photo on your gallery print'],
+  ['map', 'Satellite maps', 'See every trip from above, hills and all'],
+  ['garage', 'More vehicles', 'Every car you drive, each with its own stats'],
+  ['save', 'Backup file', 'Keep a copy, or move to any phone'],
+  ['download', 'GPX export', 'Your routes in other map and sat-nav apps'],
 ];
 
 function FeatureTile({ icon, title, description }) {
