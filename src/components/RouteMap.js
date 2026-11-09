@@ -3,11 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useMapView } from '../hooks/useMapView';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
 import DotMarker from './DotMarker';
 import MapCard, { MAP_CARD_ROOM } from './MapCard';
 import MapDot from './MapDot';
+import MapViewButton from './MapViewButton';
 
 const MAP_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
 const FOCUS_DELTA = 0.01; // ~1 km across when zooming to a single marker
@@ -28,6 +30,7 @@ const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
  * `fitTo` (coordinates) frames part of the map, e.g. one drive of a trip; the
  * map moves to it whenever a new array is passed.
  * `flat` fills its parent edge to edge, under the status bar (the Trip page).
+ * A layers button bottom right picks Map, Satellite or Terrain (MapViewButton).
  */
 export default function RouteMap({
   segments,
@@ -39,6 +42,7 @@ export default function RouteMap({
   ref,
 }) {
   const { scheme } = useTheme();
+  const { mapType, mapColor } = useMapView();
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   const mapRef = useRef(null);
@@ -97,6 +101,7 @@ export default function RouteMap({
           // No Google Maps toolbar (Android) over the card when a marker is tapped.
           toolbarEnabled={false}
           userInterfaceStyle={scheme}
+          mapType={mapType}
           initialRegion={{
             latitude: all[0].latitude,
             longitude: all[0].longitude,
@@ -108,7 +113,7 @@ export default function RouteMap({
             <Polyline
               key={s.key}
               coordinates={s.coordinates}
-              strokeColor={s.color}
+              strokeColor={mapColor(s.color)}
               strokeWidth={3.5}
               {...(s.dotted ? DOTS : null)}
             />
@@ -120,12 +125,18 @@ export default function RouteMap({
               onPress={() => setSelectedKey(m.key)}
               // The selected marker draws on top.
               zIndex={m.key === selectedKey ? markers.length : i}
-              redrawKey={`${m.color}:${m.key === selectedKey}`}
+              redrawKey={`${mapColor(m.color)}:${m.key === selectedKey}`}
             >
-              <MapDot kind={m.kind} color={m.color} selected={m.key === selectedKey} />
+              <MapDot kind={m.kind} color={mapColor(m.color)} selected={m.key === selectedKey} />
             </DotMarker>
           ))}
         </MapView>
+      ) : null}
+      {all.length > 0 ? (
+        // Above the marker card while one shows.
+        <MapViewButton
+          style={[styles.layers, { bottom: spacing.md + (selected ? MAP_CARD_ROOM : 0) }]}
+        />
       ) : null}
       {all.length > 0 ? <MapCard marker={selected} onClose={() => setSelectedKey(null)} /> : null}
       {all.length === 0 ? (
@@ -140,6 +151,7 @@ export default function RouteMap({
 const makeStyles = (c) => ({
   wrap: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: c.card },
   flat: { flex: 1, backgroundColor: c.card },
+  layers: { position: 'absolute', right: 12 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.md },
   emptyText: { ...type.small, color: c.textMuted },
 });

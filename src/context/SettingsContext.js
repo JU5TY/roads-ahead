@@ -18,6 +18,7 @@ export function SettingsProvider({ children }) {
   const [onboarded, setOnboarded] = useState(settingsStorage.getOnboarded);
   const [showIconicRoads, setShowIconicRoads] = useState(settingsStorage.getShowIconicRoads);
   const [theme, setTheme] = useState(settingsStorage.getTheme);
+  const [mapView, setMapView] = useState(settingsStorage.getMapView);
 
   // Pin the app (and the maps and system bars) to light or dark, or follow the phone.
   useEffect(() => {
@@ -56,6 +57,11 @@ export function SettingsProvider({ children }) {
         setShowIconicRoads(next);
         save(settingsStorage.setShowIconicRoads(next));
       },
+      mapView,
+      setMapView: (next) => {
+        setMapView(next);
+        save(settingsStorage.setMapView(next));
+      },
       onboarded,
       finishOnboarding: () => {
         setOnboarded(true);
@@ -67,7 +73,7 @@ export function SettingsProvider({ children }) {
         save(settingsStorage.setOnboarded(false));
       },
     }),
-    [units, breakReminderMinutes, theme, showIconicRoads, onboarded]
+    [units, breakReminderMinutes, theme, showIconicRoads, mapView, onboarded]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

@@ -28,6 +28,7 @@ const CARRIED_KEYS = [
   'settings.breakReminderMinutes',
   'settings.showIconicRoads',
   'settings.theme',
+  'settings.mapView',
   'exampleTrip.id',
   'roads.checkedVersion',
   'countries.checkedVersion',

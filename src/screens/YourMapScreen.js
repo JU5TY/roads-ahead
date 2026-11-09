@@ -5,7 +5,9 @@ import { StyleSheet, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import MapViewButton from '../components/MapViewButton';
 import IconButton from '../components/ui/IconButton';
+import { useMapView } from '../hooks/useMapView';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { getLocationAccess } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
@@ -45,6 +47,7 @@ function useEveryRoute() {
  */
 export default function YourMapScreen() {
   const { c, scheme } = useTheme();
+  const { mapType, mapColor } = useMapView();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
@@ -103,6 +106,7 @@ export default function YourMapScreen() {
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         userInterfaceStyle={scheme}
+        mapType={mapType}
         onMapReady={() => {
           if (segments.length > 0) fit();
         }}
@@ -114,7 +118,7 @@ export default function YourMapScreen() {
           <Polyline
             key={s.key}
             coordinates={s.coordinates}
-            strokeColor={s.color}
+            strokeColor={mapColor(s.color)}
             strokeWidth={3.5}
             {...(s.dotted ? { lineDashPattern: [1, 8], lineCap: 'round' } : null)}
           />
@@ -135,6 +139,7 @@ export default function YourMapScreen() {
         onPress={() => centreOnMe().catch(() => fit())}
         style={[styles.button, styles.right, { top: insets.top + 12 }]}
       />
+      <MapViewButton style={[styles.button, styles.right, { top: insets.top + 12 + 56 }]} />
     </View>
   );
 }

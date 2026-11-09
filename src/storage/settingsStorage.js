@@ -65,6 +65,19 @@ export function setTheme(theme) {
   return Storage.setItemAsync(THEME_KEY, theme);
 }
 
+const MAP_VIEW_KEY = 'settings.mapView';
+export const MAP_VIEW_OPTIONS = ['map', 'satellite', 'terrain'];
+
+/** How the full maps are drawn: 'map', 'satellite' or 'terrain' (hooks/useMapView.js). */
+export function getMapView() {
+  const saved = Storage.getItemSync(MAP_VIEW_KEY);
+  return MAP_VIEW_OPTIONS.includes(saved) ? saved : 'map';
+}
+
+export function setMapView(view) {
+  return Storage.setItemAsync(MAP_VIEW_KEY, view);
+}
+
 const RECORD_MAP_HIDDEN_KEY = 'recordMapHidden';
 
 /** Whether Record's map was hidden last time, so the next drive starts the same way. */
