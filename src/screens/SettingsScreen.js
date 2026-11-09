@@ -18,6 +18,7 @@ import { PREMIUM_TAGLINE, openPremium, usePremium } from '../hooks/usePremium';
 import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { useVehicles } from '../hooks/useVehicles';
+import { restoreBackup, saveBackup } from '../services/backupService';
 import { exportAllTrips, showExportFailed } from '../services/exportService';
 import { countSavedPoints } from '../storage/driveStorage';
 import { getExampleTripId } from '../storage/exampleTrip';
@@ -25,7 +26,6 @@ import { BREAK_REMINDER_OPTIONS } from '../storage/settingsStorage';
 import { listTrips } from '../storage/tripStorage';
 import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { spacing, type } from '../theme';
-import { comingSoon } from '../utils/comingSoon';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
 import { ICONIC_ROADS, ROADS_ATTRIBUTION } from '../utils/iconicRoads';
@@ -116,11 +116,28 @@ export default function SettingsScreen() {
     const mb = Math.ceil((points * GPX_ZIPPED_BYTES_PER_POINT) / 1e6) || 1;
     showDialog({
       title: trips.length === 1 ? 'Export your trip?' : `Export all ${trips.length} trips?`,
-      message: `This makes a zip file of about ${mb} MB, with a GPX file for each trip.`,
+      message: `This makes a zip file of about ${mb} MB, with a GPX file for each trip. GPX files hold your routes only. To keep everything, save a backup file.`,
       confirmLabel: 'Export',
       onConfirm: async () => {
         await exportAllTrips(trips, (done, total) => setExporting(`Exporting trip ${done} of ${total}`));
         setExporting(null);
+      },
+    });
+  };
+
+  const [saving, setSaving] = useState(false);
+
+  const confirmBackup = () => {
+    if (saving) return;
+    showDialog({
+      title: 'Save a backup file?',
+      message:
+        'This saves everything in Roads Ahead to one file: your trips, routes, vehicles and settings. Keep it somewhere safe, like Google Drive or email.',
+      confirmLabel: 'Save',
+      onConfirm: async () => {
+        setSaving(true);
+        await saveBackup();
+        setSaving(false);
       },
     });
   };
@@ -264,18 +281,25 @@ export default function SettingsScreen() {
         onPress={() => setPicking(true)}
       />
 
+      {/* The phone's own backup (Android Auto Backup, iCloud) needs no row: the file is what's extra. */}
       <SectionHeader variant="label" title="Backup" />
       <ListRow
-        icon="cloud_upload"
-        title="Back up and restore"
+        icon="save"
+        title="Save a backup file"
+        subtitle={saving ? 'Saving…' : 'Keep a copy, or move to any phone'}
         right={<PremiumTag />}
-        onPress={premium ? () => comingSoon('Back up and restore') : openPremium}
+        // Free for everyone for now, though still badged: it goes behind Premium later.
+        onPress={confirmBackup}
         divider
       />
+      {/* Never behind Premium: nobody should lose their trips when it ends. */}
+      <ListRow icon="settings_backup_restore" title="Restore from a file" onPress={restoreBackup} />
+
+      <SectionHeader variant="label" title="Export" />
       <ListRow
         icon="download"
-        title="Export all"
-        subtitle={exporting}
+        title="Export routes as GPX"
+        subtitle={exporting ?? 'For other map and sat-nav apps'}
         right={<PremiumTag />}
         // Free for everyone for now, though still badged: it goes behind Premium later.
         onPress={confirmExport}
@@ -298,7 +322,7 @@ export default function SettingsScreen() {
         onPress={() =>
           showMessage(
             'Privacy',
-            'Your trips stay on this phone. Only if you order a printed poster is it sent to us: its route, words and photo, which go to our printer and are deleted 14 days later. Maps and place names come from Apple or Google.'
+            "Your trips stay on this phone and in your phone's own backup. Only if you order a print is it sent to us: its route, words and photo, which go to our printer and are deleted 14 days later. Maps and place names come from Apple or Google."
           )
         }
         divider

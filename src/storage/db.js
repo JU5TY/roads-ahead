@@ -116,6 +116,9 @@ const MIGRATIONS = [
   `,
 ];
 
+/** The schema this build writes (PRAGMA user_version once migrated); a newer backup can't be restored. */
+export const SCHEMA_VERSION = MIGRATIONS.length;
+
 /** Bring the schema up to date. Resolves to true when the database was just created. */
 async function migrate(db) {
   const { user_version: version } = await db.getFirstAsync('PRAGMA user_version');
@@ -147,4 +150,16 @@ export function getDb() {
     });
   }
   return dbPromise;
+}
+
+/**
+ * Replace everything in the app's database with `source` (an open backup, see
+ * services/backupService.js), in place so the shared connection stays valid,
+ * then bring an older backup's schema up to date.
+ */
+export async function restoreDatabase(source) {
+  const db = await getDb();
+  await SQLite.backupDatabaseAsync({ sourceDatabase: source, destDatabase: db });
+  await db.execAsync('DROP TABLE IF EXISTS backup_info;');
+  await migrate(db);
 }

@@ -7,7 +7,8 @@ let open = null;
 
 /**
  * Show the app's dialog from anywhere: { title, highlight?, message?,
- * cancelLabel? (null for a single button), confirmLabel, destructive?, onConfirm? }.
+ * cancelLabel? (null for a single button), confirmLabel, destructive?, onConfirm?,
+ * onCancel? (also when dismissed) }.
  * Needs <DialogHost /> mounted once (the root layout does).
  */
 export function showDialog(options) {
@@ -28,12 +29,15 @@ export default function DialogHost() {
     };
   }, []);
   const close = () => setDialog((d) => ({ ...d, visible: false }));
-  const { onConfirm, ...options } = dialog.options;
+  const { onConfirm, onCancel, ...options } = dialog.options;
   return (
     <ConfirmDialog
       {...options}
       visible={dialog.visible}
-      onCancel={close}
+      onCancel={() => {
+        close();
+        onCancel?.();
+      }}
       onConfirm={() => {
         close();
         onConfirm?.();

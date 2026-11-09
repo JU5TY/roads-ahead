@@ -397,7 +397,7 @@ export default function TripScreen() {
           { icon: 'edit', label: 'Edit name and notes', onPress: () => setMenu('edit') },
           {
             icon: 'download',
-            label: 'Export',
+            label: 'Export as GPX',
             badge: premium ? null : 'Premium',
             // Free for everyone for now, though still badged: it goes behind Premium later.
             onPress: () => {
