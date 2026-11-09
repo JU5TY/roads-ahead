@@ -55,7 +55,7 @@ function RouteTile({ segments, selected, onPress }) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Route poster"
+      accessibilityLabel="Route print"
       accessibilityState={{ selected }}
       style={[styles.tile, styles.routeTile, selected && styles.tileSelected]}
     >
@@ -175,7 +175,7 @@ export default function PosterScreen() {
 
   const order = async () => {
     if (!printingOpen) {
-      comingSoon('Ordering a printed poster');
+      comingSoon('Ordering a print');
       return;
     }
     setOrdering(true);
@@ -207,7 +207,7 @@ export default function PosterScreen() {
           </Text>
         </View>
 
-        <View style={styles.sizes} role="radiogroup" accessibilityLabel="Poster size">
+        <View style={styles.sizes} role="radiogroup" accessibilityLabel="Print size">
           {Object.values(SIZES).map((s) => (
             <Pressable
               key={s.label}
@@ -229,7 +229,7 @@ export default function PosterScreen() {
         </View>
 
         <View style={[styles.preview, { height: previewHeight }]}>
-          <View style={styles.poster} accessibilityLabel={`Preview of the ${size} poster`}>
+          <View style={styles.poster} accessibilityLabel={`Preview of the ${size} print`}>
             <PosterCard
               spec={spec}
               width={posterWidth}
@@ -313,7 +313,7 @@ export default function PosterScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
         {/* The paper and free delivery are spelt out on Stripe's page, keeping this one to Share's height. */}
         <Button
-          label={ordering ? 'Preparing your poster…' : `Order print · ${SIZES[size].price}`}
+          label={ordering ? 'Preparing your print…' : `Order print · ${SIZES[size].price}`}
           disabled={ordering || (!!photoId && !photoAspect)}
           onPress={order}
         />

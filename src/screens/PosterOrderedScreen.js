@@ -33,7 +33,7 @@ export default function PosterOrderedScreen() {
   const rows = pending
     ? [
         ['Order', pending.ref],
-        ['Poster', [pending.spec.size, pending.spec.lines.title.text].filter(Boolean).join(' · ')],
+        ['Print', [pending.spec.size, pending.spec.lines.title.text].filter(Boolean).join(' · ')],
         ['Paid', SIZES[pending.spec.size].price],
       ].filter(([, value]) => value)
     : [];

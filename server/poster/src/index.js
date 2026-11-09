@@ -56,7 +56,7 @@ async function postOrder(request, env, url) {
     return problem('Expected a PDF', 415);
   }
   const length = Number(request.headers.get('Content-Length') ?? 0);
-  if (!length || length > MAX_PDF_BYTES) return problem('This poster is too large to send', 413);
+  if (!length || length > MAX_PDF_BYTES) return problem('This print is too large to send', 413);
 
   const order = newOrder();
   await env.POSTERS.put(pdfFile(order.id), request.body, {
@@ -113,7 +113,7 @@ async function stripeWebhook(request, env) {
     return new Response('ok');
   }
   const { orderId: id, ref, size } = session.metadata ?? {};
-  if (!ORDER_ID.test(id ?? '') || !SIZES[size]) return new Response('Not a poster order');
+  if (!ORDER_ID.test(id ?? '') || !SIZES[size]) return new Response('Not a print order');
 
   if (!(await env.POSTERS.head(pdfFile(id)))) throw new Error(`No PDF for paid order ${ref}`);
   const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
@@ -173,7 +173,7 @@ function donePage(env, url) {
   const back = `${env.APP_SCHEME}://poster/done?order=${id}`;
   return page(
     'Order placed',
-    `<h1>Order placed</h1><p>Your poster is being printed.</p>
+    `<h1>Order placed</h1><p>Your gallery print is being made.</p>
 <a href="${back}">Back to Roads Ahead</a>
 <script>location.href=${JSON.stringify(back)}</script>`
   );
