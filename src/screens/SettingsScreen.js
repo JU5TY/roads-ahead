@@ -286,7 +286,7 @@ export default function SettingsScreen() {
       <ListRow
         icon="save"
         title="Save a backup file"
-        subtitle={saving ? 'Saving…' : 'Keep a copy, or move to any phone'}
+        subtitle={saving ? 'Saving…' : null}
         right={<PremiumTag />}
         // Free for everyone for now, though still badged: it goes behind Premium later.
         onPress={confirmBackup}
@@ -299,7 +299,7 @@ export default function SettingsScreen() {
       <ListRow
         icon="download"
         title="Export routes as GPX"
-        subtitle={exporting ?? 'For other map and sat-nav apps'}
+        subtitle={exporting}
         right={<PremiumTag />}
         // Free for everyone for now, though still badged: it goes behind Premium later.
         onPress={confirmExport}
