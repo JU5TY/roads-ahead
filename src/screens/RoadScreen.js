@@ -187,7 +187,7 @@ export default function RoadScreen() {
       ) : (
         <View style={[styles.status, styles.statusTodo]}>
           <View style={[styles.statusWell, { backgroundColor: c.track }]}>
-            <Icon name="route" size={24} color={c.outlineStrong} />
+            <Icon name="road" size={24} color={c.outlineStrong} />
           </View>
           <View style={styles.flex}>
             <Text style={[type.bodyStrong, styles.text]}>Not completed yet</Text>

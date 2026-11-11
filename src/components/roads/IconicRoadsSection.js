@@ -57,6 +57,7 @@ export default function IconicRoadsSection({
             key={road.id}
             completed
             name={road.name}
+            line={road.line}
             subtitle={
               dayOf
                 ? `${completedLabel(count)} · ${dayLabel(days)}`

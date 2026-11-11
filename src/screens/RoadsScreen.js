@@ -103,6 +103,7 @@ export default function RoadsScreen() {
                 key={road.id}
                 completed
                 name={road.name}
+                line={road.line}
                 subtitle={`${placeOf(road)} · ${completedOn(totals.get(road.id))}`}
                 onPress={() => open(road)}
               />
@@ -122,6 +123,7 @@ export default function RoadsScreen() {
               <RoadRow
                 key={road.id}
                 name={road.name}
+                line={road.line}
                 subtitle={`${placeOf(road)} · ${km(road)}`}
                 onPress={() => open(road)}
               />

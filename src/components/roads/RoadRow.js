@@ -1,18 +1,34 @@
+import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
+import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
 
+const THUMB = 48;
+
 /**
- * One Iconic Road: green with a tick once completed, outlined when not yet.
+ * One Iconic Road: green once completed, outlined when not yet, with the road's
+ * shape on the right like a Trips card (a tick on it once completed).
+ * `line` is the road's [latitude, longitude] points.
  * `subtitle` is e.g. "Completed 2 times · Day 3" or "Peak District · 21 km".
  */
-export default function RoadRow({ name, subtitle, completed, onPress, chevron = false }) {
+export default function RoadRow({ name, subtitle, line, completed, onPress }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const fg = completed ? c.onRoadContainer : c.text;
   const muted = completed ? c.roadContainerMuted : c.textMuted;
+  const segments = useMemo(
+    () => [
+      {
+        key: 'road',
+        coordinates: (line ?? []).map(([latitude, longitude]) => ({ latitude, longitude })),
+        color: c.accent,
+      },
+    ],
+    [line, c.accent]
+  );
   return (
     <Pressable
       onPress={onPress}
@@ -24,11 +40,6 @@ export default function RoadRow({ name, subtitle, completed, onPress, chevron = 
         pressed && styles.pressed,
       ]}
     >
-      <Icon
-        name={completed ? 'verified' : 'route'}
-        size={24}
-        color={completed ? c.onRoadContainer : c.textMuted}
-      />
       <View style={styles.text}>
         <Text style={[type.bodyStrong, { color: fg }]} numberOfLines={1}>
           {name}
@@ -37,7 +48,14 @@ export default function RoadRow({ name, subtitle, completed, onPress, chevron = 
           {subtitle}
         </Text>
       </View>
-      {chevron ? <Icon name="chevron_right" size={24} color={muted} /> : null}
+      <View>
+        <RouteThumb segments={segments} size={THUMB} />
+        {completed ? (
+          <View style={styles.badge}>
+            <Icon name="check" size={13} color={c.onRoadBadge} />
+          </View>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
@@ -53,5 +71,19 @@ const makeStyles = (c) => ({
     paddingHorizontal: 15,
   },
   text: { flex: 1, minWidth: 0 },
+  // Sits on the thumbnail's corner, ringed in the row colour so it reads as cut out.
+  badge: {
+    position: 'absolute',
+    right: -3,
+    bottom: -3,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: c.roadContainer,
+    backgroundColor: c.roadBadge,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pressed: { opacity: pressedOpacity },
 });
