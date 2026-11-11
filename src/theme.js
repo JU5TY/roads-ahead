@@ -42,7 +42,6 @@ const light = {
   // Home's round map: the app icon's blue and white, the same in dark.
   mapRoad: '#FFFFFF',
   progressTrack: '#E8EAED',
-  outlinedRow: '#FFFFFF', // not-yet Iconic Road rows
   screen: '#FFFFFF', // full-screen pages without cards (Record, Drive saved)
   recordControl: '#E8EAED', // Record's round Maps / Hide map buttons and break track
   onRecordControl: '#202124',
@@ -119,7 +118,6 @@ const dark = {
   mapLand: '#1C2226',
   mapRoad: '#2C343A',
   progressTrack: '#3C4043',
-  outlinedRow: '#26272B',
   screen: '#202124',
   recordControl: '#35363A',
   onRecordControl: '#FFFFFF',

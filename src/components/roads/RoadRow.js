@@ -9,8 +9,9 @@ import Icon from '../ui/Icon';
 const THUMB = 48;
 
 /**
- * One Iconic Road (or ready-made route): green once completed, blue when it's
- * `planned` (a ready-made route in your plans), outlined otherwise, with its
+ * One Iconic Road (or ready-made route), a card like a Trips card: green once
+ * completed, blue when it's `planned` (a ready-made route in your plans),
+ * white otherwise, with its
  * shape on the right like a Trips card (a tick on it once completed, a
  * bookmark once planned). `line` is its [latitude, longitude] points.
  * `subtitle` is e.g. "Completed 2 times · Day 3" or "Peak District · 21 km".
@@ -67,16 +68,19 @@ export default function RoadRow({ name, subtitle, line, completed, planned = fal
 }
 
 const makeStyles = (c) => ({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: radius.card },
-  completed: { backgroundColor: c.roadContainer, paddingVertical: 12, paddingHorizontal: 16 },
-  planned: { backgroundColor: c.accentContainer, paddingVertical: 12, paddingHorizontal: 16 },
-  notYet: {
-    backgroundColor: c.outlinedRow,
-    borderWidth: 1,
-    borderColor: c.outline,
-    paddingVertical: 11,
-    paddingHorizontal: 15,
+  // As a Trips or plan card: same padding and shadow, whatever its colour.
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: radius.card,
+    ...c.cardShadow,
   },
+  completed: { backgroundColor: c.roadContainer },
+  planned: { backgroundColor: c.accentContainer },
+  notYet: { backgroundColor: c.card },
   text: { flex: 1, minWidth: 0 },
   // Sits on the thumbnail's corner, ringed in the row colour so it reads as cut out.
   badge: {
