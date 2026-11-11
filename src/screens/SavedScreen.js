@@ -20,7 +20,7 @@ import { spacing, type } from '../theme';
 import { routeGaps, routeSegments } from '../utils/crossings';
 import { distanceParts, elevationParts, formatDate, formatDurationShort } from '../utils/format';
 import { downsample } from '../utils/geoMath';
-import { dayNumberFor, groupIntoDays, routeLabel, tripTitle } from '../utils/tripSummary';
+import { driveNumberFor, routeLabel, tripTitle } from '../utils/tripSummary';
 
 /** Shown after Stop: the drive just saved, with Share and View. */
 export default function SavedScreen() {
@@ -78,14 +78,10 @@ export default function SavedScreen() {
     );
   }
 
-  const multiDay = groupIntoDays(trip.drives).length > 1;
-  const dayNumber = dayNumberFor(
-    trip.drives.filter((d) => d.startedAt < drive.startedAt),
-    drive.startedAt
-  );
+  const driveNumber = driveNumberFor(trip.drives, drive.startedAt);
   const name = tripTitle(trip);
   const kicker = (
-    multiDay ? `Day ${dayNumber} saved${name ? ` · ${name}` : ''}` : 'Drive saved'
+    trip.drives.length > 1 ? `Drive ${driveNumber} saved${name ? ` · ${name}` : ''}` : 'Drive saved'
   ).toUpperCase();
   const distance = distanceParts(drive.stats.distanceM, units);
   const climb = elevationParts(drive.stats.elevationGainM, units);

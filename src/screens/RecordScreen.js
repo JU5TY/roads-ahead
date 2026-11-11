@@ -21,7 +21,7 @@ import {
 import { getActiveDrive, getDriveRoutePreview } from '../storage/driveStorage';
 import { getContinuableTrip, getTrip } from '../storage/tripStorage';
 import { liveMetrics } from '../utils/geoMath';
-import { CONTINUE_WINDOW_MS, dayNumberFor, tripTitle } from '../utils/tripSummary';
+import { CONTINUE_WINDOW_MS, driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const REFRESH_MS = 1000;
 const ROUTE_REFRESH_MS = 10 * 1000;
@@ -101,10 +101,10 @@ export default function RecordScreen() {
     getTrip(activeTripId)
       .then((trip) => {
         if (cancelled || !trip) return;
-        const day = dayNumberFor(trip.drives, activeStartedAt);
+        const number = driveNumberFor(trip.drives, activeStartedAt);
         const name = tripTitle(trip) ?? 'New trip';
-        // Day 1 (or a one-day trip) is just the trip's name.
-        setTripLabelFor({ driveId: activeId, text: day > 1 ? `${name} · Day ${day}` : name });
+        // A trip's first drive is just the trip's name.
+        setTripLabelFor({ driveId: activeId, text: number > 1 ? `${name} · Drive ${number}` : name });
       })
       .catch((err) => console.warn('[record] trip label failed', err));
     return () => {

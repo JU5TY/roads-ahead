@@ -16,7 +16,7 @@ import { getTrip } from '../storage/tripStorage';
 import { pressedOpacity, radius, type } from '../theme';
 import { distanceParts, elevationParts, formatLongDate, formatShortDate } from '../utils/format';
 import { bendsLabel, completedLabel, getRoad } from '../utils/iconicRoads';
-import { dayNumberFor, groupIntoDays, tripTitle } from '../utils/tripSummary';
+import { driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const NOTE = 'Iconic Roads are never timed. Drive them at your own pace.';
 
@@ -58,7 +58,7 @@ export default function RoadScreen() {
   const { units } = useSettings();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const [drives, setDrives] = useState(null); // [{ driveId, tripId, title, dayNumber, multiDay, count, ... }]
+  const [drives, setDrives] = useState(null); // [{ driveId, tripId, title, count, ... }]
   const [summary, setSummary] = useState({ count: 0, first: null, last: null });
 
   useFocusEffect(
@@ -78,15 +78,9 @@ export default function RoadScreen() {
         }
         const rows = [...byDrive.values()].map((x) => {
           const trip = trips.get(x.tripId);
-          const earlier = trip ? trip.drives.filter((d) => d.startedAt < x.driveStartedAt) : [];
-          const dayNumber = dayNumberFor(earlier, x.driveStartedAt);
+          const number = driveNumberFor(trip?.drives ?? [], x.driveStartedAt);
           const name = trip ? tripTitle(trip) : null;
-          return {
-            ...x,
-            dayNumber,
-            multiDay: trip ? groupIntoDays(trip.drives).length > 1 : false,
-            title: name ? `${name} · Day ${dayNumber}` : `Day ${dayNumber}`,
-          };
+          return { ...x, title: name ? `${name} · Drive ${number}` : `Drive ${number}` };
         });
         if (cancelled) return;
         setDrives(rows);

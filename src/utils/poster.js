@@ -6,7 +6,7 @@ import { distanceUnit, toDistance } from './format';
 import { CENTRED, coverSize } from './photoCrop';
 import { CIRCLE, IMAGE, mmPerUnit, posterLines } from './posterLayout';
 import { fitInCircle, fitMap, pinPoint } from './routeOutline';
-import { groupIntoDays, oneWayLabel, summarizeDrives, tripOneWayLabel, tripTitle } from './tripSummary';
+import { driveNumberFor, oneWayLabel, summarizeDrives, tripOneWayLabel, tripTitle } from './tripSummary';
 import { vehicleLabel } from './vehicles';
 
 export const SPEC_VERSION = 1;
@@ -39,7 +39,7 @@ function posterDistance(meters, units) {
 /**
  * The poster's words for `trip`, or for `drive` alone: { title, route, footer }.
  * The title is the trip's name; the route line starts with the vehicle when one
- * was driven, and a drive of a longer trip starts its footer with its day.
+ * was driven, and a drive of a longer trip starts its footer with its number.
  */
 export function posterText(trip, drive, vehicles, units) {
   const drives = drive ? [drive] : trip.drives;
@@ -47,8 +47,7 @@ export function posterText(trip, drive, vehicles, units) {
   const route = drive ? oneWayLabel(drive.places) : tripOneWayLabel(trip);
   const vehicleIds = [...new Set(drives.map((d) => d.vehicleId).filter((v) => v != null))];
   const vehicle = vehicleIds.length === 1 ? vehicles.find((v) => v.id === vehicleIds[0]) : null;
-  const days = groupIntoDays(trip.drives);
-  const day = drive && days.length > 1 ? days.find((d) => d.drives.includes(drive)) : null;
+  const number = drive && trip.drives.length > 1 ? driveNumberFor(trip.drives, drive.startedAt) : null;
   return {
     title,
     // An unnamed trip is already titled by its route, so don't say it twice.
@@ -57,7 +56,7 @@ export function posterText(trip, drive, vehicles, units) {
         .filter(Boolean)
         .join(' · ') || null,
     footer: [
-      day ? `Day ${day.number}` : null,
+      number ? `Drive ${number}` : null,
       posterDistance(summarizeDrives(drives).distanceM, units),
       longDateRange(drives[0].startedAt, drives.at(-1).endedAt),
     ]

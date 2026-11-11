@@ -174,13 +174,19 @@ export function groupByRoad(completions) {
 /** "Completed", or "Completed 4 times". */
 export const completedLabel = (count) => (count > 1 ? `Completed ${count} times` : 'Completed');
 
-/** "Day 3", "Days 2–3" or "Days 1, 3" for a set of day numbers. */
-export function dayLabel(dayNumbers) {
-  const days = [...new Set(dayNumbers)].sort((a, b) => a - b);
-  if (days.length === 1) return `Day ${days[0]}`;
-  const consecutive = days.every((d, i) => i === 0 || d === days[i - 1] + 1);
-  return consecutive ? `Days ${days[0]}–${days.at(-1)}` : `Days ${days.join(', ')}`;
+/** `one 3`, `many 2–3` or `many 1, 3` for a set of numbers. */
+function numberedLabel(one, many, numbers) {
+  const sorted = [...new Set(numbers)].sort((a, b) => a - b);
+  if (sorted.length === 1) return `${one} ${sorted[0]}`;
+  const consecutive = sorted.every((n, i) => i === 0 || n === sorted[i - 1] + 1);
+  return consecutive ? `${many} ${sorted[0]}–${sorted.at(-1)}` : `${many} ${sorted.join(', ')}`;
 }
+
+/** "Day 3", "Days 2–3" or "Days 1, 3" for a set of day numbers. */
+export const dayLabel = (dayNumbers) => numberedLabel('Day', 'Days', dayNumbers);
+
+/** "Drive 3", "Drives 2–3" or "Drives 1, 3" for a set of drive numbers. */
+export const driveLabel = (driveNumbers) => numberedLabel('Drive', 'Drives', driveNumbers);
 
 /**
  * How twisty a road is, from the total turning along its line per km:

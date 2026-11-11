@@ -34,9 +34,9 @@ const openGoogleMaps = () =>
 
 /**
  * Record while a drive is live: the map (which can be hidden), status, speed,
- * distance and driving time, the break bar, and Maps / Pause or Resume / Stop.
+ * distance and driving time, the break bar, and Navigate / Pause or Resume / Stop.
  * `live` is liveMetrics(drive), `route` the points drawn so far and `tripLabel`
- * "Scotland 2026 · Day 2". Stop asks first: Save, or Discard when nothing moved.
+ * "Scotland 2026 · Drive 2". Stop asks first: Save, or Discard when nothing moved.
  */
 export default function RecordingView({
   drive,
@@ -273,7 +273,7 @@ export default function RecordingView({
             variant="record"
             size={64}
             iconSize={28}
-            label="Maps"
+            label="Navigate"
             labelStyle={styles.controlLabel}
             onPress={openGoogleMaps}
             style={styles.sideControl}

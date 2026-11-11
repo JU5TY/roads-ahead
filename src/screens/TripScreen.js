@@ -244,10 +244,11 @@ export default function TripScreen() {
 
   const allHidden = hiddenCount === trip.drives.length;
   const roadsShown = showIconicRoads ? completions : [];
-  const dayOf = (driveId) => {
-    const drive = trip.drives.find((d) => d.id === driveId);
-    return drive ? (days.find((day) => day.drives.includes(drive))?.number ?? 1) : 1;
-  };
+  // Iconic Road rows name the drive ("Completed · Drive 2") when there's more than one.
+  const driveOf =
+    trip.drives.length > 1
+      ? (driveId) => trip.drives.findIndex((d) => d.id === driveId) + 1
+      : undefined;
 
   const showMap = () => scrollRef.current?.scrollTo({ y: 0, animated: true });
   // Timeline stop items carry their start time; find which drive they belong to.
@@ -519,7 +520,7 @@ export default function TripScreen() {
           today={new Date(selected.startedAt).toDateString() === new Date().toDateString()}
         />
       ) : (
-        <IconicRoadsSection completions={viewRoads} dayOf={dayOf} />
+        <IconicRoadsSection completions={viewRoads} driveOf={driveOf} />
       )}
       {pointsByDrive ? (
         <Timeline

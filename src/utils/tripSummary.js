@@ -61,6 +61,9 @@ export function dayNumberFor(drives, ts) {
   return localDateKey(last.date) === localDateKey(ts) ? last.number : last.number + 1;
 }
 
+/** Which drive of its trip one starting at `ts` is, from 1: one more than the drives started before it. */
+export const driveNumberFor = (drives, ts) => drives.filter((d) => d.startedAt < ts).length + 1;
+
 /** "Manchester → Edinburgh", "Manchester" for a round trip, or null if unknown. */
 export function routeLabel(places) {
   const { start, end } = places ?? {};

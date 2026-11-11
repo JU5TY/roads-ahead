@@ -1,7 +1,7 @@
 // What a share card says about a whole trip or one of its drives.
 import { countryRows } from './countries';
 import { formatDate, tripKicker } from './format';
-import { dayNumberFor, groupIntoDays, oneWayLabel, summarizeDrives, tripOneWayLabel, tripTitle } from './tripSummary';
+import { driveNumberFor, groupIntoDays, oneWayLabel, summarizeDrives, tripOneWayLabel, tripTitle } from './tripSummary';
 import { vehicleLabel } from './vehicles';
 
 const dayWithYear = (ts) =>
@@ -23,11 +23,11 @@ export function shareCardContent(trip, drive = null, vehicles = []) {
 
   let kicker;
   if (drive) {
-    const day = dayNumberFor(
-      trip.drives.filter((d) => d.startedAt < drive.startedAt),
-      drive.startedAt
-    );
-    kicker = multiDay ? `${dayWithYear(drive.startedAt)} · DAY ${day}` : dayWithYear(drive.startedAt);
+    const number = driveNumberFor(trip.drives, drive.startedAt);
+    kicker =
+      trip.drives.length > 1
+        ? `${dayWithYear(drive.startedAt)} · DRIVE ${number}`
+        : dayWithYear(drive.startedAt);
   } else if (multiDay) {
     const days = groupIntoDays(trip.drives).length;
     kicker = tripKicker(drives[0].startedAt, drives.at(-1).endedAt, days, { withYear: true });

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { radius, spacing, type } from '../../theme';
-import { dayNumberFor, tripTitle } from '../../utils/tripSummary';
+import { driveNumberFor, tripTitle } from '../../utils/tripSummary';
 import Icon from '../ui/Icon';
 import IconButton from '../ui/IconButton';
 import LiveMap from './LiveMap';
@@ -113,7 +113,7 @@ export default function ReadyView({ here, recent, now, busy, onStart }) {
               label="Start"
               labelStyle={styles.startLabel}
               accessibilityLabel={
-                continuing ? `Start day ${dayNumberFor(recent.drives, now)}` : 'Start a new trip'
+                continuing ? `Start drive ${driveNumberFor(recent.drives, now)}` : 'Start a new trip'
               }
               onPress={() => onStart(continuing ? recent.id : null)}
             />

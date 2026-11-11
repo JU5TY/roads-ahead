@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { useStyles } from '../../hooks/useTheme';
-import { completedLabel, dayLabel, getRoad } from '../../utils/iconicRoads';
+import { completedLabel, driveLabel, getRoad } from '../../utils/iconicRoads';
 import SectionHeader from '../ui/SectionHeader';
 import RoadRow from './RoadRow';
 
@@ -16,7 +16,7 @@ function dayPageLabel(count, total, today) {
 
 /**
  * "Iconic Roads" on the Trip page (all of it, or one drive): one row per road.
- * All: pass `dayOf(driveId)`, for "Completed 2 times · Day 3".
+ * All: pass `driveOf(driveId)` (its drive number), for "Completed 2 times · Drive 3".
  * One drive: pass `totals` (getRoadTotals) and `today` (the drive was today),
  * for "Completed twice today · 3 times in all".
  * `header={false}` leaves out the title and All roads link (Drive saved, where
@@ -25,7 +25,7 @@ function dayPageLabel(count, total, today) {
  */
 export default function IconicRoadsSection({
   completions,
-  dayOf,
+  driveOf,
   totals,
   today = false,
   header = true,
@@ -35,9 +35,9 @@ export default function IconicRoadsSection({
   const groups = new Map();
   for (const c of completions) {
     if (!getRoad(c.roadId)) continue;
-    const g = groups.get(c.roadId) ?? { road: getRoad(c.roadId), count: 0, days: [] };
+    const g = groups.get(c.roadId) ?? { road: getRoad(c.roadId), count: 0, drives: [] };
     g.count += 1;
-    if (dayOf) g.days.push(dayOf(c.driveId));
+    if (driveOf) g.drives.push(driveOf(c.driveId));
     groups.set(c.roadId, g);
   }
   if (groups.size === 0) return null;
@@ -52,15 +52,15 @@ export default function IconicRoadsSection({
         />
       ) : null}
       <View style={[styles.list, style]}>
-        {[...groups.values()].map(({ road, count, days }) => (
+        {[...groups.values()].map(({ road, count, drives }) => (
           <RoadRow
             key={road.id}
             completed
             name={road.name}
             line={road.line}
             subtitle={
-              dayOf
-                ? `${completedLabel(count)} · ${dayLabel(days)}`
+              driveOf
+                ? `${completedLabel(count)} · ${driveLabel(drives)}`
                 : totals
                   ? dayPageLabel(count, totals.get(road.id)?.count ?? count, today)
                   : completedLabel(count)
