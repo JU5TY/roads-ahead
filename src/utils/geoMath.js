@@ -14,6 +14,8 @@ export const STOP_MIN_DURATION_MS = 5 * 60 * 1000;
 // after a short or walking-pace stretch, is the same stop carrying on.
 const STOP_MERGE_M = 500;
 const STOP_MERGE_SPEED_MPS = 3; // about 7 mph: on foot, not driving
+/** A drive stopped this long (not paused) was left running: it ends where it stopped. */
+export const AUTO_STOP_AFTER_MS = 3 * 60 * 60 * 1000;
 /** A stop or pause this long counts as a break: it resets the break reminder. */
 export const BREAK_MIN_MS = 15 * 60 * 1000;
 const STOP_SPEED_MPS = 5 / 3.6; // "stationary" for long GPS gaps and the live break timer
@@ -351,6 +353,21 @@ export function skipTo(stats, fix, { resetStint = true } = {}) {
     currentStintMs: resetStint ? 0 : next.currentStintMs,
     sinceStop: null, // a stop either side of a ferry or pause stays two stops
   };
+}
+
+/**
+ * When the car stopped, if it hasn't driven since: the start of the stop it's
+ * at now, a walk round it included. Null while driving or paused.
+ */
+export function stoppedSince(stats) {
+  if (stats.paused || !stats.dwell) return null;
+  return joinsLastStop(stats, stats.dwell) ? stats.stops.at(-1).startedAt : stats.dwell.startedAt;
+}
+
+/** Whether the drive has sat stopped (not paused) for AUTO_STOP_AFTER_MS by `now`. */
+export function isLeftRunning(stats, now) {
+  const since = stoppedSince(stats);
+  return since !== null && now - since >= AUTO_STOP_AFTER_MS;
 }
 
 /** Fold a batch of fixes, oldest first. */

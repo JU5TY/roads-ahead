@@ -11,20 +11,25 @@ import {
   completeDrive,
   createDrive,
   deleteDrive,
+  deletePointsAfter,
   getActiveDrive,
   getDrive,
+  getDrivePoints,
 } from '../storage/driveStorage';
 import { checkDriveCountries } from '../storage/countryStorage';
 import { checkDriveCrossings } from '../storage/crossingStorage';
 import { checkDrive } from '../storage/roadStorage';
 import { removeExampleTrip } from '../storage/tripStorage';
 import { palettes } from '../theme';
+import { statsWithoutCrossings } from '../utils/crossings';
 import {
+  AUTO_STOP_AFTER_MS,
   applyFixes,
   finalizeStats,
   isUsableFix,
   pauseStats,
   resumeStats,
+  stoppedSince,
   toFix,
 } from '../utils/geoMath';
 import { ensureDrivePlaces } from './placeService';
@@ -73,10 +78,10 @@ const duringPause = (stats, f) =>
     (p) => f.timestamp >= p.pausedAt && (p.resumedAt === null || f.timestamp < p.resumedAt)
   );
 
-function handleLocations(locations) {
-  return enqueue(async () => {
+async function handleLocations(locations) {
+  const due = await enqueue(async () => {
     const drive = await getActiveDrive();
-    if (!drive) return;
+    if (!drive) return false;
     const fixes = locations
       .map(toFix)
       .filter(
@@ -85,10 +90,22 @@ function handleLocations(locations) {
           f.timestamp >= drive.startedAt - STALE_FIX_TOLERANCE_MS &&
           !duringPause(drive.stats, f)
       );
-    if (fixes.length === 0) return;
-    const stats = applyFixes(drive.stats, fixes);
-    await appendFixes(drive.id, fixes, stats);
+    const stats = fixes.length ? applyFixes(drive.stats, fixes) : drive.stats;
+    if (fixes.length) await appendFixes(drive.id, fixes, stats);
+    return idleSince({ ...drive, stats }) !== null;
   });
+  // After the batch's own job, so ending the drive doesn't wait on itself.
+  if (due) await endDriveIfLeftRunning();
+}
+
+/**
+ * When a drive that's been stopped (not paused) for AUTO_STOP_AFTER_MS came to
+ * a stop, or null. A drive that never got a GPS fix counts from its start.
+ */
+function idleSince(drive, now = Date.now()) {
+  const { stats } = drive;
+  const since = stats.lastFix ? stoppedSince(stats) : stats.paused ? null : drive.startedAt;
+  return since !== null && now - since >= AUTO_STOP_AFTER_MS ? since : null;
 }
 
 TaskManager.defineTask(LOCATION_TRACKING_TASK, async ({ data, error }) => {
@@ -218,30 +235,70 @@ export async function stopDrive() {
   return enqueue(async () => {
     const drive = await getActiveDrive();
     if (!drive) return null;
-    const endedAt = Date.now();
-    await completeDrive(drive.id, endedAt, finalizeStats(drive.stats));
-    // The first recorded drive replaces the example trip new installs start with.
-    await removeExampleTrip().catch((err) =>
-      console.warn('[locationService] removing the example trip failed', err)
-    );
-    // Ferry and tunnel crossings first: they redo the stats the checks below build on.
-    await checkDriveCrossings(drive.id).catch((err) =>
-      console.warn('[locationService] crossings check failed', err)
-    );
-    // Iconic Roads, before Drive saved opens so it can show them (all offline).
-    await checkDrive(drive.id).catch((err) =>
-      console.warn('[locationService] Iconic Roads check failed', err)
-    );
-    // Countries too, before the place lookup so border crossings get names.
-    await checkDriveCountries(drive.id).catch((err) =>
-      console.warn('[locationService] countries check failed', err)
-    );
-    // Look up place names now while we're likely online; failures retry later.
-    getDrive(drive.id)
-      .then((completed) => ensureDrivePlaces(completed, { includeStops: true }))
-      .catch((err) => console.warn('[locationService] place lookup failed', err));
+    await completeDrive(drive.id, Date.now(), finalizeStats(drive.stats));
+    await afterDriveEnds(drive.id);
     return drive.id;
   });
+}
+
+/**
+ * End a drive left running: stopped (not paused) for AUTO_STOP_AFTER_MS. It
+ * ends quietly where it stopped, without the time or wandering after; one
+ * that never moved is thrown away. Safe to call any time. Returns whether it ended one.
+ */
+export async function endDriveIfLeftRunning() {
+  return enqueue(async () => {
+    const drive = await getActiveDrive();
+    const since = drive && idleSince(drive);
+    if (!since) return false;
+    await stopUpdates();
+    if (drive.stats.distanceM === 0) {
+      await deleteDrive(drive.id);
+      return true;
+    }
+    // Worked out again up to the stop, so walks round it aren't a last rest stop.
+    const pauses = (drive.stats.pauses ?? []).filter(
+      (p) => p.endedAt !== null && p.endedAt <= since
+    );
+    const points = (await getDrivePoints(drive.id)).filter((p) => p.timestamp <= since);
+    const stats = {
+      ...drive.stats,
+      ...statsWithoutCrossings(points, pauses.filter((p) => p.from)),
+      // Saved points don't keep altitude accuracy, so keep the climb measured live.
+      maxAltitudeM: drive.stats.maxAltitudeM,
+      elevationGainM: drive.stats.elevationGainM,
+      pauses,
+      paused: false,
+    };
+    await deletePointsAfter(drive.id, since);
+    await completeDrive(drive.id, since, stats);
+    await afterDriveEnds(drive.id);
+    return true;
+  });
+}
+
+/** What follows a drive ending: crossings, Iconic Roads, countries and place names. */
+async function afterDriveEnds(driveId) {
+  // The first recorded drive replaces the example trip new installs start with.
+  await removeExampleTrip().catch((err) =>
+    console.warn('[locationService] removing the example trip failed', err)
+  );
+  // Ferry and tunnel crossings first: they redo the stats the checks below build on.
+  await checkDriveCrossings(driveId).catch((err) =>
+    console.warn('[locationService] crossings check failed', err)
+  );
+  // Iconic Roads, before Drive saved opens so it can show them (all offline).
+  await checkDrive(driveId).catch((err) =>
+    console.warn('[locationService] Iconic Roads check failed', err)
+  );
+  // Countries too, before the place lookup so border crossings get names.
+  await checkDriveCountries(driveId).catch((err) =>
+    console.warn('[locationService] countries check failed', err)
+  );
+  // Look up place names now while we're likely online; failures retry later.
+  getDrive(driveId)
+    .then((completed) => ensureDrivePlaces(completed, { includeStops: true }))
+    .catch((err) => console.warn('[locationService] place lookup failed', err));
 }
 
 /**
@@ -264,6 +321,8 @@ export async function resumeActiveDrive() {
   const drive = await getActiveDrive();
   // Never prompt on launch; if access was revoked the dashboard still shows the drive.
   if (!drive || !(await getLocationAccess()).granted) return null;
+  // Left running while the app was closed: it ends where it stopped instead.
+  if (await endDriveIfLeftRunning()) return null;
   // Paused: Record shows it, but GPS stays off until Resume.
   if (drive.stats.paused) return { background: await canTrackInBackground() };
   return startUpdates();

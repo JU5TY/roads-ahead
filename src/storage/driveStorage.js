@@ -110,6 +110,12 @@ export async function completeDrive(driveId, endedAt, stats) {
   );
 }
 
+/** Drop a drive's points after `timestamp` (a drive left running, ended where it stopped). */
+export async function deletePointsAfter(driveId, timestamp) {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM points WHERE drive_id = ? AND timestamp > ?', driveId, timestamp);
+}
+
 export async function getDrivePoints(driveId) {
   const db = await getDb();
   return db.getAllAsync(

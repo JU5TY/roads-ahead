@@ -1,13 +1,13 @@
 // Importing locationService defines the background location task at module
 // load. Must stay the first import so the task exists when the OS launches the
 // app headless.
-import { resumeActiveDrive } from '../services/locationService';
+import { endDriveIfLeftRunning, resumeActiveDrive } from '../services/locationService';
 
 import { useFonts } from 'expo-font';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { AppState, View } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import DialogHost from '../components/ui/DialogHost';
@@ -49,6 +49,20 @@ function AppStack() {
       .catch((err) => console.warn('[app] Iconic Roads check failed', err));
     // And work out countries for drives recorded before Countries existed.
     checkAllCountriesIfNeeded().catch((err) => console.warn('[app] countries check failed', err));
+  }, [ready, onboarded]);
+
+  // A drive left running ends where it stopped. GPS barely reports while the
+  // phone sits still, so check when the app comes back and each minute it's open.
+  useEffect(() => {
+    if (!ready || !onboarded) return;
+    const check = () =>
+      endDriveIfLeftRunning().catch((err) => console.warn('[app] auto-stop failed', err));
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && check());
+    const id = setInterval(check, 60 * 1000);
+    return () => {
+      sub.remove();
+      clearInterval(id);
+    };
   }, [ready, onboarded]);
 
   if (!ready) return <View style={{ flex: 1, backgroundColor: c.background }} />;
