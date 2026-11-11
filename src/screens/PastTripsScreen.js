@@ -8,6 +8,7 @@ import PlanCard from '../components/plan/PlanCard';
 import PlanSheet from '../components/plan/PlanSheet';
 import RecordingBar from '../components/RecordingBar';
 import TripCard from '../components/TripCard';
+import BannerCard from '../components/ui/BannerCard';
 import Icon from '../components/ui/Icon';
 import SectionHeader from '../components/ui/SectionHeader';
 import SegmentedSwitch from '../components/ui/SegmentedSwitch';
@@ -197,6 +198,19 @@ export default function PastTripsScreen() {
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={empty}
+        // Under the plans: copy a ready-made route instead of planning from scratch.
+        ListFooterComponent={
+          planned && plans ? (
+            <BannerCard
+              icon="explore"
+              filled
+              title="Ready-made routes"
+              subtitle="Start with the North Coast 500"
+              onPress={() => router.push('/routes')}
+              style={styles.routes}
+            />
+          ) : null
+        }
       />
       {planned ? (
         <Pressable
@@ -226,6 +240,7 @@ const makeStyles = (c) => ({
   text: { color: c.text },
   center: { textAlign: 'center' },
   empty: { paddingTop: 124 },
+  routes: { marginTop: 20 },
   noPlans: { alignItems: 'center', gap: spacing.sm, paddingTop: 96, paddingHorizontal: spacing.lg },
   // Where the Record pill sits on Driven, so the two never overlap.
   planButton: {

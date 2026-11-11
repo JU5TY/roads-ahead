@@ -9,16 +9,18 @@ import Icon from '../ui/Icon';
 const THUMB = 48;
 
 /**
- * One Iconic Road: green once completed, outlined when not yet, with the road's
- * shape on the right like a Trips card (a tick on it once completed).
- * `line` is the road's [latitude, longitude] points.
+ * One Iconic Road (or ready-made route): green once completed, blue when it's
+ * `planned` (a ready-made route in your plans), outlined otherwise, with its
+ * shape on the right like a Trips card (a tick on it once completed, a
+ * bookmark once planned). `line` is its [latitude, longitude] points.
  * `subtitle` is e.g. "Completed 2 times · Day 3" or "Peak District · 21 km".
  */
-export default function RoadRow({ name, subtitle, line, completed, onPress }) {
+export default function RoadRow({ name, subtitle, line, completed, planned = false, onPress }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const fg = completed ? c.onRoadContainer : c.text;
-  const muted = completed ? c.roadContainerMuted : c.textMuted;
+  const blue = planned && !completed;
+  const fg = completed ? c.onRoadContainer : blue ? c.onAccentContainer : c.text;
+  const muted = completed ? c.roadContainerMuted : blue ? c.accentContainerMuted : c.textMuted;
   const segments = useMemo(
     () => [
       {
@@ -36,7 +38,7 @@ export default function RoadRow({ name, subtitle, line, completed, onPress }) {
       accessibilityRole={onPress ? 'button' : undefined}
       style={({ pressed }) => [
         styles.row,
-        completed ? styles.completed : styles.notYet,
+        completed ? styles.completed : blue ? styles.planned : styles.notYet,
         pressed && styles.pressed,
       ]}
     >
@@ -54,6 +56,10 @@ export default function RoadRow({ name, subtitle, line, completed, onPress }) {
           <View style={styles.badge}>
             <Icon name="check" size={13} color={c.onRoadBadge} />
           </View>
+        ) : blue ? (
+          <View style={[styles.badge, styles.plannedBadge]}>
+            <Icon name="bookmark" filled size={13} color={c.onAccent} />
+          </View>
         ) : null}
       </View>
     </Pressable>
@@ -63,6 +69,7 @@ export default function RoadRow({ name, subtitle, line, completed, onPress }) {
 const makeStyles = (c) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: radius.card },
   completed: { backgroundColor: c.roadContainer, paddingVertical: 12, paddingHorizontal: 16 },
+  planned: { backgroundColor: c.accentContainer, paddingVertical: 12, paddingHorizontal: 16 },
   notYet: {
     backgroundColor: c.outlinedRow,
     borderWidth: 1,
@@ -85,5 +92,6 @@ const makeStyles = (c) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  plannedBadge: { borderColor: c.accentContainer, backgroundColor: c.accent },
   pressed: { opacity: pressedOpacity },
 });

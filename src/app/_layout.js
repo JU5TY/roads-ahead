@@ -92,6 +92,8 @@ function AppStack() {
           <Stack.Screen name="saved/[id]" options={{ gestureEnabled: false }} />
           <Stack.Screen name="roads/index" />
           <Stack.Screen name="roads/[id]" />
+          <Stack.Screen name="routes/index" />
+          <Stack.Screen name="routes/[id]" />
           <Stack.Screen name="share" />
           <Stack.Screen name="poster/index" />
           <Stack.Screen name="poster/done" options={{ gestureEnabled: false }} />

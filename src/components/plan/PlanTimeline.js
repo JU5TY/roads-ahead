@@ -118,7 +118,8 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * them; tapping one opens its options.
  * `start` is driveStart(); `legTexts` ("33 mi · 45m") are by the id of the
  * stop each leg arrives at; onStopPress(stop), onStartPress(),
- * onMove(stop, position).
+ * onMove(stop, position). `locked` (a copied ready-made route) leaves out the
+ * handles and taps: nothing can be changed.
  */
 export default function PlanTimeline({
   drive,
@@ -129,6 +130,7 @@ export default function PlanTimeline({
   onStopPress,
   onStartPress,
   onMove,
+  locked = false,
 }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -214,14 +216,16 @@ export default function PlanTimeline({
 
   // The last place is the finish, unless an Iconic Road comes after it.
   const lastPlace = stops.map((s) => !s.roadId).lastIndexOf(true);
-  const unitRows = (stop, i, handlers) => {
+  const unitRows = (stop, i, dragHandlers) => {
+    const handlers = locked ? undefined : dragHandlers;
+    const onPress = locked ? undefined : () => onStopPress(stop);
     const road = stop.roadId ? getRoad(stop.roadId) : null;
     if (road) {
       // A road shows the leg to the place after it (or to its own end, last).
       const next = stops[i + 1];
       const text = next && !next.roadId ? legTexts[next.id] : legTexts[stop.id];
       return (
-        <LegRow color={color} road={road.name} text={text} onPress={() => onStopPress(stop)} handlers={handlers} />
+        <LegRow color={color} road={road.name} text={text} onPress={onPress} handlers={handlers} />
       );
     }
     const finish = i === stops.length - 1 && i === lastPlace;
@@ -234,7 +238,7 @@ export default function PlanTimeline({
           color={color}
           name={stop.name ?? 'Dropped pin'}
           subtitle={finish ? 'Finish' : 'Stop'}
-          onPress={() => onStopPress(stop)}
+          onPress={onPress}
           handlers={handlers}
         />
       </>

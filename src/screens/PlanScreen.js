@@ -153,6 +153,8 @@ export default function PlanScreen() {
     });
   };
 
+  // A copied ready-made route can't be changed for now: its drives and stops are as they came.
+  const locked = !!plan.routeId;
   // "Fort William → Applecross"; Drive 1 with no start runs from wherever you are.
   const routeName = finish ? `${start?.name ?? 'Your location'} → ${finish.name ?? 'Dropped pin'}` : null;
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
@@ -259,7 +261,7 @@ export default function PlanScreen() {
         visible={menu === 'options'}
         actions={[
           { icon: 'edit', label: 'Edit name and date', onPress: () => setMenu('edit') },
-          ...(plan.drives.length > 1
+          ...(plan.drives.length > 1 && !locked
             ? [{ icon: 'delete', label: 'Delete this drive', style: 'destructive', onPress: confirmDeleteDrive }]
             : []),
           { icon: 'delete', label: 'Delete plan', style: 'destructive', onPress: confirmDeletePlan },
@@ -382,14 +384,16 @@ export default function PlanScreen() {
           ))}
         </ScrollView>
         {/* Pinned at the end of the tabs, so it's there however many drives there are. */}
-        <Pressable
-          onPress={addDrive}
-          accessibilityRole="button"
-          accessibilityLabel="Add a drive"
-          style={({ pressed }) => [styles.addDrive, pressed && styles.pressed]}
-        >
-          <Icon name="add" size={22} color={c.accent} />
-        </Pressable>
+        {locked ? null : (
+          <Pressable
+            onPress={addDrive}
+            accessibilityRole="button"
+            accessibilityLabel="Add a drive"
+            style={({ pressed }) => [styles.addDrive, pressed && styles.pressed]}
+          >
+            <Icon name="add" size={22} color={c.accent} />
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.heading}>
@@ -418,28 +422,38 @@ export default function PlanScreen() {
         start={start}
         color={colorOf(picked)}
         onStopPress={(s) => setMenu({ stop: s })}
-        onStartPress={() => setMenu('start')}
+        onStartPress={locked ? undefined : () => setMenu('start')}
         onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
+        locked={locked}
       />
 
-      <View style={styles.buttons}>
-        <Button
-          label="Add stop"
-          icon="add_location_alt"
-          variant="tonal"
-          size="small"
-          onPress={() => pickPlace('stop')}
-          style={styles.button}
-        />
-        <Button
-          label="Iconic Road"
-          icon="verified"
-          variant="tonal"
-          size="small"
-          onPress={() => setMenu('road')}
-          style={styles.button}
-        />
-      </View>
+      {locked ? (
+        <View style={styles.lockedNote}>
+          <Icon name="info" size={20} color={c.textMuted} />
+          <Text style={[type.label, styles.muted, styles.regular, styles.flex]}>
+            Copied from Ready-made routes, so its drives and stops stay as they are for now
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.buttons}>
+          <Button
+            label="Add stop"
+            icon="add_location_alt"
+            variant="tonal"
+            size="small"
+            onPress={() => pickPlace('stop')}
+            style={styles.button}
+          />
+          <Button
+            label="Iconic Road"
+            icon="verified"
+            variant="tonal"
+            size="small"
+            onPress={() => setMenu('road')}
+            style={styles.button}
+          />
+        </View>
+      )}
     </DetailLayout>
   );
 }
@@ -466,6 +480,9 @@ const makeStyles = (c) => ({
   button: { flex: 1 },
   text: { color: c.text },
   muted: { color: c.textMuted },
+  regular: { fontFamily: type.body.fontFamily },
+  flex: { flex: 1, minWidth: 0 },
+  lockedNote: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginHorizontal: 4 },
   link: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
   pressed: { opacity: pressedOpacity },
 });

@@ -34,6 +34,7 @@ import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/f
 import { ICONIC_ROADS, ROADS_ATTRIBUTION } from '../utils/iconicRoads';
 import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
 import { NAV_APPS } from '../utils/navLinks';
+import { READY_ROUTES_ATTRIBUTION } from '../utils/readyRoutes';
 import { hasTwin } from '../utils/vehicles';
 
 const UNIT_LABELS = { metric: 'Kilometres', imperial: 'Miles' };
@@ -392,7 +393,10 @@ export default function SettingsScreen() {
         value={version}
         chevron={false}
         onPress={() =>
-          showMessage(`Roads Ahead ${version}`, `${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}`)
+          showMessage(
+            `Roads Ahead ${version}`,
+            `${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}\n${READY_ROUTES_ATTRIBUTION}`
+          )
         }
         divider={__DEV__}
       />
