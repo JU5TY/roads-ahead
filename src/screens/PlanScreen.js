@@ -167,7 +167,8 @@ export default function PlanScreen() {
         coordinates: routes.lines[index] ?? coordinates,
         // The picked drive stands out; the rest fade back, as on a trip.
         color: index === picked ? colorOf(index) : `${colorOf(index)}40`,
-        dotted: true,
+        // Solid along the roads; dotted while it's still a straight guess, as a trip dots a ferry.
+        dotted: !routes.lines[index],
       }))}
       fitTo={pickedCoords.length > 1 ? pickedCoords : undefined}
       markers={markers}
