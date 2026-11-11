@@ -56,8 +56,8 @@ const TRACKING_OPTIONS = {
   // indicator) works with "While using the app" permission alone; "Allow all
   // the time" is never needed.
   foregroundService: {
-    notificationTitle: 'Road trip in progress',
-    notificationBody: 'Recording your route in the background.',
+    notificationTitle: 'Recording your drive',
+    notificationBody: 'Tap to see your route',
     notificationColor: palettes.light.accent,
     killServiceOnDestroy: false,
   },
