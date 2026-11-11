@@ -1,7 +1,9 @@
 // Links that hand a planned drive to a sat nav app. Pure functions over points
-// ({ latitude, longitude }, in driving order, the last one the finish). A point
-// with `road` set is an Iconic Road guide point: there to keep the sat nav on
-// that road, not a place to stop.
+// ({ latitude, longitude, name? }, in driving order, the last one the finish). A
+// point with `road` set is an Iconic Road guide point: there to keep the sat nav
+// on that road, not a place to stop. A point with a `name` (picked from search)
+// goes to Google and Apple by name, so they show it rather than whatever
+// business sits nearest its coordinates; Waze always gets coordinates.
 //
 // Google Maps gets the whole drive in one link (or a few, past its waypoint
 // limit). It opens on the route overview, not straight into navigation: that's
@@ -16,6 +18,7 @@ export const MAX_GOOGLE_WAYPOINTS = 9;
 export const MAX_GOOGLE_URL = 2048;
 
 const coord = (p) => `${p.latitude.toFixed(6)},${p.longitude.toFixed(6)}`;
+const place = (p) => p.name ?? coord(p);
 const isGuide = (p) => p.road != null;
 
 /**
@@ -58,8 +61,8 @@ function thinGuides(points, max) {
 function googleUrl(destination, waypoints) {
   const params = [
     'api=1',
-    `destination=${encodeURIComponent(coord(destination))}`,
-    ...(waypoints.length ? [`waypoints=${encodeURIComponent(waypoints.map(coord).join('|'))}`] : []),
+    `destination=${encodeURIComponent(place(destination))}`,
+    ...(waypoints.length ? [`waypoints=${encodeURIComponent(waypoints.map(place).join('|'))}`] : []),
     'travelmode=driving',
   ];
   return `https://www.google.com/maps/dir/?${params.join('&')}`;
@@ -111,6 +114,6 @@ export function wazeLinks(points) {
  * point in order. Unofficial: test on an iPhone before relying on it.
  */
 export function appleMapsLink(points) {
-  const stops = points.map((p) => `daddr=${encodeURIComponent(coord(p))}`).join('&');
+  const stops = points.map((p) => `daddr=${encodeURIComponent(place(p))}`).join('&');
   return `https://maps.apple.com/?${stops}&dirflg=d`;
 }

@@ -78,6 +78,13 @@ describe('googleMapsLinks', () => {
     expect(parts(links[1]).destination).toBe('51.400000,-3.000000');
   });
 
+  it('sends a stop picked from search by name, the rest by coordinates', () => {
+    const named = { ...eileanDonan, name: 'Eilean Donan Castle, Dornie' };
+    const { waypoints, destination } = parts(googleMapsLinks([fortAugustus, named, applecross])[0]);
+    expect(waypoints).toEqual(['57.144700,-4.681400', 'Eilean Donan Castle, Dornie']);
+    expect(destination).toBe('57.433500,-5.815000');
+  });
+
   it('gives nothing for an empty drive', () => {
     expect(googleMapsLinks([])).toEqual([]);
   });

@@ -11,6 +11,11 @@
 //   road_completions (id, road_id, drive_id,              Iconic Roads completed on a drive
 //           completed_at)                                 (road ids from src/data/iconicRoads.json)
 //   drives.sea_crossings                                  ferry and tunnel crossings (JSON, utils/crossings.js)
+//   plans  (id, name, start_date, route_id, created_at)   a trip being planned (utils/plans.js)
+//   plan_drives (id, plan_id, position, start)            its drives in order; start null = linked
+//   plan_stops (id, plan_drive_id, position, name,        each drive's stops in order, or an Iconic
+//           latitude, longitude, source, road_id, reversed)  Road (road_id) driven forwards or back
+//   drives.plan_drive_id                                  the planned drive a recording belongs to
 import * as SQLite from 'expo-sqlite';
 
 import { seedExampleTrip } from './exampleTrip';
@@ -113,6 +118,38 @@ const MIGRATIONS = [
         THEN substr(trim(name), 1, instr(trim(name), ' ') - 1) ELSE trim(name) END,
       model = CASE WHEN instr(trim(name), ' ') > 0
         THEN trim(substr(trim(name), instr(trim(name), ' ') + 1)) ELSE '' END;
+  `,
+  // 8: the trip planner. A plan's drives and their stops, in order (see
+  // utils/plans.js); a recorded drive can point at the planned drive it was.
+  // Deleted together in planStorage (foreign keys aren't enforced).
+  `
+    CREATE TABLE plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      start_date TEXT,
+      route_id TEXT,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE plan_drives (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      plan_id INTEGER NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      start TEXT
+    );
+    CREATE INDEX idx_plan_drives_plan ON plan_drives (plan_id, position);
+    CREATE TABLE plan_stops (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      plan_drive_id INTEGER NOT NULL REFERENCES plan_drives(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      name TEXT,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      source TEXT NOT NULL DEFAULT 'pin',
+      road_id TEXT,
+      reversed INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX idx_plan_stops_drive ON plan_stops (plan_drive_id, position);
+    ALTER TABLE drives ADD COLUMN plan_drive_id INTEGER REFERENCES plan_drives(id);
   `,
 ];
 
