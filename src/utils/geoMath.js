@@ -9,6 +9,11 @@ const EARTH_RADIUS_M = 6371008.8;
 // traffic jams, which keep creeping forward out of the radius.
 export const STOP_RADIUS_M = 100;
 export const STOP_MIN_DURATION_MS = 5 * 60 * 1000;
+// Walking round a service station, or GPS drifting indoors, carries you out of
+// the radius and back: a stop that starts within STOP_MERGE_M of the last one,
+// after a short or walking-pace stretch, is the same stop carrying on.
+const STOP_MERGE_M = 500;
+const STOP_MERGE_SPEED_MPS = 3; // about 7 mph: on foot, not driving
 /** A stop or pause this long counts as a break: it resets the break reminder. */
 export const BREAK_MIN_MS = 15 * 60 * 1000;
 const STOP_SPEED_MPS = 5 / 3.6; // "stationary" for long GPS gaps and the live break timer
@@ -65,6 +70,10 @@ export function createTripStats() {
     stops: [], // [{ startedAt, endedAt, latitude, longitude }]
     currentStintMs: 0, // driving time since the last rest stop
     longestStintMs: 0,
+    // Driving since the last rest stop, { distanceM, movingTimeMs }, to tell a
+    // walk round the stop from a drive to the next one. Null before the first
+    // stop and after a ferry or pause, when nothing should join up.
+    sinceStop: null,
     lastFix: null,
     currentAltitudeM: null,
     // Time spent near one spot. Becomes a rest stop if it lasts long enough;
@@ -91,13 +100,26 @@ export function isUsableFix(fix) {
 
 function addDriving(stats, ms, meters) {
   const currentStintMs = stats.currentStintMs + ms;
+  const since = stats.sinceStop;
   return {
     ...stats,
     movingTimeMs: stats.movingTimeMs + ms,
     distanceM: stats.distanceM + meters,
     currentStintMs,
     longestStintMs: Math.max(stats.longestStintMs, currentStintMs),
+    sinceStop: since
+      ? { distanceM: since.distanceM + meters, movingTimeMs: since.movingTimeMs + ms }
+      : null,
   };
+}
+
+/** Whether a stop at `dwell` carries on the last one: nearby, and only walked to. */
+function joinsLastStop(stats, dwell) {
+  const last = stats.stops.at(-1);
+  const since = stats.sinceStop;
+  if (!last || !since || haversineDistance(last, dwell) > STOP_MERGE_M) return false;
+  const speed = since.movingTimeMs > 0 ? since.distanceM / (since.movingTimeMs / 1000) : 0;
+  return since.distanceM <= STOP_MERGE_M || speed < STOP_MERGE_SPEED_MPS;
 }
 
 /** Distance covered inside a dwell that turned out not to be a stop. */
@@ -120,8 +142,27 @@ function closeDwell(stats, endedAt) {
   if (dwell.durationMs < STOP_MIN_DURATION_MS) {
     return addDriving(next, dwell.durationMs, dwellDistance(dwell));
   }
+  if (joinsLastStop(stats, dwell)) {
+    // One longer stop: the walk in between is neither driving nor distance.
+    const last = stats.stops.at(-1);
+    const since = stats.sinceStop;
+    const merged = { ...last, endedAt };
+    return {
+      ...next,
+      distanceM: stats.distanceM - since.distanceM,
+      movingTimeMs: stats.movingTimeMs - since.movingTimeMs,
+      totalStopMs: stats.totalStopMs + (endedAt - last.endedAt),
+      stops: [...stats.stops.slice(0, -1), merged],
+      currentStintMs:
+        endedAt - last.startedAt >= BREAK_MIN_MS
+          ? 0
+          : Math.max(0, stats.currentStintMs - since.movingTimeMs),
+      sinceStop: { distanceM: 0, movingTimeMs: 0 },
+    };
+  }
   return {
     ...next,
+    sinceStop: { distanceM: 0, movingTimeMs: 0 },
     stopCount: stats.stopCount + 1,
     totalStopMs: stats.totalStopMs + dwell.durationMs,
     stops: [
@@ -308,6 +349,7 @@ export function skipTo(stats, fix, { resetStint = true } = {}) {
     dwell: openDwell(fix),
     speedWindow: [],
     currentStintMs: resetStint ? 0 : next.currentStintMs,
+    sinceStop: null, // a stop either side of a ferry or pause stays two stops
   };
 }
 

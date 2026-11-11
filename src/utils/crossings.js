@@ -28,8 +28,11 @@ const MIN_SPAN_M = 3000; // start to end, so parking on a seafront isn't a cross
 const TUNNEL_SPEED_MPS = 60 / 3.6; // end to end, faster than a car ferry
 const TUNNEL_GAP_SHARE = 0.6; // and mostly one GPS gap
 
-/** Changes whenever detection or the borders change, so past drives are checked again. */
-export const CROSSINGS_VERSION = `1:${COUNTRIES_VERSION}`;
+/**
+ * Changes whenever detection, rest stops or the borders change, so past drives
+ * are checked again. 2: rest stops a walk apart join into one.
+ */
+export const CROSSINGS_VERSION = `2:${COUNTRIES_VERSION}`;
 
 const atSea = (p) => countryAt(p.latitude, p.longitude) === null;
 

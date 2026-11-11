@@ -16,7 +16,8 @@ const CHECKED_KEY = 'crossings.checkedVersion';
 /**
  * Find one completed drive's crossings and save them. A drive with a crossing
  * (now or before) gets its stats redone so the crossing isn't counted as
- * driving; others keep the stats worked out while recording. A crossing the
+ * driving, and so does one whose rest stops now join up; others keep the stats
+ * worked out while recording. A crossing the
  * driver paused over is already left out, so it isn't saved. Returns the crossings.
  */
 export async function checkDriveCrossings(driveId) {
@@ -33,14 +34,17 @@ export async function checkDriveCrossings(driveId) {
     const pauses = (current.pauses ?? []).filter((p) => p.endedAt !== null && p.from);
     crossings = detectCrossings(points).filter((c) => !overlapsAny(c, pauses));
     const had = row.sea_crossings ? JSON.parse(row.sea_crossings).length > 0 : false;
-    if (crossings.length === 0 && !had) {
+    const gaps = [...crossings, ...pauses].sort((a, b) => a.startedAt - b.startedAt);
+    const redone = statsWithoutCrossings(points, gaps);
+    // Without a crossing, only redo a drive whose rest stops now join up (one
+    // recorded before walks round a stop were joined into it).
+    if (crossings.length === 0 && !had && redone.stops.length >= current.stops.length) {
       await db.runAsync("UPDATE drives SET sea_crossings = '[]' WHERE id = ?", driveId);
       return;
     }
-    const gaps = [...crossings, ...pauses].sort((a, b) => a.startedAt - b.startedAt);
     const stats = {
       ...current,
-      ...statsWithoutCrossings(points, gaps),
+      ...redone,
       // Saved points don't keep altitude accuracy, so keep the climb measured live.
       maxAltitudeM: current.maxAltitudeM,
       elevationGainM: current.elevationGainM,
