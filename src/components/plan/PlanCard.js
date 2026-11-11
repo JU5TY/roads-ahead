@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
+import { formatDateRange } from '../../utils/format';
 import { planKicker, planOutline, stopCounts } from '../../utils/plans';
 import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
@@ -11,9 +12,10 @@ import Icon from '../ui/Icon';
 /**
  * A plan on the Planned tab, like a Trips card: blue date line (grey with no
  * date), name, "23 stops", an Iconic Roads chip, and the planned outline dotted
- * in the round thumbnail. `done` adds a "Driven" chip. Tapping opens the plan.
+ * in the round thumbnail. `done` adds a "Driven 11–12 Oct 2026" chip, its
+ * dates from `drivenDates` ({ from, to }). Tapping opens the plan.
  */
-export default function PlanCard({ plan, done = false }) {
+export default function PlanCard({ plan, done = false, drivenDates = null }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const { stops, roads } = stopCounts(plan.drives);
@@ -57,7 +59,9 @@ export default function PlanCard({ plan, done = false }) {
             {done ? (
               <View style={[styles.chip, styles.outlinedChip]}>
                 <Icon name="check" size={14} color={c.textMuted} />
-                <Text style={[type.nav, styles.muted]}>Driven</Text>
+                <Text style={[type.nav, styles.muted]}>
+                  {drivenDates ? `Driven ${formatDateRange(drivenDates.from, drivenDates.to)}` : 'Driven'}
+                </Text>
               </View>
             ) : null}
           </View>

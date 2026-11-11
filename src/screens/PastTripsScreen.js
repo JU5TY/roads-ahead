@@ -16,7 +16,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useRoadCounts } from '../hooks/useRoadCounts';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
-import { createPlan, drivenPlanDriveIds, listPlans } from '../storage/planStorage';
+import { createPlan, drivenPlanDates, drivenPlanDriveIds, listPlans } from '../storage/planStorage';
 import { listTrips } from '../storage/tripStorage';
 import { bottomSpace, floating, pressedOpacity, spacing, type } from '../theme';
 import { distanceParts } from '../utils/format';
@@ -28,8 +28,11 @@ const VIEWS = [
   ['planned', 'Planned'],
 ];
 
-/** Planned tab rows: Coming up, Someday and Done, each with its header when it has plans. */
-function planRows(plans, driven) {
+/**
+ * Planned tab rows: Coming up, Someday and Done, each with its header when it
+ * has plans. `dates` (plan id → { from, to }) dates the Done chips.
+ */
+function planRows(plans, driven, dates) {
   const { comingUp, someday, done } = groupPlans(plans, driven);
   return [
     ['Coming up', comingUp, false],
@@ -39,7 +42,12 @@ function planRows(plans, driven) {
     list.length
       ? [
           { key: `group-${title}`, month: title },
-          ...list.map((plan) => ({ key: `plan-${plan.id}`, plan, done: isDone })),
+          ...list.map((plan) => ({
+            key: `plan-${plan.id}`,
+            plan,
+            done: isDone,
+            drivenDates: isDone ? (dates.get(plan.id) ?? null) : null,
+          })),
         ]
       : []
   );
@@ -88,7 +96,7 @@ export default function PastTripsScreen() {
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [trips, setTrips] = useState(null);
-  const [plans, setPlans] = useState(null); // { list, driven }
+  const [plans, setPlans] = useState(null); // { list, driven, dates }
   const [planning, setPlanning] = useState(false);
   // Driven or Planned, kept in the route so the Record pill can step aside for Plan a trip.
   const planned = useLocalSearchParams().view === 'planned';
@@ -118,8 +126,8 @@ export default function PastTripsScreen() {
         }
       }
     })().catch((err) => console.warn('[trips] load failed', err));
-    Promise.all([listPlans(), drivenPlanDriveIds()])
-      .then(([list, driven]) => !cancelled && setPlans({ list, driven }))
+    Promise.all([listPlans(), drivenPlanDriveIds(), drivenPlanDates()])
+      .then(([list, driven, dates]) => !cancelled && setPlans({ list, driven, dates }))
       .catch((err) => console.warn('[trips] plans failed', err));
     return () => {
       cancelled = true;
@@ -132,7 +140,7 @@ export default function PastTripsScreen() {
     () =>
       planned
         ? plans
-          ? planRows(plans.list, plans.driven)
+          ? planRows(plans.list, plans.driven, plans.dates)
           : []
         : withMonthHeaders(trips ?? []),
     [planned, plans, trips]
@@ -187,7 +195,7 @@ export default function PastTripsScreen() {
           item.month ? (
             <SectionHeader variant="label" title={item.month} style={styles.month} />
           ) : item.plan ? (
-            <PlanCard plan={item.plan} done={item.done} />
+            <PlanCard plan={item.plan} done={item.done} drivenDates={item.drivenDates} />
           ) : (
             <TripCard
               trip={item.trip}

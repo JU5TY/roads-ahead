@@ -15,6 +15,7 @@ import IconicRoadsSection from '../components/roads/IconicRoadsSection';
 import { DetailsRows, HeroStats, TitleBlock } from '../components/detail/TripStats';
 import VehicleSection from '../components/detail/VehicleSection';
 import EditTripSheet from '../components/EditTripSheet';
+import LinkPlanDriveSheet from '../components/LinkPlanDriveSheet';
 import MoveDriveSheet from '../components/MoveDriveSheet';
 import RouteMap from '../components/RouteMap';
 import FilterChip from '../components/ui/FilterChip';
@@ -25,6 +26,7 @@ import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
 import { deleteDrive, getDrivePoints } from '../storage/driveStorage';
+import { getPlanDriveLinks, linkDriveToPlan } from '../storage/planStorage';
 import { getTripCompletions } from '../storage/roadStorage';
 import { deleteTrip, getTrip, updateTrip } from '../storage/tripStorage';
 import { listVehicles, setDriveVehicle } from '../storage/vehicleStorage';
@@ -67,10 +69,12 @@ export default function TripScreen() {
   const [completions, setCompletions] = useState([]); // Iconic Roads on this trip
   const [pointsByDrive, setPointsByDrive] = useState(null); // driveId -> points
   const [missing, setMissing] = useState(false);
-  const [menu, setMenu] = useState(null); // null | 'options' | 'edit' | 'move' | 'vehicle'
+  const [menu, setMenu] = useState(null); // null | 'options' | 'edit' | 'move' | 'link' | 'vehicle'
   const [picked, setPicked] = useState(driveParam ? Number(driveParam) : null); // drive id, null = All
   const [vehicles, setVehicles] = useState([]); // the Garage
-  const [loads, setLoads] = useState(0); // bumped to load the trip again (after deleting a drive)
+  const [loads, setLoads] = useState(0); // bumped to load the trip again (after deleting or linking a drive)
+  // The plans the trip's drives were planned as: planned drive id → { planId, planName, number }.
+  const [planLinks, setPlanLinks] = useState(new Map());
   const [focusedStop, setFocusedStop] = useState(null); // { driveId, time }: a Timeline stop on All
   const {
     photos,
@@ -97,9 +101,14 @@ export default function TripScreen() {
           setMissing(true);
           return;
         }
-        const [roads, garage] = await Promise.all([getTripCompletions(t.id), listVehicles()]);
+        const [roads, garage, links] = await Promise.all([
+          getTripCompletions(t.id),
+          listVehicles(),
+          getPlanDriveLinks(t.drives.map((d) => d.planDriveId)),
+        ]);
         if (cancelled) return;
         setVehicles(garage);
+        setPlanLinks(links);
         setTrip(t);
         setCompletions(roads);
         // The page shows now; the map, Timeline and charts follow once the
@@ -118,7 +127,7 @@ export default function TripScreen() {
       return () => {
         cancelled = true;
       };
-      // `loads` is in the list only to load again after a drive is deleted.
+      // `loads` is in the list only to load again after a drive is deleted or linked.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, loads])
   );
@@ -269,6 +278,15 @@ export default function TripScreen() {
   };
 
   const selected = selectedDrive ?? null;
+  const selectedLink = selected ? (planLinks.get(selected.planDriveId) ?? null) : null;
+  const latestLink = [...trip.drives].reverse().map((d) => planLinks.get(d.planDriveId)).find(Boolean);
+  const tripPlan = selectedLink ?? latestLink ?? null;
+  const unlinkDrive = () => {
+    setMenu(null);
+    linkDriveToPlan(selected.id, null)
+      .then(() => setLoads((n) => n + 1))
+      .catch((err) => console.warn('[trip] unlink failed', err));
+  };
   const pick = (driveId) => {
     setPicked(driveId);
     setFocusedStop(null);
@@ -395,6 +413,19 @@ export default function TripScreen() {
       <ActionSheet
         visible={menu === 'options'}
         actions={[
+          // The plan this trip was driven from: the picked drive's, else the latest linked one's.
+          ...(tripPlan
+            ? [
+                {
+                  icon: 'route',
+                  label: 'Open the plan for this trip',
+                  onPress: () => {
+                    setMenu(null);
+                    router.push(`/plans/${tripPlan.planId}`);
+                  },
+                },
+              ]
+            : []),
           { icon: 'edit', label: 'Edit name and notes', onPress: () => setMenu('edit') },
           {
             icon: 'download',
@@ -414,6 +445,15 @@ export default function TripScreen() {
                   label: single ? 'Add to another trip' : 'Move this drive to another trip',
                   onPress: () => setMenu('move'),
                 },
+                // A drive recorded with plain Record can be put down to the planned drive it was.
+                selectedLink
+                  ? {
+                      icon: 'link_off',
+                      label: `Unlink from ${selectedLink.planName}`,
+                      detail: `Drive ${selectedLink.number}`,
+                      onPress: unlinkDrive,
+                    }
+                  : { icon: 'link', label: 'Link to a planned drive', onPress: () => setMenu('link') },
               ]
             : []),
           ...(selected && !single
@@ -436,6 +476,14 @@ export default function TripScreen() {
         onSave={save}
         onClose={() => setMenu(null)}
       />
+      {selected ? (
+        <LinkPlanDriveSheet
+          visible={menu === 'link'}
+          drive={selected}
+          onLinked={() => setLoads((n) => n + 1)}
+          onClose={() => setMenu(null)}
+        />
+      ) : null}
       {selected ? (
         <MoveDriveSheet
           visible={menu === 'move'}

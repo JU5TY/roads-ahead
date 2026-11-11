@@ -294,3 +294,35 @@ export async function getPlanTripId(planId) {
   );
   return row?.trip_id ?? null;
 }
+
+/**
+ * When each plan was driven: a Map of plan id → { from, to }, the first start
+ * and last end of the finished drives linked to it (for the Done chip).
+ */
+export async function drivenPlanDates() {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT p.plan_id, MIN(d.started_at) AS first, MAX(d.ended_at) AS last
+     FROM drives d JOIN plan_drives p ON p.id = d.plan_drive_id
+     WHERE d.status = 'completed' GROUP BY p.plan_id`
+  );
+  return new Map(rows.map((r) => [r.plan_id, { from: r.first, to: r.last }]));
+}
+
+/**
+ * The plans some planned drives belong to: a Map of planned drive id →
+ * { planId, planName, number } (number: Drive 3 is 3). Unknown ids are left out.
+ */
+export async function getPlanDriveLinks(planDriveIds) {
+  const ids = [...new Set(planDriveIds.filter((id) => id != null))];
+  if (!ids.length) return new Map();
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT d.id, d.plan_id, pl.name,
+            (SELECT COUNT(*) FROM plan_drives o WHERE o.plan_id = d.plan_id AND o.position < d.position) AS before
+     FROM plan_drives d JOIN plans pl ON pl.id = d.plan_id
+     WHERE d.id IN (${ids.map(() => '?').join(', ')})`,
+    ...ids
+  );
+  return new Map(rows.map((r) => [r.id, { planId: r.plan_id, planName: r.name, number: r.before + 1 }]));
+}
