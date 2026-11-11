@@ -17,6 +17,8 @@ export function rowToDrive(row) {
     vehicleId: row.vehicle_id ?? null,
     // Ferry and tunnel crossings (utils/crossings.js); none until checked.
     seaCrossings: row.sea_crossings ? JSON.parse(row.sea_crossings) : [],
+    // The planned drive this was (started from a plan), or null.
+    planDriveId: row.plan_drive_id ?? null,
   };
 }
 
@@ -27,9 +29,16 @@ export async function deleteTripIfEmpty(db, tripId) {
 }
 
 /**
- * Create an active drive in `tripId`, or in a brand-new trip when `tripId` is null.
+ * Create an active drive in `tripId`, or in a brand-new trip when `tripId` is
+ * null (named `tripName`, when given). `planDriveId` links it to the planned
+ * drive it is.
  */
-export async function createDrive({ tripId = null, startedAt = Date.now() } = {}) {
+export async function createDrive({
+  tripId = null,
+  tripName = null,
+  planDriveId = null,
+  startedAt = Date.now(),
+} = {}) {
   const db = await getDb();
   const stats = createTripStats();
   let driveId;
@@ -37,18 +46,24 @@ export async function createDrive({ tripId = null, startedAt = Date.now() } = {}
   let targetTripId = tripId;
   await db.withTransactionAsync(async () => {
     if (targetTripId === null) {
-      const res = await db.runAsync('INSERT INTO trips (created_at) VALUES (?)', startedAt);
+      const res = await db.runAsync(
+        'INSERT INTO trips (name, created_at) VALUES (?, ?)',
+        tripName,
+        startedAt
+      );
       targetTripId = res.lastInsertRowId;
     }
     // Driven in the default vehicle from the Garage, if one is set up.
     const vehicle = await db.getFirstAsync('SELECT id FROM vehicles WHERE is_default = 1 LIMIT 1');
     vehicleId = vehicle?.id ?? null;
     const res = await db.runAsync(
-      "INSERT INTO drives (trip_id, started_at, status, stats, vehicle_id) VALUES (?, ?, 'active', ?, ?)",
+      `INSERT INTO drives (trip_id, started_at, status, stats, vehicle_id, plan_drive_id)
+       VALUES (?, ?, 'active', ?, ?, ?)`,
       targetTripId,
       startedAt,
       JSON.stringify(stats),
-      vehicleId
+      vehicleId,
+      planDriveId
     );
     driveId = res.lastInsertRowId;
   });
@@ -63,6 +78,7 @@ export async function createDrive({ tripId = null, startedAt = Date.now() } = {}
     countries: null,
     vehicleId,
     seaCrossings: [],
+    planDriveId,
   };
 }
 

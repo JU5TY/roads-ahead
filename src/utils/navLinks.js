@@ -117,3 +117,28 @@ export function appleMapsLink(points) {
   const stops = points.map((p) => `daddr=${encodeURIComponent(place(p))}`).join('&');
   return `https://maps.apple.com/?${stops}&dirflg=d`;
 }
+
+/** The sat nav apps Navigate with offers, by platform: [id, name]. Apple Maps only on iPhone. */
+export const NAV_APPS = {
+  google: 'Google Maps',
+  waze: 'Waze',
+  apple: 'Apple Maps',
+};
+
+/** Whether `app` takes the whole drive in one go (Waze takes one stop at a time). */
+export const takesWholeDrive = (app) => app !== 'waze';
+
+/** The links handing `points` to `app` ('google' | 'waze' | 'apple'), in the order to open them. */
+export function navLinks(app, points) {
+  if (points.length === 0) return [];
+  if (app === 'waze') return wazeLinks(points);
+  if (app === 'apple') return [appleMapsLink(points)];
+  return googleMapsLinks(points);
+}
+
+/** `app` opened with nowhere set: Record's Navigate outside a plan. */
+export const NAV_APP_HOME = {
+  google: 'https://www.google.com/maps/dir/?api=1&travelmode=driving',
+  waze: 'https://waze.com/ul',
+  apple: 'https://maps.apple.com/?dirflg=d',
+};

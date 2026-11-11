@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { router, useFocusEffect, useIsFocused } from 'expo-router';
+import { router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, View } from 'react-native';
 
@@ -7,6 +7,7 @@ import PermissionSheet from '../components/PermissionSheet';
 import ReadyView from '../components/record/ReadyView';
 import RecordingView from '../components/record/RecordingView';
 import { showMessage } from '../components/ui/DialogHost';
+import { useSettings } from '../context/SettingsContext';
 import { useStyles } from '../hooks/useTheme';
 import {
   canTrackInBackground,
@@ -18,20 +19,36 @@ import {
   startDrive,
   stopDrive,
 } from '../services/locationService';
-import { getActiveDrive, getDriveRoutePreview } from '../storage/driveStorage';
+import { getActiveDrive, getDrivePoints, getDriveRoutePreview } from '../storage/driveStorage';
+import { getPlanOfDrive, getPlanTripId } from '../storage/planStorage';
 import { getContinuableTrip, getTrip } from '../storage/tripStorage';
 import { liveMetrics } from '../utils/geoMath';
+import { NAV_APPS, NAV_APP_HOME } from '../utils/navLinks';
+import { planHandover, stopsPassed } from '../utils/plans';
 import { CONTINUE_WINDOW_MS, driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const REFRESH_MS = 1000;
 const ROUTE_REFRESH_MS = 10 * 1000;
 const ROUTE_POINTS = 400;
 
+/** Open a sat nav link, saying so when the app isn't there. */
+const openNav = (url, appName) =>
+  Linking.openURL(url).catch(() => showMessage(appName, `Couldn’t open ${appName}.`));
+
+/** Where the phone last was, { latitude, longitude }, or null (access isn't asked for just for this). */
+async function lastPosition() {
+  const access = await getLocationAccess();
+  const pos = access.granted ? await Location.getLastKnownPositionAsync() : null;
+  return pos ? { latitude: pos.coords.latitude, longitude: pos.coords.longitude } : null;
+}
+
 /**
  * Record tab: "Ready to go" (ReadyView) until a drive is live, then the
  * full-screen recording view (RecordingView). Owns the active drive (polled from
  * SQLite, which the background task writes), the actions on it and the
- * location-permission flow.
+ * location-permission flow. Opened with `planDrive` (a planned drive's id, from
+ * a plan's Start drive), it records that drive into the plan's trip and hands it
+ * to the sat nav app.
  */
 export default function RecordScreen() {
   const styles = useStyles(makeStyles);
@@ -49,8 +66,11 @@ export default function RecordScreen() {
   const [recent, setRecent] = useState(null); // trip that can be continued, if any
   const [here, setHere] = useState(null); // last known position, for the Ready map
 
-  // Trip chosen before the permission check (null = new trip).
-  const chosenTripRef = useRef(null);
+  // What to start once location access is sorted: { tripId (null = new trip),
+  // tripName?, planDriveId?, nav?: { url, appName } to open once recording }.
+  const chosenRef = useRef({ tripId: null });
+  const { planDrive } = useLocalSearchParams();
+  const { navApp } = useSettings();
 
   // Expo Go can only record while the app is open; warn while recording there.
   useEffect(() => {
@@ -139,20 +159,24 @@ export default function RecordScreen() {
     }
   };
 
-  const beginDrive = (tripId) =>
+  const beginDrive = ({ nav, ...chosen }) =>
     run(async () => {
-      const res = await startDrive({ tripId });
+      const res = await startDrive(chosen);
       setDrive(res.drive);
+      if (nav) openNav(nav.url, nav.appName);
     });
 
-  /** Start recording into `tripId` (null = new trip), once location access is sorted. */
-  const startRecording = async (tripId) => {
-    chosenTripRef.current = tripId;
+  /**
+   * Start recording, once location access is sorted: into `tripId` (null =
+   * new trip), or a planned drive (see chosenRef).
+   */
+  const startRecording = async (tripId, plan = {}) => {
+    chosenRef.current = { tripId, ...plan };
     // Explain before (or instead of) the system prompt; start straight away once allowed.
     const access = await getLocationAccess();
     if (!access.granted) return setSheet(access.canAskAgain ? 'ask' : 'blocked');
     if (!access.precise) return setSheet('approximate');
-    return beginDrive(tripId);
+    return beginDrive(chosenRef.current);
   };
 
   const stop = () =>
@@ -195,13 +219,56 @@ export default function RecordScreen() {
       return;
     }
     if (!access.precise) return setSheet('approximate');
-    return beginDrive(chosenTripRef.current);
+    return beginDrive(chosenRef.current);
   };
 
   const onSheetSecondary = () => {
     const kind = sheet;
     setSheet(null);
-    if (kind === 'approximate') beginDrive(chosenTripRef.current);
+    if (kind === 'approximate') beginDrive(chosenRef.current);
+  };
+
+  // A plan's Start drive: record it into the plan's trip (made, named after the
+  // plan, by its first drive), then open the sat nav. Taken once, then cleared.
+  useEffect(() => {
+    if (!planDrive) return;
+    router.setParams({ planDrive: undefined });
+    (async () => {
+      const found = await getPlanOfDrive(Number(planDrive));
+      if (!found) return;
+      if (await getActiveDrive()) {
+        showMessage('Already recording', 'Stop the drive you’re recording, then start this one.');
+        return;
+      }
+      const { plan, index } = found;
+      const tripId = await getPlanTripId(plan.id);
+      const { links, appName } = planHandover(plan, index, { here: await lastPosition(), app: navApp });
+      await startRecording(tripId, {
+        tripName: tripId ? null : plan.name,
+        planDriveId: plan.drives[index].id,
+        nav: links.length ? { url: links[0], appName } : null,
+      });
+    })().catch((err) => console.warn('[record] plan start failed', err));
+    // Only a new `planDrive` starts anything; the rest is read as it is then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planDrive]);
+
+  // Navigate: a planned drive goes back to the sat nav for the stops still
+  // ahead (never back to its start); otherwise, or with none left, the app
+  // just opens.
+  const navigate = async () => {
+    const home = () => openNav(NAV_APP_HOME[navApp], NAV_APPS[navApp]);
+    try {
+      const found = drive?.planDriveId ? await getPlanOfDrive(drive.planDriveId) : null;
+      if (!found) return home();
+      const { plan, index } = found;
+      const passed = stopsPassed(plan, index, await getDrivePoints(drive.id));
+      const { links, appName } = planHandover(plan, index, { here: null, app: navApp, underway: true, passed });
+      return links.length ? openNav(links[0], appName) : home();
+    } catch (err) {
+      console.warn('[record] navigate failed', err);
+      return home();
+    }
   };
 
   const permissionSheet = (
@@ -228,6 +295,7 @@ export default function RecordScreen() {
         busy={busy}
         focused={focused}
         foregroundOnly={foregroundOnly}
+        onNavigate={navigate}
         onPause={pause}
         onResume={resume}
         onSave={stop}

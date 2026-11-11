@@ -186,14 +186,15 @@ async function stopUpdates() {
 
 /**
  * Start recording a drive, as part of trip `tripId` or of a new trip when it is
- * null. Location permission must already be granted (see the dashboard's
+ * null (named `tripName`, when given); `planDriveId` links it to its planned
+ * drive. Location permission must already be granted (see the dashboard's
  * permission sheet). Returns { drive, background }.
  */
-export async function startDrive({ tripId = null } = {}) {
+export async function startDrive({ tripId = null, tripName = null, planDriveId = null } = {}) {
   const existing = await getActiveDrive();
   // Start updates before creating the drive so a failure leaves no empty drive behind.
   const { background } = await startUpdates();
-  const drive = existing ?? (await createDrive({ tripId }));
+  const drive = existing ?? (await createDrive({ tripId, tripName, planDriveId }));
   return { drive, background };
 }
 

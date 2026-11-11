@@ -8,6 +8,8 @@ import PriceSheet from '../components/PriceSheet';
 import { TitleBlock } from '../components/detail/TripStats';
 import PlanSheet from '../components/plan/PlanSheet';
 import PlanTimeline from '../components/plan/PlanTimeline';
+import StartDriveSheet from '../components/plan/StartDriveSheet';
+import NavAppSheet from '../components/NavAppSheet';
 import RouteMap from '../components/RouteMap';
 import VehicleSheet from '../components/VehicleSheet';
 import Button from '../components/ui/Button';
@@ -42,6 +44,7 @@ import {
   driveStart,
   fromHere,
   planKicker,
+  planHandover,
   planOutline,
   roadStop,
   stopCounts,
@@ -59,7 +62,8 @@ export default function PlanScreen() {
   const styles = useStyles(makeStyles);
   const [plan, setPlan] = useState(null);
   const [picked, setPicked] = useState(0);
-  const [menu, setMenu] = useState(null); // 'options' | 'edit' | 'road' | 'start' | 'vehicle' | 'price' | { stop }
+  // 'options' | 'edit' | 'road' | 'start' | 'vehicle' | 'price' | 'go' | 'nav' | { stop }
+  const [menu, setMenu] = useState(null);
   const { here } = useHere();
 
   const reload = useCallback(
@@ -84,7 +88,7 @@ export default function PlanScreen() {
   const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const routes = usePlanRoutes(mapPlan, picked);
-  const { units, prices, setPrice } = useSettings();
+  const { units, prices, setPrice, navApp } = useSettings();
   const [vehicles, reloadVehicles] = useVehicles();
   // Plans aren't tied to a car: the fuel is worked out for the default one.
   const vehicle = vehicles?.find((v) => v.isDefault) ?? null;
@@ -148,6 +152,11 @@ export default function PlanScreen() {
       onConfirm: () => deletePlan(plan.id).then(() => router.back()),
     });
   };
+
+  // "Fort William → Applecross"; Drive 1 with no start runs from wherever you are.
+  const routeName = finish ? `${start?.name ?? 'Your location'} → ${finish.name ?? 'Dropped pin'}` : null;
+  // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
+  const handover = drive.stops.length ? planHandover(plan, picked, { here, app: navApp }) : null;
 
   const markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
 
@@ -219,7 +228,33 @@ export default function PlanScreen() {
     <DetailLayout
       map={map}
       actions={[{ icon: 'more_vert', label: 'More options', onPress: () => setMenu('options') }]}
+      footer={
+        <Button
+          label={`Start drive ${picked + 1}`}
+          icon="play_arrow"
+          disabled={!drive.stops.length}
+          onPress={() => setMenu('go')}
+        />
+      }
     >
+      <StartDriveSheet
+        visible={menu === 'go'}
+        number={picked + 1}
+        route={routeName}
+        detail={status === 'done' ? routeSummary : null}
+        color={colorOf(picked)}
+        handover={handover}
+        units={units}
+        onPickApp={() => setMenu('nav')}
+        // Record starts it: location access is asked for there, then the sat nav opens.
+        onStart={() => {
+          setMenu(null);
+          router.navigate({ pathname: '/record', params: { planDrive: drive.id } });
+        }}
+        onClose={() => setMenu(null)}
+      />
+      {/* Picked from Start drive, so it goes back there. */}
+      <NavAppSheet visible={menu === 'nav'} onClose={() => setMenu('go')} />
       <ActionSheet
         visible={menu === 'options'}
         actions={[
@@ -359,7 +394,7 @@ export default function PlanScreen() {
 
       <View style={styles.heading}>
         <Text style={[type.section, styles.text]} numberOfLines={2}>
-          {finish ? `${start?.name ?? 'Your location'} → ${finish.name ?? 'Dropped pin'}` : `From ${start?.name ?? 'your location'}`}
+          {finish ? routeName : `From ${start?.name ?? 'your location'}`}
         </Text>
         <Text style={[type.bodySmall, styles.muted]}>
           {[stops === 0 ? 'No stops yet' : `${stops} ${stops === 1 ? 'stop' : 'stops'}`, routeSummary]

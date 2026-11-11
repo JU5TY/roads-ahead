@@ -8,7 +8,7 @@
 // driven through, not a place to stop.
 import { haversineDistance } from './geoMath';
 import { ICONIC_ROADS, getRoad } from './iconicRoads';
-import { roadGuidePoints } from './navLinks';
+import { NAV_APPS, navLinks, roadGuidePoints, takesWholeDrive } from './navLinks';
 
 /** The end of an Iconic Road stop, in the direction it's driven. */
 function roadEnd(stop) {
@@ -264,4 +264,85 @@ export function driveRoute(plan, index) {
   // The first point is where the route starts, whatever it is.
   points[0] = { ...points[0], via: false };
   return { points, legStops };
+}
+
+/** How far from a drive's start counts as away from it: the sat nav takes you there first. */
+export const AWAY_M = 1000;
+
+/** How close the recorded route must come to a stop (or an Iconic Road's far end) to have passed it. */
+export const PASSED_M = 500;
+
+/**
+ * How many of drive `index`'s stops are behind you, from `points` (the
+ * recording so far, { latitude, longitude }): up to and including the furthest
+ * stop the route has come within PASSED_M of. An Iconic Road counts once its
+ * far end is reached. Stops skipped on the way count as passed too.
+ */
+export function stopsPassed(plan, index, points) {
+  const { stops } = plan.drives[index];
+  for (let i = stops.length - 1; i >= 0; i--) {
+    const target = endOfStop(stops[i]);
+    if (target && points.some((p) => haversineDistance(p, target) <= PASSED_M)) return i + 1;
+  }
+  return 0;
+}
+
+/** "Fort Augustus", "Fort Augustus and Eilean Donan", "A, B and C". */
+const listed = (items) =>
+  items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : (items[0] ?? '');
+
+/**
+ * Handing drive `index` to the sat nav `app` ('google' | 'waze' | 'apple'),
+ * from `here` (the phone, or null when unknown): { links, start, awayM,
+ * summary }. A drive with a start of its own (or linked to the drive before)
+ * goes there first when the phone is AWAY_M or more from it, or when where the
+ * phone is isn't known; `awayM` is how far, null when not away or unknown.
+ * `wholeDrive` says whether `app` takes it all at once (Waze: one stop at a time).
+ * `summary` is the Start drive sheet's line: "Fort William, 2 stops and
+ * Bealach na Bà, to Applecross", or for Waze "One stop at a time, starting
+ * with Fort Augustus". Once `underway` (Record's Navigate), the start is never
+ * gone back to and the first `passed` stops (stopsPassed) are left out; with
+ * none left, there are no links.
+ */
+export function planHandover(plan, index, { here, app, underway = false, passed = 0 }) {
+  const start = driveStart(plan, index);
+  if (passed > 0) {
+    const drives = plan.drives.map((d, i) => (i === index ? { ...d, stops: d.stops.slice(passed) } : d));
+    plan = { ...plan, drives };
+  }
+  const drive = plan.drives[index];
+  const metres = start && here ? haversineDistance(here, start) : null;
+  const fromStart = !underway && !!start && (metres == null || metres >= AWAY_M);
+  const links = drive.stops.length ? navLinks(app, drivePoints(plan, index, { fromStart })) : [];
+  const finish = drive.stops.length ? driveReach(plan, index) : null;
+  const finishName = finish?.name ?? 'Dropped pin';
+
+  let summary;
+  if (!takesWholeDrive(app)) {
+    const first = fromStart ? start : drive.stops[0] && (drive.stops[0].roadId ? getRoad(drive.stops[0].roadId) : drive.stops[0]);
+    summary = `One stop at a time, starting with ${first?.name ?? 'Dropped pin'}`;
+  } else {
+    // The last place is the finish, unless an Iconic Road comes after it.
+    const places = drive.stops.filter((s) => !s.roadId);
+    if (!drive.stops.at(-1)?.roadId) places.pop();
+    const roads = drive.stops.filter((s) => s.roadId).map((s) => getRoad(s.roadId)?.name).filter(Boolean);
+    // A drive that ends on an Iconic Road ends "on" it rather than "to" its far end.
+    const endsOnRoad = !!drive.stops.at(-1)?.roadId && roads.length > 0;
+    const lastRoad = endsOnRoad ? roads.pop() : null;
+    const parts = [
+      ...(fromStart && start?.name ? [start.name] : []),
+      ...(places.length ? [`${places.length} ${places.length === 1 ? 'stop' : 'stops'}`] : []),
+      ...roads,
+    ];
+    if (endsOnRoad) summary = parts.length ? `${listed(parts)}, ending on ${lastRoad}` : `Along ${lastRoad}`;
+    else summary = parts.length ? `${listed(parts)}, to ${finishName}` : `Straight to ${finishName}`;
+  }
+  return {
+    links,
+    start,
+    awayM: fromStart && metres != null ? metres : null,
+    summary,
+    wholeDrive: takesWholeDrive(app),
+    appName: NAV_APPS[app],
+  };
 }

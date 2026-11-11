@@ -19,6 +19,7 @@ export function SettingsProvider({ children }) {
   const [showIconicRoads, setShowIconicRoads] = useState(settingsStorage.getShowIconicRoads);
   const [theme, setTheme] = useState(settingsStorage.getTheme);
   const [mapView, setMapView] = useState(settingsStorage.getMapView);
+  const [navApp, setNavApp] = useState(settingsStorage.getNavApp);
   const [prices, setPrices] = useState(() => ({
     fuel: settingsStorage.getPrice('fuel'),
     charge: settingsStorage.getPrice('charge'),
@@ -66,6 +67,11 @@ export function SettingsProvider({ children }) {
         setMapView(next);
         save(settingsStorage.setMapView(next));
       },
+      navApp,
+      setNavApp: (next) => {
+        setNavApp(next);
+        save(settingsStorage.setNavApp(next));
+      },
       // { fuel, charge }: each { price, setAt } (pounds a litre / a kWh) or null.
       prices,
       // Remembers when, so an old price is noticed on You.
@@ -85,7 +91,7 @@ export function SettingsProvider({ children }) {
         save(settingsStorage.setOnboarded(false));
       },
     }),
-    [units, breakReminderMinutes, theme, showIconicRoads, mapView, prices, onboarded]
+    [units, breakReminderMinutes, theme, showIconicRoads, mapView, navApp, prices, onboarded]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

@@ -8,9 +8,11 @@ import {
   fromHere,
   groupPlans,
   planKicker,
+  planHandover,
   planOutline,
   roadReversedFrom,
   roadsNear,
+  stopsPassed,
 } from '../plans';
 
 const bealach = getRoad('bealach-na-ba');
@@ -211,5 +213,101 @@ describe('driveRoute', () => {
   it('has nothing to route with nowhere to go', () => {
     expect(driveRoute(plan({ stops: [fortAugustus] }), 0)).toBeNull();
     expect(driveRoute(plan({ stops: [] }), 0)).toBeNull();
+  });
+});
+
+describe('planHandover', () => {
+  const ullapool = { name: 'Ullapool', latitude: 57.9, longitude: -5.16 };
+  const scotland = plan(
+    { stops: [fortWilliam] },
+    { stops: [fortAugustus, eileanDonan, road(), applecross] }
+  );
+
+  it("gives Google the whole drive and says what's in it", () => {
+    const h = planHandover(scotland, 1, { here: fortWilliam, app: 'google' });
+    expect(h.links).toHaveLength(1);
+    expect(h.links[0]).toContain('destination=57.433500%2C-5.815000');
+    expect(h.summary).toBe('2 stops and Bealach na Bà, to Applecross');
+    expect(h.awayM).toBeNull();
+    expect(h.appName).toBe('Google Maps');
+  });
+
+  it('goes to the start first when the phone is away from it', () => {
+    const h = planHandover(scotland, 1, { here: ullapool, app: 'google' });
+    expect(h.awayM).toBeGreaterThan(50000);
+    expect(h.summary).toBe('Fort William, 2 stops and Bealach na Bà, to Applecross');
+    expect(h.links[0]).toContain('waypoints=Fort%20William%7CFort%20Augustus');
+  });
+
+  it("goes to the start first when where the phone is isn't known, without saying how far", () => {
+    const h = planHandover(scotland, 1, { here: null, app: 'google' });
+    expect(h.awayM).toBeNull();
+    expect(h.summary.startsWith('Fort William, ')).toBe(true);
+  });
+
+  it('starts Drive 1 with no start from wherever the phone is', () => {
+    const h = planHandover(plan({ stops: [applecross] }), 0, { here: ullapool, app: 'google' });
+    expect(h.start).toBeNull();
+    expect(h.awayM).toBeNull();
+    expect(h.summary).toBe('Straight to Applecross');
+  });
+
+  it('gives Waze one leg at a time, Bealach na Bà its own leg', () => {
+    const h = planHandover(scotland, 1, { here: fortWilliam, app: 'waze' });
+    expect(h.links).toHaveLength(4);
+    expect(h.summary).toBe('One stop at a time, starting with Fort Augustus');
+  });
+
+  it('gives Apple Maps the whole drive in one link', () => {
+    expect(planHandover(scotland, 1, { here: fortWilliam, app: 'apple' }).links).toHaveLength(1);
+  });
+
+  it('ends on an Iconic Road that finishes the drive', () => {
+    const h = planHandover(plan({ stops: [eileanDonan, road()] }), 0, { here: null, app: 'google' });
+    expect(h.summary).toBe('1 stop, ending on Bealach na Bà');
+    expect(planHandover(plan({ stops: [road()] }), 0, { here: null, app: 'google' }).summary).toBe('Along Bealach na Bà');
+  });
+});
+
+describe('stopsPassed', () => {
+  const drive = plan({ stops: [fortAugustus, eileanDonan, road(), applecross] });
+  const near = (p) => ({ latitude: p.latitude + 0.002, longitude: p.longitude });
+
+  it('counts none before the first stop', () => {
+    expect(stopsPassed(drive, 0, [near(fortWilliam)])).toBe(0);
+  });
+
+  it('counts up to the furthest stop the route came near, skipped ones too', () => {
+    expect(stopsPassed(drive, 0, [near(fortAugustus)])).toBe(1);
+    expect(stopsPassed(drive, 0, [near(fortWilliam), near(eileanDonan)])).toBe(2);
+  });
+
+  it('counts an Iconic Road once its far end is reached, not its start', () => {
+    const [startLat, startLon] = bealach.line[0];
+    const [endLat, endLon] = bealach.line.at(-1);
+    // Ending on the road: Bealach na Bà ends in Applecross, so that would count it too.
+    const onRoad = plan({ stops: [fortAugustus, eileanDonan, road()] });
+    expect(stopsPassed(onRoad, 0, [{ latitude: startLat, longitude: startLon }])).toBe(0);
+    expect(stopsPassed(onRoad, 0, [{ latitude: endLat, longitude: endLon }])).toBe(3);
+  });
+});
+
+describe('planHandover underway', () => {
+  const ullapool = { name: 'Ullapool', latitude: 57.9, longitude: -5.16 };
+  const scotland = plan({ stops: [fortWilliam] }, { stops: [fortAugustus, eileanDonan, applecross] });
+
+  it('never goes back to the start once underway', () => {
+    const h = planHandover(scotland, 1, { here: ullapool, app: 'google', underway: true });
+    expect(h.links[0]).not.toContain('Fort%20William');
+  });
+
+  it('leaves out the stops already passed', () => {
+    const h = planHandover(scotland, 1, { here: null, app: 'google', underway: true, passed: 1 });
+    expect(h.links[0]).not.toContain('Fort%20Augustus');
+    expect(h.links[0]).toContain('Eilean%20Donan');
+  });
+
+  it('has no links once every stop is passed', () => {
+    expect(planHandover(scotland, 1, { here: null, app: 'google', underway: true, passed: 3 }).links).toEqual([]);
   });
 });

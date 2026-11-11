@@ -270,3 +270,27 @@ export async function drivenPlanDriveIds() {
   );
   return new Set(rows.map((r) => r.plan_drive_id));
 }
+
+/** The plan a planned drive belongs to, and the drive's place in it: { plan, index }, or null. */
+export async function getPlanOfDrive(planDriveId) {
+  const db = await getDb();
+  const row = await db.getFirstAsync('SELECT plan_id FROM plan_drives WHERE id = ?', planDriveId);
+  const plan = row ? await getPlan(row.plan_id) : null;
+  const index = plan ? plan.drives.findIndex((d) => d.id === planDriveId) : -1;
+  return index >= 0 ? { plan, index } : null;
+}
+
+/**
+ * The trip a plan is being driven as: the trip of its latest recorded drive
+ * (finished or still going), or null before its first. A drive moved to
+ * another trip takes the plan with it.
+ */
+export async function getPlanTripId(planId) {
+  const db = await getDb();
+  const row = await db.getFirstAsync(
+    `SELECT d.trip_id FROM drives d JOIN plan_drives p ON p.id = d.plan_drive_id
+     WHERE p.plan_id = ? ORDER BY d.started_at DESC LIMIT 1`,
+    planId
+  );
+  return row?.trip_id ?? null;
+}

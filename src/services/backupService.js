@@ -31,6 +31,7 @@ const CARRIED_KEYS = [
   'settings.mapView',
   'settings.fuelPrice',
   'settings.chargePrice',
+  'settings.navApp',
   'exampleTrip.id',
   'roads.checkedVersion',
   'countries.checkedVersion',

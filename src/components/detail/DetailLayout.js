@@ -16,12 +16,14 @@ export const MAP_HEIGHT = 400;
  * seems to stay behind). Nothing floats over the content.
  * actions: [{ icon, label, onPress }], left to right; label is for screen readers.
  * `mapHeight` below the status bar: 400 on Trip, 380 on Day, 360 on a road.
+ * `footer` is pinned under the content, outside the scroll (a plan's Start drive).
  */
 export default function DetailLayout({
   map,
   mapHeight = MAP_HEIGHT,
   actions = [],
   scrollRef,
+  footer,
   children,
 }) {
   const insets = useSafeAreaInsets();
@@ -53,10 +55,13 @@ export default function DetailLayout({
         >
           {map}
         </Animated.View>
-        <View style={[styles.content, { paddingBottom: spacing.xl + insets.bottom }]}>
+        <View style={[styles.content, { paddingBottom: spacing.xl + (footer ? 0 : insets.bottom) }]}>
           {children}
         </View>
       </Animated.ScrollView>
+      {footer ? (
+        <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>{footer}</View>
+      ) : null}
       <IconButton
         icon="arrow_back"
         variant="floating"
@@ -96,6 +101,13 @@ const makeStyles = (c) => ({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: -2 },
     elevation: 4,
+  },
+  footer: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    backgroundColor: c.background,
+    borderTopWidth: 1,
+    borderTopColor: c.divider,
   },
   back: { position: 'absolute', left: 12 },
   actions: { position: 'absolute', right: 12, flexDirection: 'row', gap: 8 },

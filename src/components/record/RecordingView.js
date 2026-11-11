@@ -1,7 +1,7 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, LayoutAnimation, Linking, Text, View } from 'react-native';
+import { ActivityIndicator, LayoutAnimation, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSettings } from '../../context/SettingsContext';
@@ -11,12 +11,10 @@ import { type } from '../../theme';
 import { routeGaps, routeSegments } from '../../utils/crossings';
 import { formatDistance, formatDurationShort, speedUnit, toSpeed } from '../../utils/format';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { showMessage } from '../ui/DialogHost';
 import Icon from '../ui/Icon';
 import IconButton from '../ui/IconButton';
 import LiveMap from './LiveMap';
 
-const GOOGLE_MAPS_NAV_URL = 'https://www.google.com/maps/dir/?api=1&travelmode=driving';
 const BREAK_SOON_MS = 30 * 60 * 1000; // the break bar shows this long before a break is due
 // The map eases shorter as the break bar fades in (and back when a stop resets it).
 const BREAK_BAR_ANIMATION = LayoutAnimation.create(350, 'easeInEaseOut', 'opacity');
@@ -27,16 +25,12 @@ function KeepScreenOn() {
   return null;
 }
 
-const openGoogleMaps = () =>
-  Linking.openURL(GOOGLE_MAPS_NAV_URL).catch(() =>
-    showMessage('Google Maps', 'Couldn’t open Google Maps.')
-  );
-
 /**
  * Record while a drive is live: the map (which can be hidden), status, speed,
  * distance and driving time, the break bar, and Navigate / Pause or Resume / Stop.
  * `live` is liveMetrics(drive), `route` the points drawn so far and `tripLabel`
  * "Scotland 2026 · Drive 2". Stop asks first: Save, or Discard when nothing moved.
+ * Navigate (onNavigate) opens the sat nav app.
  */
 export default function RecordingView({
   drive,
@@ -46,6 +40,7 @@ export default function RecordingView({
   busy,
   focused,
   foregroundOnly,
+  onNavigate,
   onPause,
   onResume,
   onSave,
@@ -275,7 +270,7 @@ export default function RecordingView({
             iconSize={28}
             label="Navigate"
             labelStyle={styles.controlLabel}
-            onPress={openGoogleMaps}
+            onPress={onNavigate}
             style={styles.sideControl}
           />
           {busy ? (

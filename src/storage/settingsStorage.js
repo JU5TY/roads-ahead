@@ -1,6 +1,7 @@
 // Small persisted user preferences (expo-sqlite key-value store). Sync reads so
 // the first render already uses the saved values.
 import Storage from 'expo-sqlite/kv-store';
+import { Platform } from 'react-native';
 
 const UNITS_KEY = 'settings.units';
 
@@ -94,6 +95,21 @@ export function getPrice(kind) {
 
 export function setPrice(kind, saved) {
   return Storage.setItemAsync(PRICE_KEYS[kind], JSON.stringify(saved));
+}
+
+const NAV_APP_KEY = 'settings.navApp';
+
+/** The sat nav apps on offer, in order: Apple Maps only on iPhone (utils/navLinks.js NAV_APPS). */
+export const NAV_APP_OPTIONS = Platform.OS === 'ios' ? ['apple', 'google', 'waze'] : ['google', 'waze'];
+
+/** The app Navigate hands drives to: Google Maps on Android and Apple Maps on iPhone until chosen. */
+export function getNavApp() {
+  const saved = Storage.getItemSync(NAV_APP_KEY);
+  return NAV_APP_OPTIONS.includes(saved) ? saved : NAV_APP_OPTIONS[0];
+}
+
+export function setNavApp(app) {
+  return Storage.setItemAsync(NAV_APP_KEY, app);
 }
 
 const RECORD_MAP_HIDDEN_KEY = 'recordMapHidden';

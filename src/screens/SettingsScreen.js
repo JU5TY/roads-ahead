@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BannerCard from '../components/ui/BannerCard';
 import { showDialog, showMessage } from '../components/ui/DialogHost';
 import ActionSheet from '../components/ActionSheet';
+import NavAppSheet from '../components/NavAppSheet';
 import PriceSheet from '../components/PriceSheet';
 import VehicleSheet from '../components/VehicleSheet';
 import Icon from '../components/ui/Icon';
@@ -32,6 +33,7 @@ import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
 import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/fuel';
 import { ICONIC_ROADS, ROADS_ATTRIBUTION } from '../utils/iconicRoads';
 import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
+import { NAV_APPS } from '../utils/navLinks';
 import { hasTwin } from '../utils/vehicles';
 
 const UNIT_LABELS = { metric: 'Kilometres', imperial: 'Miles' };
@@ -93,6 +95,7 @@ export default function SettingsScreen() {
     setTheme,
     prices,
     setPrice,
+    navApp,
     replayOnboarding,
   } = useSettings();
   const { c } = useTheme();
@@ -102,6 +105,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [picking, setPicking] = useState(false);
   const [pricing, setPricing] = useState(null); // null | 'fuel' | 'charge'
+  const [pickingNav, setPickingNav] = useState(false);
   const version = Constants.expoConfig?.version ?? '—';
   const [vehicles, reloadVehicles] = useVehicles();
   const [editing, setEditing] = useState(null); // null | 'new' | vehicle
@@ -198,6 +202,7 @@ export default function SettingsScreen() {
         }))}
         onClose={() => setPicking(false)}
       />
+      <NavAppSheet visible={pickingNav} onClose={() => setPickingNav(false)} />
       <PriceSheet
         visible={pricing !== null}
         kind={pricing ?? 'fuel'}
@@ -310,6 +315,14 @@ export default function SettingsScreen() {
           divider
         />
       ) : null}
+      {/* The sat nav app planned drives are handed to. */}
+      <ListRow
+        icon="map"
+        title="Navigate with"
+        value={NAV_APPS[navApp]}
+        onPress={() => setPickingNav(true)}
+        divider
+      />
       <ListRow
         icon="contrast"
         title="Theme"
