@@ -30,7 +30,8 @@ function KeepScreenOn() {
  * distance and driving time, the break bar, and Navigate / Pause or Resume / Stop.
  * `live` is liveMetrics(drive), `route` the points drawn so far and `tripLabel`
  * "Scotland 2026 · Drive 2". Stop asks first: Save, or Discard when nothing moved.
- * Navigate (onNavigate) opens the sat nav app.
+ * Navigate (onNavigate) opens the sat nav app. `planCard` (a planned drive's
+ * PlanCard) sits under the distance and driving time.
  */
 export default function RecordingView({
   drive,
@@ -40,6 +41,7 @@ export default function RecordingView({
   busy,
   focused,
   foregroundOnly,
+  planCard,
   onNavigate,
   onPause,
   onResume,
@@ -231,6 +233,8 @@ export default function RecordingView({
             <Text style={styles.liveLabel}>driving</Text>
           </View>
         </View>
+
+        {planCard}
 
         {breakSoon ? (
           <View style={styles.breakBox}>

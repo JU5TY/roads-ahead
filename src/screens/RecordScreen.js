@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import PermissionSheet from '../components/PermissionSheet';
+import PlanCard from '../components/record/PlanCard';
 import ReadyView from '../components/record/ReadyView';
 import RecordingView from '../components/record/RecordingView';
 import { showMessage } from '../components/ui/DialogHost';
@@ -23,8 +24,8 @@ import { getActiveDrive, getDrivePoints, getDriveRoutePreview } from '../storage
 import { getPlanOfDrive, getPlanTripId } from '../storage/planStorage';
 import { getContinuableTrip, getTrip } from '../storage/tripStorage';
 import { liveMetrics } from '../utils/geoMath';
-import { NAV_APPS, NAV_APP_HOME } from '../utils/navLinks';
-import { planHandover, stopsPassed } from '../utils/plans';
+import { NAV_APPS, NAV_APP_HOME, takesWholeDrive } from '../utils/navLinks';
+import { planHandover, planProgress, stopsPassed } from '../utils/plans';
 import { CONTINUE_WINDOW_MS, driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const REFRESH_MS = 1000;
@@ -131,6 +132,20 @@ export default function RecordScreen() {
       cancelled = true;
     };
   }, [activeId, activeTripId, activeStartedAt]);
+
+  // A planned drive's plan, for Record's card: { driveId, plan, index }.
+  const [planOf, setPlanOf] = useState(null);
+  const activePlanDriveId = drive?.planDriveId;
+  useEffect(() => {
+    if (!activeId || !activePlanDriveId) return;
+    let cancelled = false;
+    getPlanOfDrive(activePlanDriveId)
+      .then((found) => !cancelled && found && setPlanOf({ driveId: activeId, ...found }))
+      .catch((err) => console.warn('[record] plan failed', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId, activePlanDriveId]);
 
   // The route drawn so far; refreshed less often than the numbers.
   useEffect(() => {
@@ -271,6 +286,24 @@ export default function RecordScreen() {
     }
   };
 
+  // On a planned drive, the card: what's next, or where you are and Next leg.
+  // Next leg shows where the sat nav needs the next part handed over: Waze
+  // (one stop at a time), or a drive too long for one Google Maps link.
+  let planCard = null;
+  const routePoints = routeFor && routeFor.driveId === activeId ? routeFor.points : [];
+  if (planOf && planOf.driveId === activeId && routePoints.length) {
+    const { plan, index } = planOf;
+    const whole = planHandover(plan, index, { here: null, app: navApp });
+    planCard = (
+      <PlanCard
+        progress={planProgress(plan, index, routePoints)}
+        nextLeg={!takesWholeDrive(navApp) || whole.links.length > 1}
+        onNavigate={navigate}
+        onNextLeg={navigate}
+      />
+    );
+  }
+
   const permissionSheet = (
     <PermissionSheet kind={sheet} onPrimary={onSheetPrimary} onSecondary={onSheetSecondary} />
   );
@@ -290,7 +323,8 @@ export default function RecordScreen() {
       <RecordingView
         drive={drive}
         live={liveMetrics(drive, now)}
-        route={routeFor && routeFor.driveId === activeId ? routeFor.points : []}
+        route={routePoints}
+        planCard={planCard}
         tripLabel={tripLabelFor && tripLabelFor.driveId === activeId ? tripLabelFor.text : null}
         busy={busy}
         focused={focused}

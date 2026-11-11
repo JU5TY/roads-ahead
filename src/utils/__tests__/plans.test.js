@@ -1,4 +1,5 @@
 import { getRoad } from '../iconicRoads';
+import { roadGuidePoints } from '../navLinks';
 import {
   dateKey,
   dateOf,
@@ -9,9 +10,11 @@ import {
   groupPlans,
   planKicker,
   planHandover,
+  planProgress,
   planOutline,
   roadReversedFrom,
   roadsNear,
+  stopName,
   stopsPassed,
 } from '../plans';
 
@@ -282,13 +285,15 @@ describe('stopsPassed', () => {
     expect(stopsPassed(drive, 0, [near(fortWilliam), near(eileanDonan)])).toBe(2);
   });
 
-  it('counts an Iconic Road once its far end is reached, not its start', () => {
+  it('counts an Iconic Road from its middle or far end, not its start', () => {
     const [startLat, startLon] = bealach.line[0];
     const [endLat, endLon] = bealach.line.at(-1);
     // Ending on the road: Bealach na Bà ends in Applecross, so that would count it too.
     const onRoad = plan({ stops: [fortAugustus, eileanDonan, road()] });
     expect(stopsPassed(onRoad, 0, [{ latitude: startLat, longitude: startLon }])).toBe(0);
     expect(stopsPassed(onRoad, 0, [{ latitude: endLat, longitude: endLon }])).toBe(3);
+    const [middle] = roadGuidePoints(bealach, 1);
+    expect(stopsPassed(onRoad, 0, [middle])).toBe(3);
   });
 });
 
@@ -309,5 +314,37 @@ describe('planHandover underway', () => {
 
   it('has no links once every stop is passed', () => {
     expect(planHandover(scotland, 1, { here: null, app: 'google', underway: true, passed: 3 }).links).toEqual([]);
+  });
+});
+
+describe('planProgress', () => {
+  const drive = plan({ stops: [fortAugustus, eileanDonan, road(), applecross] });
+  const near = (p) => ({ latitude: p.latitude + 0.002, longitude: p.longitude });
+
+  it('starts with the first stop next and the one after it', () => {
+    const p = planProgress(drive, 0, [near(fortWilliam)]);
+    expect(p).toMatchObject({ passed: 0, at: null, finished: false });
+    expect(stopName(p.next)).toBe('Fort Augustus');
+    expect(stopName(p.then)).toBe('Eilean Donan Castle');
+  });
+
+  it("says where you are while you're still there", () => {
+    const p = planProgress(drive, 0, [near(fortWilliam), near(fortAugustus)]);
+    expect(stopName(p.at)).toBe('Fort Augustus');
+    expect(stopName(p.next)).toBe('Eilean Donan Castle');
+  });
+
+  it('moves on once you leave', () => {
+    const p = planProgress(drive, 0, [near(fortAugustus), near(fortWilliam)]);
+    expect(p.at).toBeNull();
+    expect(p.passed).toBe(1);
+  });
+
+  it('names an Iconic Road by the road, and has nothing after the finish', () => {
+    const p = planProgress(drive, 0, [near(eileanDonan)]);
+    expect(stopName(p.next)).toBe('Bealach na Bà');
+    const done = planProgress(drive, 0, [near(applecross)]);
+    expect(done).toMatchObject({ finished: true, next: null, then: null });
+    expect(stopName(done.at)).toBe('Applecross');
   });
 });

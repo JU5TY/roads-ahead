@@ -269,20 +269,22 @@ export function driveRoute(plan, index) {
 /** How far from a drive's start counts as away from it: the sat nav takes you there first. */
 export const AWAY_M = 1000;
 
-/** How close the recorded route must come to a stop (or an Iconic Road's far end) to have passed it. */
+/** How close the recorded route must come to a stop (or an Iconic Road's middle or far end) to have passed it. */
 export const PASSED_M = 500;
 
 /**
  * How many of drive `index`'s stops are behind you, from `points` (the
  * recording so far, { latitude, longitude }): up to and including the furthest
- * stop the route has come within PASSED_M of. An Iconic Road counts once its
- * far end is reached. Stops skipped on the way count as passed too.
+ * stop the route has come within PASSED_M of. An Iconic Road counts from its
+ * middle (the guide point the sat nav was given, so it isn't sent back there)
+ * or its far end. Stops skipped on the way count as passed too.
  */
 export function stopsPassed(plan, index, points) {
   const { stops } = plan.drives[index];
   for (let i = stops.length - 1; i >= 0; i--) {
-    const target = endOfStop(stops[i]);
-    if (target && points.some((p) => haversineDistance(p, target) <= PASSED_M)) return i + 1;
+    const road = stops[i].roadId ? getRoad(stops[i].roadId) : null;
+    const targets = [endOfStop(stops[i]), ...(road ? roadGuidePoints(road, 1) : [])].filter(Boolean);
+    if (points.some((p) => targets.some((t) => haversineDistance(p, t) <= PASSED_M))) return i + 1;
   }
   return 0;
 }
@@ -290,6 +292,35 @@ export function stopsPassed(plan, index, points) {
 /** "Fort Augustus", "Fort Augustus and Eilean Donan", "A, B and C". */
 const listed = (items) =>
   items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : (items[0] ?? '');
+
+/** What a stop is called on Record: its place name, its Iconic Road's name, or "Dropped pin". */
+export function stopName(stop) {
+  if (stop.roadId) return getRoad(stop.roadId)?.name ?? 'Iconic Road';
+  return stop.name ?? 'Dropped pin';
+}
+
+/**
+ * How a planned drive is going, for Record's card, from `points` (the
+ * recording so far, oldest first): { passed, next, then, at, finished }.
+ * `next` is the stop ahead and `then` the one after it (null at the finish);
+ * `at` is the stop you're at now (the last passed one, while still within
+ * PASSED_M of it), or null; `finished` once the last stop is passed.
+ */
+export function planProgress(plan, index, points) {
+  const { stops } = plan.drives[index];
+  const passed = stopsPassed(plan, index, points);
+  const here = points.at(-1);
+  const lastPassed = passed > 0 ? stops[passed - 1] : null;
+  const target = lastPassed ? endOfStop(lastPassed) : null;
+  const at = here && target && haversineDistance(here, target) <= PASSED_M ? lastPassed : null;
+  return {
+    passed,
+    next: stops[passed] ?? null,
+    then: stops[passed + 1] ?? null,
+    at,
+    finished: passed === stops.length,
+  };
+}
 
 /**
  * Handing drive `index` to the sat nav `app` ('google' | 'waze' | 'apple'),
