@@ -12,7 +12,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { getLocationAccess } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
 import { listTrips } from '../storage/tripStorage';
-import { driveGaps, routeSegments } from '../utils/crossings';
+import { routeGaps, routeSegments } from '../utils/crossings';
 
 const MAX_MAP_POINTS = 6000; // across every drive, so a long history stays quick to draw
 const POSITION_DELTA = 0.05;
@@ -56,7 +56,7 @@ export default function YourMapScreen() {
   const segments = useMemo(
     () =>
       (data?.routes ?? []).flatMap(({ drive, points }) =>
-        routeSegments(`drive-${drive.id}`, points, driveGaps(drive), c.accent)
+        routeSegments(`drive-${drive.id}`, points, routeGaps(drive), c.accent)
       ),
     [data, c]
   );

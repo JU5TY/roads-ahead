@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { getDriveRoutePreview } from '../storage/driveStorage';
-import { driveGaps, routeSegments } from '../utils/crossings';
+import { routeGaps, routeSegments } from '../utils/crossings';
 import { useTheme } from './useTheme';
 
 const POINTS_PER_PREVIEW = 300;
@@ -13,7 +13,7 @@ const POINTS_PER_PREVIEW = 300;
 export function useTripPreview(trip, { points = POINTS_PER_PREVIEW } = {}) {
   const { c } = useTheme();
   const [result, setResult] = useState(null); // { key, segments }
-  const driveKey = trip ? trip.drives.map((d) => `${d.id}:${driveGaps(d).length}`).join(',') : '';
+  const driveKey = trip ? trip.drives.map((d) => `${d.id}:${routeGaps(d).length}`).join(',') : '';
 
   useEffect(() => {
     if (!trip) return;
@@ -24,7 +24,7 @@ export function useTripPreview(trip, { points = POINTS_PER_PREVIEW } = {}) {
         routeSegments(
           `drive-${d.id}`,
           await getDriveRoutePreview(d.id, perDrive),
-          driveGaps(d),
+          routeGaps(d),
           c.accent
         )
       )

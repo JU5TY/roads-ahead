@@ -7,7 +7,7 @@ import Svg, { Circle, Defs, G, LinearGradient, Path, Polyline, Rect, Stop } from
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getDriveRoutePreview } from '../../storage/driveStorage';
 import { pressedOpacity, spacing, type } from '../../theme';
-import { driveGaps, splitAtCrossings } from '../../utils/crossings';
+import { routeGaps, splitAtCrossings } from '../../utils/crossings';
 import { distanceParts } from '../../utils/format';
 import { fitMap, pinPoint } from '../../utils/routeOutline';
 import { computeTotals, firstDriveMonth, groupIntoDays } from '../../utils/tripSummary';
@@ -42,7 +42,7 @@ let cached = { key: null, parts: [] };
  */
 function useAllRoutes(trips) {
   const drives = useMemo(() => trips.flatMap((t) => t.drives), [trips]);
-  const key = drives.map((d) => `${d.id}:${driveGaps(d).length}`).join(',');
+  const key = drives.map((d) => `${d.id}:${routeGaps(d).length}`).join(',');
   const [loaded, setLoaded] = useState(cached);
   useEffect(() => {
     if (cached.key === key) return;
@@ -56,7 +56,7 @@ function useAllRoutes(trips) {
       .then((all) => {
         if (cancelled) return;
         const next = all.flatMap((r, i) =>
-          splitAtCrossings(r, driveGaps(drives[i])).map((p) => ({
+          splitAtCrossings(r, routeGaps(drives[i])).map((p) => ({
             ...p,
             day: latestDay.get(drives[i].id) ?? null,
           }))

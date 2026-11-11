@@ -8,7 +8,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { getRecordMapHidden, setRecordMapHidden } from '../../storage/settingsStorage';
 import { type } from '../../theme';
-import { driveGaps, routeSegments } from '../../utils/crossings';
+import { routeGaps, routeSegments } from '../../utils/crossings';
 import { formatDistance, formatDurationShort, speedUnit, toSpeed } from '../../utils/format';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { showMessage } from '../ui/DialogHost';
@@ -126,7 +126,7 @@ export default function RecordingView({
       {!mapHidden ? (
         <View style={[styles.map, { flexBasis: 320 + insets.top }]}>
           <LiveMap
-            segments={routeSegments('live', route, driveGaps(drive), c.accent)}
+            segments={routeSegments('live', route, routeGaps(drive), c.accent)}
             position={position}
             centreKey={centreKey}
             follow

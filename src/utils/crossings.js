@@ -122,6 +122,31 @@ export const driveGaps = (drive) =>
     ...(drive.stats.pauses ?? []).filter((p) => p.endedAt !== null && p.from),
   ].sort((a, b) => a.startedAt - b.startedAt);
 
+/**
+ * What a drive's line leaves out: its gaps, plus each rest stop
+ * ({ kind: 'stop', startedAt, endedAt }). A stop's fixes are walking or GPS
+ * drift while parked, so the line runs straight from arriving to driving off.
+ * For drawing and charts; the timeline uses driveGaps.
+ */
+export const routeGaps = (drive) => [
+  ...driveGaps(drive),
+  ...(drive.stats.stops ?? []).map((s) => ({
+    kind: 'stop',
+    startedAt: s.startedAt,
+    endedAt: s.endedAt,
+  })),
+];
+
+/** Points outside the rest stops in `gaps` (a stop's first and last fixes stay), and the other gaps. */
+function leaveOutStops(points, gaps) {
+  const stops = gaps.filter((g) => g.kind === 'stop');
+  if (stops.length === 0) return [points, gaps];
+  return [
+    points.filter((p) => !stops.some((s) => p.timestamp > s.startedAt && p.timestamp < s.endedAt)),
+    gaps.filter((g) => g.kind !== 'stop'),
+  ];
+}
+
 /** Whether a crossing overlaps one of the gaps (a pause over the ferry already covers it). */
 export const overlapsAny = (c, gaps) =>
   gaps.some((g) => c.startedAt < g.endedAt && g.startedAt < c.endedAt);
@@ -153,9 +178,11 @@ export function statsWithoutCrossings(points, crossings) {
 /**
  * A route split at its crossings, for drawing: [{ coordinates, crossing }],
  * where `crossing` is null for driving and 'ferry' / 'tunnel' for a crossing.
+ * Rest stops among the gaps (routeGaps) are left out without a split.
  * Works on thinned routes too: each crossing starts and ends at its own fixes.
  */
-export function splitAtCrossings(points, crossings = []) {
+export function splitAtCrossings(allPoints, gaps = []) {
+  const [points, crossings] = leaveOutStops(allPoints, gaps);
   const parts = [];
   let rest = points;
   for (const c of crossings) {
@@ -178,7 +205,8 @@ export function splitAtCrossings(points, crossings = []) {
  * Points with each crossing's fixes left out, for charts: the first fix after a
  * crossing has `afterCrossing: true`, so no distance is counted across it.
  */
-export function withoutCrossings(points, crossings = []) {
+export function withoutCrossings(allPoints, gaps = []) {
+  const [points, crossings] = leaveOutStops(allPoints, gaps);
   if (crossings.length === 0) return points;
   return points
     .filter((p) => !crossings.some((c) => p.timestamp > c.startedAt && p.timestamp < c.endedAt))

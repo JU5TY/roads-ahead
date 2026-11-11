@@ -35,7 +35,7 @@ import {
   formatTime,
   tripKicker,
 } from '../utils/format';
-import { driveGaps, routeSegments, withoutCrossings } from '../utils/crossings';
+import { routeGaps, routeSegments, withoutCrossings } from '../utils/crossings';
 import { averageMovingSpeed, downsample } from '../utils/geoMath';
 import { getRoad } from '../utils/iconicRoads';
 import { exportTrip } from '../services/exportService';
@@ -178,7 +178,7 @@ export default function TripScreen() {
           downsample(pointsByDrive.get(d.id) ?? [], perDrive).map(
             ({ latitude, longitude, timestamp }) => ({ latitude, longitude, timestamp })
           ),
-          driveGaps(d),
+          routeGaps(d),
           // With one drive picked, the others fade back.
           selectedId && d.id !== selectedId ? `${dayColorOf(day.number)}40` : dayColorOf(day.number)
         )
@@ -217,7 +217,7 @@ export default function TripScreen() {
         day.drives.map((d) => ({
           key: `drive-${d.id}`,
           color: dayColorOf(day.number),
-          points: withoutCrossings(pointsByDrive?.get(d.id) ?? [], driveGaps(d)),
+          points: withoutCrossings(pointsByDrive?.get(d.id) ?? [], routeGaps(d)),
         }))
       ),
     [days, pointsByDrive, dayColorOf]
@@ -557,7 +557,7 @@ export default function TripScreen() {
                     color: driveColors.get(selected.id),
                     points: withoutCrossings(
                       pointsByDrive.get(selected.id) ?? [],
-                      driveGaps(selected)
+                      routeGaps(selected)
                     ),
                   },
                 ]
