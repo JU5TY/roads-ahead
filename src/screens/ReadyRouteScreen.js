@@ -1,5 +1,5 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import DetailLayout from '../components/detail/DetailLayout';
@@ -10,10 +10,11 @@ import PremiumTag from '../components/ui/PremiumTag';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
 import { useSettings } from '../context/SettingsContext';
+import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { createPlan, listPlans } from '../storage/planStorage';
+import { createPlan } from '../storage/planStorage';
 import { dayColorFor, spacing, type } from '../theme';
-import { distanceParts } from '../utils/format';
+import { distanceParts, formatDateRange } from '../utils/format';
 import {
   READY_ROUTES_ATTRIBUTION,
   getReadyRoute,
@@ -23,9 +24,9 @@ import {
 } from '../utils/readyRoutes';
 
 /**
- * A ready-made route: its map (a colour per drive), what it is, its miles and
- * drives, and Copy to my plans (Premium, though free for now), or Open your
- * plan once it's copied. Params: `id`.
+ * A ready-made route: its map (a colour per drive), what it is, Completed once
+ * about 90% of it is driven, its miles and drives, and Copy to my plans
+ * (Premium, though free for now), or Open your plan once it's copied. Params: `id`.
  */
 export default function ReadyRouteScreen() {
   const { id } = useLocalSearchParams();
@@ -33,20 +34,9 @@ export default function ReadyRouteScreen() {
   const { units } = useSettings();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const [plan, setPlan] = useState(null); // its copy in your plans, if any
+  const state = useRouteStatus()?.get(id) ?? null;
+  const plan = state?.plan ?? null; // its copy in your plans, if any
   const [copying, setCopying] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      listPlans()
-        .then((list) => !cancelled && setPlan(list.find((p) => p.routeId === id) ?? null))
-        .catch((err) => console.warn('[route] plans failed', err));
-      return () => {
-        cancelled = true;
-      };
-    }, [id])
-  );
 
   const segments = useMemo(
     () =>
@@ -98,6 +88,20 @@ export default function ReadyRouteScreen() {
       <Text style={[type.title, styles.text]}>{route.name}</Text>
       <Text style={[type.lead, styles.muted, styles.blurb]}>{route.blurb}</Text>
 
+      {state?.completed ? (
+        <View style={styles.done}>
+          <View style={styles.doneWell}>
+            <Icon name="verified" filled size={26} color={c.onRoadBadge} />
+          </View>
+          <View style={styles.flex}>
+            <Text style={[type.bodyStrong, styles.onDone]}>Completed</Text>
+            <Text style={[type.small, styles.doneMuted]}>
+              {formatDateRange(state.completed.from, state.completed.to)}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
       <StatRow
         style={styles.stats}
         stats={[
@@ -138,6 +142,26 @@ const makeStyles = (c) => ({
   divider: { borderTopWidth: 1, borderTopColor: c.divider },
   dot: { width: 12, height: 12, borderRadius: 6 },
   flex: { flex: 1, minWidth: 0 },
+  // As an Iconic Road's Completed box.
+  done: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: 12,
+    backgroundColor: c.roadContainer,
+  },
+  doneWell: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.roadBadge,
+  },
+  onDone: { color: c.onRoadContainer },
+  doneMuted: { color: c.roadContainerMuted },
   premium: { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' },
   credit: { marginTop: spacing.lg, marginHorizontal: 4 },
 });

@@ -4,6 +4,7 @@
 // (plans.route_id says which route); a copied plan can't be changed for now.
 import data from '../data/routes.json';
 import { formatDistance } from './format';
+import { haversineDistance } from './geoMath';
 import { getRoad } from './iconicRoads';
 
 /**
@@ -47,3 +48,47 @@ export function routeDriveLine(route, index, units) {
     ...(places > 0 ? [`${places} ${places === 1 ? 'stop' : 'stops'}`] : []),
   ].join(' · ');
 }
+
+/** How close a recording must pass to a point on a route's line to cover it. */
+export const ROUTE_ON_M = 200;
+/** How much of a route's line must be covered to complete it, as for an Iconic Road. */
+export const ROUTE_MIN_COVERAGE = 0.9;
+
+// Grid cells ROUTE_ON_M or more across (0.005° is about 280 m of longitude at 60°N).
+const CELL = 0.005;
+const cellOf = (lat, lng) => [Math.floor(lat / CELL), Math.floor(lng / CELL)];
+
+/**
+ * How much of `line` ([[latitude, longitude]], evenly spaced) `points` (the
+ * recordings, { latitude, longitude }) came within ROUTE_ON_M of, from 0 to 1,
+ * in any order and across any number of drives.
+ */
+export function lineCoverage(line, points) {
+  if (!line.length) return 0;
+  const grid = new Map();
+  for (const p of points) {
+    const key = cellOf(p.latitude, p.longitude).join(':');
+    if (!grid.has(key)) grid.set(key, []);
+    grid.get(key).push(p);
+  }
+  let covered = 0;
+  for (const [latitude, longitude] of line) {
+    const [i, j] = cellOf(latitude, longitude);
+    const here = { latitude, longitude };
+    search: for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        for (const p of grid.get(`${i + di}:${j + dj}`) ?? []) {
+          if (haversineDistance(here, p) <= ROUTE_ON_M) {
+            covered++;
+            break search;
+          }
+        }
+      }
+    }
+  }
+  return covered / line.length;
+}
+
+/** Whether `points` complete `route`: about 90% of its line covered. */
+export const routeCompleted = (route, points) =>
+  lineCoverage(route.drives.flatMap((d) => d.line), points) >= ROUTE_MIN_COVERAGE;

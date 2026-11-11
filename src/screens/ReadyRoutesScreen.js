@@ -1,5 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { router } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,53 +6,49 @@ import RoadRow from '../components/roads/RoadRow';
 import IconButton from '../components/ui/IconButton';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
+import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles } from '../hooks/useTheme';
-import { listPlans } from '../storage/planStorage';
 import { spacing, type } from '../theme';
-import { formatDistance } from '../utils/format';
+import { formatDateRange, formatDistance } from '../utils/format';
 import { READY_ROUTES } from '../utils/readyRoutes';
 
-/** "Scotland · 489 mi · 5 drives", or "Scotland · in Scotland 2027" once it's in your plans. */
-function routeLine(route, plan, units) {
-  if (plan) return `${route.country} · in ${plan.name}`;
+/**
+ * "Scotland · 489 mi · 5 drives", "Scotland · in Scotland 2027" once it's in
+ * your plans, or "Scotland · Completed 3–8 Aug 2026".
+ */
+function routeLine(route, state, units) {
+  if (state?.completed) {
+    const { from, to } = state.completed;
+    return `${route.country} · Completed ${formatDateRange(from, to)}`;
+  }
+  if (state) return `${route.country} · in ${state.plan.name}`;
   const drives = `${route.drives.length} ${route.drives.length === 1 ? 'drive' : 'drives'}`;
   return `${route.country} · ${formatDistance(route.metres, units, 0)} · ${drives}`;
 }
 
 /**
- * Ready-made routes: the ones in your plans (copied), then the rest. A route
- * opens its page, where it's copied. Country chips come once there are routes
- * in more than one country.
+ * Ready-made routes: those completed (about 90% driven), those in your plans
+ * (copied), then the rest. A route opens its page, where it's copied. Country
+ * chips come once there are routes in more than one country.
  */
 export default function ReadyRoutesScreen() {
   const { units } = useSettings();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const [plans, setPlans] = useState([]);
+  const status = useRouteStatus();
 
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      listPlans()
-        .then((list) => !cancelled && setPlans(list))
-        .catch((err) => console.warn('[routes] plans failed', err));
-      return () => {
-        cancelled = true;
-      };
-    }, [])
-  );
-
-  // A route's newest copy, if it has one.
-  const planOf = (route) => plans.find((p) => p.routeId === route.id) ?? null;
-  const mine = READY_ROUTES.filter(planOf);
-  const more = READY_ROUTES.filter((r) => !planOf(r));
+  const stateOf = (route) => status?.get(route.id) ?? null;
+  const completed = READY_ROUTES.filter((r) => stateOf(r)?.completed);
+  const mine = READY_ROUTES.filter((r) => stateOf(r) && !stateOf(r).completed);
+  const more = READY_ROUTES.filter((r) => !stateOf(r));
   const row = (route) => (
     <RoadRow
       key={route.id}
       name={route.name}
-      subtitle={routeLine(route, planOf(route), units)}
+      subtitle={routeLine(route, stateOf(route), units)}
       line={route.drives.flatMap((d) => d.line)}
-      planned={!!planOf(route)}
+      completed={!!stateOf(route)?.completed}
+      planned={!!stateOf(route)}
       onPress={() => router.push(`/routes/${route.id}`)}
     />
   );
@@ -78,6 +73,12 @@ export default function ReadyRoutesScreen() {
       </Text>
       <Text style={[type.body, styles.intro]}>Copy one to your plans, then drive it a drive at a time</Text>
 
+      {completed.length ? (
+        <>
+          <SectionHeader variant="label" title={`Completed · ${completed.length}`} style={styles.group} />
+          <View style={styles.list}>{completed.map(row)}</View>
+        </>
+      ) : null}
       {mine.length ? (
         <>
           <SectionHeader variant="label" title={`In your plans · ${mine.length}`} style={styles.group} />

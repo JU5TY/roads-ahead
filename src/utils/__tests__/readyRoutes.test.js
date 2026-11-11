@@ -1,6 +1,8 @@
 import {
   READY_ROUTES,
   getReadyRoute,
+  lineCoverage,
+  routeCompleted,
   routeDriveLine,
   routeDriveTitle,
   routePlanDrives,
@@ -39,5 +41,34 @@ describe('ready-made routes', () => {
     expect(routeDriveTitle(nc500, 1)).toBe('Drive 2 · Applecross → Ullapool');
     expect(routeDriveLine(nc500, 0, 'imperial')).toMatch(/^\d+ mi · Bealach na Bà · 2 stops$/);
     expect(routeDriveLine(nc500, 2, 'imperial')).toMatch(/^\d+ mi · 2 stops$/);
+  });
+});
+
+describe('route coverage', () => {
+  const line = nc500.drives.flatMap((d) => d.line);
+  // A recording along the route, a little off the line as GPS is.
+  const along = (from, to) =>
+    line.slice(from, to).map(([latitude, longitude]) => ({ latitude: latitude + 0.0005, longitude }));
+
+  it('covers nothing without a recording', () => {
+    expect(lineCoverage(line, [])).toBe(0);
+  });
+
+  it('counts the line driven, in any order, across drives', () => {
+    const half = Math.floor(line.length / 2);
+    expect(lineCoverage(line, [...along(half, line.length), ...along(0, half)])).toBeGreaterThan(0.99);
+    expect(lineCoverage(line, along(0, half))).toBeCloseTo(0.5, 1);
+  });
+
+  it('ignores driving somewhere else', () => {
+    // The same shape, well south in England.
+    const away = line.map(([latitude, longitude]) => ({ latitude: latitude - 4, longitude }));
+    expect(lineCoverage(line, away)).toBe(0);
+  });
+
+  it('completes the route at about 90%, not before', () => {
+    const n = line.length;
+    expect(routeCompleted(nc500, along(0, Math.ceil(n * 0.92)))).toBe(true);
+    expect(routeCompleted(nc500, along(0, Math.floor(n * 0.85)))).toBe(false);
   });
 });
