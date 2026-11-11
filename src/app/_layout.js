@@ -88,6 +88,7 @@ function AppStack() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="trips/[id]" />
           <Stack.Screen name="plans/[id]" />
+          <Stack.Screen name="plans/add-stop" />
           <Stack.Screen name="saved/[id]" options={{ gestureEnabled: false }} />
           <Stack.Screen name="roads/index" />
           <Stack.Screen name="roads/[id]" />

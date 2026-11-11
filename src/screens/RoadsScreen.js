@@ -13,12 +13,9 @@ import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles } from '../hooks/useTheme';
 import { spacing, type } from '../theme';
 import { distanceParts, formatShortDate } from '../utils/format';
-import { ICONIC_ROADS, ROADS_INTRO, inBritain } from '../utils/iconicRoads';
+import { ICONIC_ROADS, ROADS_INTRO, roadPlace } from '../utils/iconicRoads';
 
 const COUNTRIES = ['All', ...new Set(ICONIC_ROADS.map((r) => r.country))];
-
-/** "Peak District", or "Provence, France" for a road outside Britain. */
-const placeOf = (road) => (inBritain(road) ? road.region : `${road.region}, ${road.country}`);
 
 /** "Last completed 5 Nov 2026" when done more than once, else "Completed 5 Nov 2026". */
 export const completedOn = ({ count, last }) =>
@@ -104,7 +101,7 @@ export default function RoadsScreen() {
                 completed
                 name={road.name}
                 line={road.line}
-                subtitle={`${placeOf(road)} · ${completedOn(totals.get(road.id))}`}
+                subtitle={`${roadPlace(road)} · ${completedOn(totals.get(road.id))}`}
                 onPress={() => open(road)}
               />
             ))}
@@ -124,7 +121,7 @@ export default function RoadsScreen() {
                 key={road.id}
                 name={road.name}
                 line={road.line}
-                subtitle={`${placeOf(road)} · ${km(road)}`}
+                subtitle={`${roadPlace(road)} · ${km(road)}`}
                 onPress={() => open(road)}
               />
             ))}

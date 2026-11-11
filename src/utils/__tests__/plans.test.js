@@ -1,5 +1,15 @@
 import { getRoad } from '../iconicRoads';
-import { dateKey, dateOf, drivePoints, driveStart, groupPlans, planKicker, planOutline, roadReversedFrom } from '../plans';
+import {
+  dateKey,
+  dateOf,
+  drivePoints,
+  driveStart,
+  groupPlans,
+  planKicker,
+  planOutline,
+  roadReversedFrom,
+  roadsNear,
+} from '../plans';
 
 const bealach = getRoad('bealach-na-ba');
 const place = (name, latitude, longitude, source = 'pin') => ({
@@ -132,5 +142,23 @@ describe('roadReversedFrom', () => {
     expect(roadReversedFrom(bealach, { latitude: startLat - 0.1, longitude: startLng })).toBe(false);
     expect(roadReversedFrom(bealach, { latitude: endLat, longitude: endLng - 0.05 })).toBe(true);
     expect(roadReversedFrom(bealach, null)).toBe(false);
+  });
+});
+
+describe('roadsNear', () => {
+  it('suggests Iconic Roads near the drive, nearest first', () => {
+    const near = roadsNear(plan({ stops: [eileanDonan] }), 0);
+    expect(near[0]).toMatchObject({ road: { id: 'bealach-na-ba' }, inPlan: false });
+    expect(near.every((r, i) => i === 0 || r.metres >= near[i - 1].metres)).toBe(true);
+    expect(near.every((r) => r.metres <= 80000)).toBe(true);
+  });
+
+  it('marks a road the plan already has', () => {
+    const near = roadsNear(plan({ stops: [eileanDonan, road()] }, { stops: [] }), 1);
+    expect(near.find((r) => r.road.id === 'bealach-na-ba')).toMatchObject({ inPlan: true });
+  });
+
+  it('suggests none for a drive with nowhere yet', () => {
+    expect(roadsNear(plan({ stops: [] }), 0)).toEqual([]);
   });
 });

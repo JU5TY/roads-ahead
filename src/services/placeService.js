@@ -38,6 +38,15 @@ async function lookup(coord, toName) {
   }
 }
 
+/**
+ * A name for a pin dropped on the planner's map ("Eilean Donan Castle, Dornie"),
+ * or null when the phone can't name it (offline, or no location permission on
+ * Android): it's then just a dropped pin.
+ */
+export async function pinName(coord) {
+  return (await lookup(coord, stopName)) || null;
+}
+
 async function resolvePlaces(drive, { includeStops }) {
   const places = {
     ...drive.places,

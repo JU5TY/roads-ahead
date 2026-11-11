@@ -30,6 +30,9 @@ const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
  * `fitTo` (coordinates) frames part of the map, e.g. one drive of a trip; the
  * map moves to it whenever a new array is passed.
  * `flat` fills its parent edge to edge, under the status bar (the Trip page).
+ * `region` ({ latitude, longitude, latitudeDelta, longitudeDelta }) is where
+ * the map opens when there's no route to frame (the planner's empty drive).
+ * `onLongPress(coordinate)` hears a long press on the map (dropping a pin).
  * A layers button bottom right picks Map, Satellite or Terrain (MapViewButton).
  */
 export default function RouteMap({
@@ -38,6 +41,8 @@ export default function RouteMap({
   height = 320,
   flat = false,
   fitTo,
+  region,
+  onLongPress,
   onSelect,
   ref,
 }) {
@@ -52,6 +57,7 @@ export default function RouteMap({
     onSelect?.(key);
   };
   const all = segments.flatMap((s) => s.coordinates);
+  const hasMap = all.length > 0 || !!region;
   // A marker that's gone (another drive picked) takes its card with it.
   const selected = markers.find((m) => m.key === selectedKey) ?? null;
 
@@ -89,25 +95,30 @@ export default function RouteMap({
 
   return (
     <View style={flat ? styles.flat : [styles.wrap, { height }]}>
-      {all.length > 0 ? (
+      {hasMap ? (
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           onMapReady={() => fit()}
           // iOS reports marker taps to the map too.
           onPress={(e) => e.nativeEvent.action !== 'marker-press' && setSelectedKey(null)}
+          onLongPress={onLongPress && ((e) => onLongPress(e.nativeEvent.coordinate))}
           // Keeps the map's logo clear of the card.
           mapPadding={{ top: 0, right: 0, left: 0, bottom: selected ? MAP_CARD_ROOM : 0 }}
           // No Google Maps toolbar (Android) over the card when a marker is tapped.
           toolbarEnabled={false}
           userInterfaceStyle={scheme}
           mapType={mapType}
-          initialRegion={{
-            latitude: all[0].latitude,
-            longitude: all[0].longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
+          initialRegion={
+            all.length > 0
+              ? {
+                  latitude: all[0].latitude,
+                  longitude: all[0].longitude,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }
+              : region
+          }
         >
           {segments.map((s) => (
             <Polyline
@@ -132,14 +143,14 @@ export default function RouteMap({
           ))}
         </MapView>
       ) : null}
-      {all.length > 0 ? (
+      {hasMap ? (
         // Above the marker card while one shows.
         <MapViewButton
           style={[styles.layers, { bottom: spacing.md + (selected ? MAP_CARD_ROOM : 0) }]}
         />
       ) : null}
-      {all.length > 0 ? <MapCard marker={selected} onClose={() => setSelectedKey(null)} /> : null}
-      {all.length === 0 ? (
+      {hasMap ? <MapCard marker={selected} onClose={() => setSelectedKey(null)} /> : null}
+      {!hasMap ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No GPS points were recorded.</Text>
         </View>

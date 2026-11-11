@@ -16,15 +16,21 @@ src/
     (tabs)/settings.js    → SettingsScreen
     trips/[id].js         → TripScreen (a single-drive trip shows the drive inline)
     drives/[id].js        → DriveScreen
+    plans/[id].js         → PlanScreen (a planned trip: drive tabs, timeline, map)
+    plans/add-stop.js     → AddStopScreen (search, dropped pins, Iconic Roads near the drive)
   screens/                Home, Record, Past Trips, Trip, Drive, Settings
   components/             RouteMap, RoutePreview, TripCard, TelemetryCard, TimelineCard, sheets
   components/charts/      LineChart (drag to inspect), SpeedBandsBar, DayDistanceBars, ChartsCard
   hooks/                  useActiveDrive, useTripPreview
   services/locationService.js   LOCATION_TRACKING_TASK, start/stop/resume a drive
-  services/placeService.js      reverse-geocoded place names per drive
+  services/placeService.js      reverse-geocoded place names per drive, and names for dropped pins
+  services/placeSearch.js       the planner's place search (Photon); the only file that talks to it
   storage/db.js                 SQLite connection + schema migrations
   storage/tripStorage.js        trips (name, notes) and listing
   storage/driveStorage.js       drives (one START→STOP recording) and their GPS points
+  storage/planStorage.js        plans, their drives and stops
+  utils/plans.js                the trip planner's rules (pure functions)
+  utils/navLinks.js             Google Maps, Apple Maps and Waze links for a drive (pure functions)
   utils/geoMath.js              per-drive metrics engine (pure functions)
   utils/tripSummary.js          combining drives into trips and days (pure functions)
   utils/timeline.js             stop-by-stop timelines for drives and trips (pure functions)
@@ -40,6 +46,25 @@ src/
 - Trip totals add up distance, driving time, climbing and stops, and take the maximum top speed, altitude and longest stint. Overall average speed uses time on the road only, so overnight breaks are excluded.
 - Trip options: edit name and notes, delete, or (for a single drive) add it to another trip. Drive options: move to another trip or a new one, delete.
 
+## Trip planner
+
+- A **plan** is a trip to come, split into **drives** (Drive 1, Drive 2), each a list of stops. It lives on the Trips tab's **Planned** side.
+- Each drive starts where the one before ends, unless it's set to start somewhere else (after a ferry, train or hire car). Drive 1 starts wherever the phone is, unless set.
+- An **Iconic Road** in a plan is a leg driven along, not a stop. It's driven from whichever end is nearer.
+- Stops are added by searching for a place or by long-pressing the map to drop a pin, and reordered by dragging their handle.
+
+### Place search: Photon
+
+The search box uses [Photon](https://photon.komoot.io), Komoot's free public search over OpenStreetMap data. It needs no account or key and costs nothing. OpenStreetMap's licence asks for credit, so the results show "Search © OpenStreetMap contributors".
+
+- **One file:** `src/services/placeSearch.js` is the only code that talks to Photon. `searchPlaces(text, { near })` returns the app's own places (`{ id, name, detail, latitude, longitude }`), so moving to another service (Mapbox, Google, or our own Photon server) means rewriting that file alone. Check the new service's rules on storing results first.
+- **Saved stops keep their own name and coordinates**, with no Photon ID, so plans aren't affected by a change of service.
+- **Light use:** it asks only after a pause in typing and from 3 letters, near the drive being planned. A newer search cancels the one before.
+- **If Photon fails** (no match, offline, an error or over 5 seconds), `searchPlaces` returns `{ places: [] }` or `{ failed: true }` and never throws. The screen says so and suggests dropping a pin.
+- **Dropped pins don't use Photon.** The phone's own geocoder names them (expo-location). If that fails too, the stop is saved as "Dropped pin" at its exact position.
+
+Photon's public server has no guarantee of service. If the app outgrows it, run our own Photon or switch service, as above.
+
 ## How the metrics work
 
 All data is stored in metric (metres, m/s). The Settings page switches the display between km and miles.
@@ -52,6 +77,14 @@ All data is stored in metric (metres, m/s). The Settings page switches the displ
 - **Elevation gain** uses a 5 m hysteresis. Note that Android GPS altitude is usually height above the WGS84 ellipsoid, not sea level, so max altitude can be off by tens of metres.
 - **Longest stint** is the most driving time between rest stops. The Record tab's *Since Break* tile shows the current one.
 - **Place names** for the start, end and rest stops come from the phone's reverse geocoder after a trip ends. Lookups that fail while offline are retried when you open the trip.
+
+## Tests
+
+```bash
+npm test
+```
+
+Jest with jest-expo (development only, nothing added to the app). The tests cover the metrics rules, the sat nav links, the planner's rules and place search, with Photon's replies faked.
 
 ## Running on your phone
 

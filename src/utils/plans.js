@@ -6,7 +6,8 @@
 // somewhere else"), or null: where the drive before ends, or for Drive 1,
 // wherever the phone is when it starts. A stop with `roadId` is an Iconic Road
 // driven through, not a place to stop.
-import { getRoad } from './iconicRoads';
+import { haversineDistance } from './geoMath';
+import { ICONIC_ROADS, getRoad } from './iconicRoads';
 import { roadGuidePoints } from './navLinks';
 
 /** The end of an Iconic Road stop, in the direction it's driven. */
@@ -154,4 +155,61 @@ export function roadReversedFrom(road, from) {
 export function driveReach(plan, index) {
   const last = plan.drives[index].stops.at(-1);
   return last ? endOfStop(last) : driveStart(plan, index);
+}
+
+/**
+ * Iconic Roads to suggest for drive `index` (from 0): those within `withinM`
+ * of where the drive goes so far (its start, stops and roads), nearest first:
+ * [{ road, metres, inPlan }], `inPlan` when any drive of the plan has it. A
+ * drive with nowhere yet (Drive 1, nothing added) gets none.
+ */
+export function roadsNear(plan, index, { withinM = 80000, limit = 4 } = {}) {
+  const here = planOutline(plan)[index].coordinates;
+  if (here.length === 0) return [];
+  const inPlan = new Set(plan.drives.flatMap((d) => d.stops.map((s) => s.roadId).filter(Boolean)));
+  return ICONIC_ROADS.map((road) => {
+    let metres = Infinity;
+    for (const [latitude, longitude] of road.line) {
+      for (const point of here) metres = Math.min(metres, haversineDistance(point, { latitude, longitude }));
+    }
+    return { road, metres, inPlan: inPlan.has(road.id) };
+  })
+    .filter((r) => r.metres <= withinM)
+    .sort((a, b) => a.metres - b.metres)
+    .slice(0, limit);
+}
+
+/**
+ * The stop for an Iconic Road added at the end of drive `index`: driven from
+ * whichever end is nearer where the drive has got to.
+ */
+export function roadStop(plan, index, road) {
+  const [latitude, longitude] = road.line[0];
+  return {
+    name: road.name,
+    latitude,
+    longitude,
+    source: 'pin',
+    roadId: road.id,
+    reversed: roadReversedFrom(road, driveReach(plan, index)),
+  };
+}
+
+/**
+ * Drive `index`'s map markers, as RouteMap takes them less their colour: its
+ * start, a ring per place, and the finish. An Iconic Road has no marker; one
+ * that ends the drive puts the finish at its far end.
+ */
+export function driveMarkers(plan, index) {
+  const drive = plan.drives[index];
+  const start = driveStart(plan, index);
+  const finish = drive.stops.length ? driveReach(plan, index) : null;
+  const places = drive.stops.filter((s) => !s.roadId);
+  // The last place is the finish, unless an Iconic Road comes after it.
+  if (finish && !drive.stops.at(-1).roadId) places.pop();
+  return [
+    ...(start ? [{ key: 'start', kind: 'start', coordinate: start, title: start.name ?? 'Start' }] : []),
+    ...places.map((s) => ({ key: `stop-${s.id}`, kind: 'stop', coordinate: s, title: s.name ?? 'Dropped pin' })),
+    ...(finish ? [{ key: 'finish', kind: 'finish', coordinate: finish, title: finish.name ?? 'Finish' }] : []),
+  ];
 }

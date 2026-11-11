@@ -22,14 +22,21 @@ import {
   getPlan,
   movePlanStop,
   renamePlan,
+  setPlanDriveStart,
   setPlanStartDate,
 } from '../storage/planStorage';
 import { dayColorFor, pressedOpacity, spacing, type } from '../theme';
-import { ICONIC_ROADS, getRoad, inBritain } from '../utils/iconicRoads';
-import { driveReach, driveStart, planKicker, planOutline, roadReversedFrom, stopCounts } from '../utils/plans';
+import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
+import {
+  driveMarkers,
+  driveReach,
+  driveStart,
+  planKicker,
+  planOutline,
+  roadStop,
+  stopCounts,
+} from '../utils/plans';
 
-/** "Peak District", or "Provence, France" outside Britain (as on the Iconic Roads list). */
-const placeOf = (road) => (inBritain(road) ? road.region : `${road.region}, ${road.country}`);
 
 /**
  * A plan: its map, the Drive tabs (+ adds one), and the picked drive as a
@@ -43,7 +50,7 @@ export default function PlanScreen() {
   const styles = useStyles(makeStyles);
   const [plan, setPlan] = useState(null);
   const [picked, setPicked] = useState(0);
-  const [menu, setMenu] = useState(null); // 'options' | 'edit' | 'road' | { stop }
+  const [menu, setMenu] = useState(null); // 'options' | 'edit' | 'road' | 'start' | { stop }
 
   const reload = useCallback(
     () =>
@@ -87,17 +94,13 @@ export default function PlanScreen() {
     await addPlanDrive(plan.id);
     setPicked(plan.drives.length);
   });
-  const addRoad = (road) =>
-    act(() =>
-      addPlanStop(drive.id, {
-        name: road.name,
-        latitude: road.line[0][0],
-        longitude: road.line[0][1],
-        source: 'pin',
-        roadId: road.id,
-        reversed: roadReversedFrom(road, driveReach(plan, picked)),
-      })
-    )();
+  const pickPlace = (mode) => {
+    setMenu(null);
+    router.push({ pathname: '/plans/add-stop', params: { plan: plan.id, drive: picked, mode } });
+  };
+  // Where the drive would start if it followed on (Drive 1: wherever the phone is).
+  const followOn = driveStart({ ...plan, drives: plan.drives.map((d) => (d === drive ? { ...d, start: null } : d)) }, picked);
+  const addRoad = (road) => act(() => addPlanStop(drive.id, roadStop(plan, picked, road)))();
   const confirmDeleteDrive = () => {
     setMenu(null);
     const next = plan.drives[picked + 1];
@@ -129,22 +132,7 @@ export default function PlanScreen() {
     });
   };
 
-  const markers = [
-    ...(start
-      ? [{ key: 'start', kind: 'start', coordinate: start, title: start.name ?? 'Start', color: colorOf(picked) }]
-      : []),
-    ...drive.stops
-      .filter((s) => !s.roadId)
-      .slice(0, finish && !drive.stops.at(-1).roadId ? -1 : undefined)
-      .map((s) => ({
-        key: `stop-${s.id}`,
-        kind: 'stop',
-        coordinate: s,
-        title: s.name ?? 'Dropped pin',
-        color: colorOf(picked),
-      })),
-    ...(finish ? [{ key: 'finish', kind: 'finish', coordinate: finish, title: finish.name ?? 'Finish', color: colorOf(picked) }] : []),
-  ];
+  const markers = driveMarkers(plan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
 
   const map = outline.some((d) => d.coordinates.length) ? (
     <RouteMap
@@ -204,9 +192,38 @@ export default function PlanScreen() {
             key: road.id,
             icon: 'verified',
             label: road.name,
-            detail: placeOf(road),
+            detail: roadPlace(road),
             onPress: () => addRoad(road),
           }))}
+        onClose={() => setMenu(null)}
+      />
+      <ActionSheet
+        visible={menu === 'start'}
+        message={`Where Drive ${picked + 1} starts`}
+        actions={[
+          picked === 0
+            ? {
+                icon: 'my_location',
+                label: 'Wherever you are',
+                detail: 'Where the phone is when you start',
+                selected: !drive.start,
+                onPress: act(() => setPlanDriveStart(drive.id, null)),
+              }
+            : {
+                icon: 'link',
+                label: `Where Drive ${picked} ends`,
+                detail: `${followOn?.name ?? 'Its last stop'} · moves if Drive ${picked} changes`,
+                selected: !drive.start,
+                onPress: act(() => setPlanDriveStart(drive.id, null)),
+              },
+          {
+            icon: 'edit_location_alt',
+            label: 'Start somewhere else',
+            detail: picked === 0 ? 'Pick a place, or drop a pin' : 'After a ferry, train or hire car',
+            selected: !!drive.start,
+            onPress: () => pickPlace('start'),
+          },
+        ]}
         onClose={() => setMenu(null)}
       />
       <ActionSheet
@@ -279,9 +296,19 @@ export default function PlanScreen() {
         start={start}
         color={colorOf(picked)}
         onStopPress={(s) => setMenu({ stop: s })}
+        onStartPress={() => setMenu('start')}
+        onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
       />
 
       <View style={styles.buttons}>
+        <Button
+          label="Add stop"
+          icon="add_location_alt"
+          variant="tonal"
+          size="small"
+          onPress={() => pickPlace('stop')}
+          style={styles.button}
+        />
         <Button
           label="Iconic Road"
           icon="verified"

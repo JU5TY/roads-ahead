@@ -27,6 +27,9 @@ const BRITAIN = new Set(['England', 'Scotland', 'Wales']);
 /** True for a road in England, Scotland or Wales; the rest are "Europe". */
 export const inBritain = (road) => BRITAIN.has(road.country);
 
+/** "Peak District", or "Provence, France" outside Britain: where a road is, on lists. */
+export const roadPlace = (road) => (inBritain(road) ? road.region : `${road.region}, ${road.country}`);
+
 const ukCount = ICONIC_ROADS.filter(inBritain).length;
 /** What the list is, for Home and the Roads page. */
 export const ROADS_INTRO = `The UK's top ${ukCount} driving roads and Europe's top ${ICONIC_ROADS.length - ukCount}, waiting to be driven.`;
