@@ -17,6 +17,19 @@ const FOCUS_DELTA = 0.01; // ~1 km across when zooming to a single marker
 const DOTS = { lineDashPattern: [1, 8], lineCap: 'round' };
 
 /**
+ * Changes whenever a line's points do. Keyed on it, a line that changes (a
+ * stop added on the planner while its screen was hidden) is drawn afresh:
+ * Google Maps on Android didn't always redraw it in place.
+ */
+const lineKey = (s) => {
+  let sum = 0;
+  s.coordinates.forEach((p, i) => {
+    sum += (p.latitude + 2 * p.longitude) * ((i % 7) + 1);
+  });
+  return `${s.key}:${s.coordinates.length}:${sum.toFixed(6)}`;
+};
+
+/**
  * Map of one or more route segments.
  * segments: [{ key, coordinates: [{latitude, longitude}], color, dotted? }]
  *           (`dotted` for a ferry or tunnel crossing, see utils/crossings.js)
@@ -122,7 +135,7 @@ export default function RouteMap({
         >
           {segments.map((s) => (
             <Polyline
-              key={s.key}
+              key={lineKey(s)}
               coordinates={s.coordinates}
               strokeColor={mapColor(s.color)}
               strokeWidth={3.5}

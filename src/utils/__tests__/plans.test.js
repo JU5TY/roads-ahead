@@ -4,6 +4,7 @@ import {
   dateOf,
   drivePoints,
   driveStart,
+  fromHere,
   groupPlans,
   planKicker,
   planOutline,
@@ -160,5 +161,22 @@ describe('roadsNear', () => {
 
   it('suggests none for a drive with nowhere yet', () => {
     expect(roadsNear(plan({ stops: [] }), 0)).toEqual([]);
+  });
+});
+
+describe('fromHere', () => {
+  const here = { latitude: 53.48, longitude: -2.24 };
+
+  it("starts Drive 1's line where the phone is", () => {
+    const p = fromHere(plan({ stops: [fortAugustus] }), here);
+    expect(planOutline(p)[0].coordinates[0]).toEqual(here);
+    expect(driveStart(p, 0)).toMatchObject({ name: 'Your location', ...here });
+  });
+
+  it('keeps a start set by hand, and does nothing without a location', () => {
+    const set = plan({ start: { name: 'Dover', latitude: 51.12, longitude: 1.31 }, stops: [] });
+    expect(fromHere(set, here)).toBe(set);
+    const p = plan({ stops: [] });
+    expect(fromHere(p, null)).toBe(p);
   });
 });

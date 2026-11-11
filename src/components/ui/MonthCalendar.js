@@ -8,6 +8,9 @@ import IconButton from './IconButton';
 const sameDay = (a, b) =>
   a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+// Spelled out: the phone's JavaScript engine (Hermes) crashes on `dateStyle`.
+const FULL_DATE = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+
 /** Monday first, the phone's own short day names ("M", "T", …). */
 const WEEKDAYS = Array.from({ length: 7 }, (_, i) =>
   new Date(2024, 0, 1 + i).toLocaleDateString(undefined, { weekday: 'narrow' })
@@ -57,7 +60,7 @@ export default function MonthCalendar({ value, onChange }) {
               onPress={() => onChange(d)}
               accessibilityRole="button"
               accessibilityState={{ selected: sameDay(d, value) }}
-              accessibilityLabel={d.toLocaleDateString(undefined, { dateStyle: 'full' })}
+              accessibilityLabel={d.toLocaleDateString(undefined, FULL_DATE)}
               style={({ pressed }) => [styles.cell, pressed && styles.pressed]}
             >
               <View

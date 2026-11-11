@@ -9,17 +9,11 @@ import Icon from '../ui/Icon';
 
 const RAIL_W = 22;
 
-/** Green start dot, numbered ring for a stop, red finish dot. */
-function Marker({ kind, number, color }) {
+/** Green start dot, a ring in the drive's colour for a stop, red finish dot (as on a trip). */
+function Marker({ kind, color }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  if (kind === 'stop') {
-    return (
-      <View style={[styles.ring, { borderColor: color }]}>
-        <Text style={[styles.ringNumber, { color }]}>{number}</Text>
-      </View>
-    );
-  }
+  if (kind === 'stop') return <View style={[styles.ring, { borderColor: color }]} />;
   return <View style={[styles.dot, { backgroundColor: kind === 'start' ? c.start : c.finish }]} />;
 }
 
@@ -35,13 +29,13 @@ function Handle({ name, handlers }) {
   );
 }
 
-function EventRow({ kind, number, color, name, subtitle, linked, onPress, onChange, handlers }) {
+function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, handlers }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const body = (
     <View style={styles.event}>
       <View style={styles.rail}>
-        <Marker kind={kind} number={number} color={color} />
+        <Marker kind={kind} color={color} />
       </View>
       <View style={styles.flex}>
         <Text style={[type.bodyStrong, styles.text]} numberOfLines={1}>
@@ -118,8 +112,8 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
 
 /**
  * One planned drive as a timeline, like the Trip page's: its start (a green
- * dot; linked when it's where the drive before ends) with Change, a numbered
- * ring per stop, an Iconic Road as a chip on the leg it's driven on, and the
+ * dot; linked when it's where the drive before ends) with Change, a ring per
+ * stop, an Iconic Road as a chip on the leg it's driven on, and the
  * last place as the red finish. Stops are dragged by their handle to reorder
  * them; tapping one opens its options. Leg distances come with leg routing.
  * `start` is driveStart(); onStopPress(stop), onStartPress(),
@@ -208,27 +202,20 @@ export default function PlanTimeline({ drive, index, start, color, onStopPress, 
     );
   }
 
-  // Stops are numbered in order; the last place, unless a road follows it, is the finish.
+  // The last place is the finish, unless an Iconic Road comes after it.
   const lastPlace = stops.map((s) => !s.roadId).lastIndexOf(true);
-  const numbers = [];
-  for (let i = 0, n = 0; i < stops.length; i += 1) {
-    const finish = i === stops.length - 1 && i === lastPlace;
-    if (!stops[i].roadId && !finish) n += 1;
-    numbers.push(finish ? null : n);
-  }
   const unitRows = (stop, i, handlers) => {
     const road = stop.roadId ? getRoad(stop.roadId) : null;
     if (road) {
       return <LegRow color={color} road={road.name} onPress={() => onStopPress(stop)} handlers={handlers} />;
     }
-    const finish = numbers[i] === null;
+    const finish = i === stops.length - 1 && i === lastPlace;
     return (
       <>
         {/* A leg leads into each place, unless an Iconic Road's leg already did. */}
         {stops[i - 1]?.roadId ? null : <LegRow color={color} />}
         <EventRow
           kind={finish ? 'finish' : 'stop'}
-          number={numbers[i]}
           color={color}
           name={stop.name ?? 'Dropped pin'}
           subtitle={finish ? 'Finish' : 'Stop'}
@@ -273,16 +260,7 @@ const makeStyles = (c) => ({
   leg: { flexDirection: 'row', alignItems: 'stretch', gap: 12, minHeight: 44 },
   rail: { width: RAIL_W, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8 },
-  ring: {
-    width: RAIL_W,
-    height: RAIL_W,
-    borderRadius: RAIL_W / 2,
-    borderWidth: 3,
-    backgroundColor: c.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ringNumber: { fontFamily: type.nav.fontFamily, fontSize: 11, lineHeight: 13 },
+  ring: { width: 16, height: 16, borderRadius: 8, borderWidth: 3, backgroundColor: c.background },
   bar: { width: 4, flex: 1, borderRadius: 2 },
   flex: { flex: 1, minWidth: 0 },
   text: { color: c.text },

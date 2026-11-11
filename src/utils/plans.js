@@ -213,3 +213,14 @@ export function driveMarkers(plan, index) {
     ...(finish ? [{ key: 'finish', kind: 'finish', coordinate: finish, title: finish.name ?? 'Finish' }] : []),
   ];
 }
+
+/**
+ * The plan for its map: a Drive 1 with no start set starts at `here` (where the
+ * phone is, { latitude, longitude }), so its line runs from there. Unchanged
+ * without `here`. The timeline keeps "Wherever you are when you start".
+ */
+export function fromHere(plan, here) {
+  const [first, ...rest] = plan.drives;
+  if (!here || !first || first.start) return plan;
+  return { ...plan, drives: [{ ...first, start: { name: 'Your location', ...here } }, ...rest] };
+}

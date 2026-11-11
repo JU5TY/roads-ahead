@@ -39,7 +39,7 @@ function PlanForm({ plan, onSave }) {
           style={({ pressed }) => [styles.input, styles.dateField, pressed && styles.pressed]}
         >
           <Text style={[type.bodyLarge, { color: date ? c.text : c.textMuted }]}>
-            {date ? date.toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'No date'}
+            {date ? date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : 'No date'}
           </Text>
           <Icon name="calendar_month" size={22} color={c.textMuted} />
         </Pressable>

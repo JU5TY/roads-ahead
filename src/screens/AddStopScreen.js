@@ -1,4 +1,3 @@
-import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -10,15 +9,23 @@ import Icon from '../components/ui/Icon';
 import IconButton from '../components/ui/IconButton';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
+import { useHere } from '../hooks/useHere';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { getLocationAccess } from '../services/locationService';
 import { MIN_SEARCH_LENGTH, SEARCH_CREDIT, searchPlaces } from '../services/placeSearch';
 import { pinName } from '../services/placeService';
 import { addPlanStop, getPlan, setPlanDriveStart } from '../storage/planStorage';
 import { dayColorFor, pressedOpacity, radius, spacing, type } from '../theme';
 import { formatDistance } from '../utils/format';
 import { roadPlace } from '../utils/iconicRoads';
-import { driveMarkers, driveReach, driveStart, planOutline, roadStop, roadsNear } from '../utils/plans';
+import {
+  driveMarkers,
+  driveReach,
+  driveStart,
+  fromHere,
+  planOutline,
+  roadStop,
+  roadsNear,
+} from '../utils/plans';
 
 const MAP_HEIGHT = 300;
 const MAP_HEIGHT_TYPING = 140; // while the keyboard is up, so the results have room
@@ -78,8 +85,7 @@ export default function AddStopScreen() {
   const insets = useSafeAreaInsets();
   const typing = useKeyboardState((s) => s.isVisible);
   const [plan, setPlan] = useState(null);
-  const [region, setRegion] = useState(null);
-  const [here, setHere] = useState(null);
+  const { here, ready } = useHere();
   const [text, setText] = useState('');
   // The last answer, for the text it was for: { text, status: 'done' | 'failed', places }.
   const [search, setSearch] = useState({ text: '', status: 'done', places: [] });
@@ -92,28 +98,13 @@ export default function AddStopScreen() {
       .catch((err) => console.warn('[plan] load failed', err));
   }, [planId]);
 
-  const outline = useMemo(() => (plan ? planOutline(plan) : []), [plan]);
+  // On the map, a Drive 1 with no start runs from where the phone is.
+  const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
+  const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const nothingYet = plan != null && outline.every((d) => d.coordinates.length === 0);
 
-  // With nothing planned yet, the map opens on the phone, or on Britain without
-  // location (it isn't asked for just for this).
-  useEffect(() => {
-    if (!nothingYet) return;
-    let cancelled = false;
-    getLocationAccess()
-      .then((access) => (access.granted ? Location.getLastKnownPositionAsync() : null))
-      .catch(() => null)
-      .then((pos) => {
-        if (cancelled) return;
-        if (!pos) return setRegion(BRITAIN);
-        const at = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-        setHere(at);
-        setRegion({ ...at, latitudeDelta: 0.5, longitudeDelta: 0.5 });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [nothingYet]);
+  // With nothing planned yet and no location, the map opens on Britain.
+  const region = here ? { ...here, latitudeDelta: 0.5, longitudeDelta: 0.5 } : BRITAIN;
 
   // Search near where the drive has got to (for a start, where it is now).
   const near = useMemo(() => {
@@ -178,7 +169,7 @@ export default function AddStopScreen() {
 
   const roads = forStart ? [] : roadsNear(plan, index);
   const markers = [
-    ...driveMarkers(plan, index).map((m) => ({ ...m, color })),
+    ...driveMarkers(mapPlan, index).map((m) => ({ ...m, color })),
     ...(pin ? [{ key: 'pin', kind: 'finish', coordinate: pin, title: pin.name ?? 'Dropped pin', color: c.finish }] : []),
   ];
   const pickedCoords = outline[index]?.coordinates ?? [];
@@ -198,7 +189,7 @@ export default function AddStopScreen() {
   return (
     <KeyboardAvoidingView behavior="padding" style={styles.screen}>
       <View style={[styles.map, { height: mapHeight }]}>
-        {nothingYet && !region ? null : (
+        {!ready ? null : (
           <RouteMap
             flat
             segments={outline.map(({ index: i, coordinates }) => ({

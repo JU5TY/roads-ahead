@@ -12,6 +12,7 @@ import Button from '../components/ui/Button';
 import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
 import Icon from '../components/ui/Icon';
+import { useHere } from '../hooks/useHere';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import {
   addPlanDrive,
@@ -31,12 +32,12 @@ import {
   driveMarkers,
   driveReach,
   driveStart,
+  fromHere,
   planKicker,
   planOutline,
   roadStop,
   stopCounts,
 } from '../utils/plans';
-
 
 /**
  * A plan: its map, the Drive tabs (+ adds one), and the picked drive as a
@@ -51,6 +52,7 @@ export default function PlanScreen() {
   const [plan, setPlan] = useState(null);
   const [picked, setPicked] = useState(0);
   const [menu, setMenu] = useState(null); // 'options' | 'edit' | 'road' | 'start' | { stop }
+  const { here } = useHere();
 
   const reload = useCallback(
     () =>
@@ -70,7 +72,9 @@ export default function PlanScreen() {
   );
 
   const colorOf = useCallback((i) => dayColorFor(c, i + 1), [c]);
-  const outline = useMemo(() => (plan ? planOutline(plan) : []), [plan]);
+  // On the map, a Drive 1 with no start runs from where the phone is.
+  const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
+  const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
 
   if (!plan) {
     return (
@@ -132,7 +136,7 @@ export default function PlanScreen() {
     });
   };
 
-  const markers = driveMarkers(plan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
+  const markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
 
   const map = outline.some((d) => d.coordinates.length) ? (
     <RouteMap
