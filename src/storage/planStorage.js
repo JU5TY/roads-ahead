@@ -261,3 +261,12 @@ export async function getPlanDrives(planId) {
   }
   return driven;
 }
+
+/** The ids of every planned drive that has a finished recording (for Done and the Planned tab). */
+export async function drivenPlanDriveIds() {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    "SELECT DISTINCT plan_drive_id FROM drives WHERE plan_drive_id IS NOT NULL AND status = 'completed'"
+  );
+  return new Set(rows.map((r) => r.plan_drive_id));
+}

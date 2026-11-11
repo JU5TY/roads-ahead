@@ -73,3 +73,85 @@ export function drivePoints(plan, index, { fromStart = false } = {}) {
   }
   return points;
 }
+
+/**
+ * The Planned tab's groups: { comingUp, someday, done }. Done is a plan whose
+ * every drive has been driven (`driven`: the planned drive ids with a
+ * recording); Coming up has a start date, soonest first; Someday has none,
+ * newest first.
+ */
+export function groupPlans(plans, driven) {
+  const isDone = (p) => p.drives.length > 0 && p.drives.every((d) => driven.has(d.id));
+  const open = plans.filter((p) => !isDone(p));
+  return {
+    comingUp: open.filter((p) => p.startDate).sort((a, b) => a.startDate.localeCompare(b.startDate)),
+    someday: open.filter((p) => !p.startDate).sort((a, b) => b.createdAt - a.createdAt),
+    done: plans.filter(isDone),
+  };
+}
+
+/** A 'YYYY-MM-DD' start date as a local Date. */
+export const dateOf = (startDate) => {
+  const [y, m, d] = startDate.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+/** A local Date as 'YYYY-MM-DD'. */
+export const dateKey = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+/** "14 MAY 2027 · 7 DRIVES", or "7 DRIVES" with no date: the blue line above a plan's name. */
+export function planKicker(plan) {
+  const n = plan.drives.length;
+  const drives = `${n} ${n === 1 ? 'DRIVE' : 'DRIVES'}`;
+  if (!plan.startDate) return drives;
+  const date = dateOf(plan.startDate)
+    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    .toUpperCase();
+  return `${date} · ${drives}`;
+}
+
+/** { stops, roads }: a plan's (or one drive's) places and Iconic Roads. */
+export function stopCounts(drives) {
+  const all = drives.flatMap((d) => d.stops);
+  return { stops: all.filter((s) => !s.roadId).length, roads: all.filter((s) => s.roadId).length };
+}
+
+/**
+ * Each drive's planned outline for a map or thumbnail: [{ index, coordinates }],
+ * from its start (when known) through its stops, an Iconic Road along its own
+ * line. Straight between stops: real roads come with leg routing.
+ */
+export function planOutline(plan) {
+  return plan.drives.map((drive, index) => {
+    const coordinates = [];
+    const start = driveStart(plan, index);
+    if (start) coordinates.push({ latitude: start.latitude, longitude: start.longitude });
+    for (const stop of drive.stops) {
+      const road = stop.roadId ? getRoad(stop.roadId) : null;
+      if (road) {
+        const line = stop.reversed ? [...road.line].reverse() : road.line;
+        coordinates.push(...line.map(([latitude, longitude]) => ({ latitude, longitude })));
+      } else {
+        coordinates.push({ latitude: stop.latitude, longitude: stop.longitude });
+      }
+    }
+    return { index, coordinates };
+  });
+}
+
+/**
+ * Whether an Iconic Road added after `from` ({ latitude, longitude }, where the
+ * drive has got to) is driven from its finish: true when its finish is nearer.
+ */
+export function roadReversedFrom(road, from) {
+  if (!from) return false;
+  const dist = ([la, lo]) => (la - from.latitude) ** 2 + ((lo - from.longitude) * Math.cos((la * Math.PI) / 180)) ** 2;
+  return dist(road.line.at(-1)) < dist(road.line[0]);
+}
+
+/** Where drive `index` has got to after its stops so far: the end of its last stop, or its start. */
+export function driveReach(plan, index) {
+  const last = plan.drives[index].stops.at(-1);
+  return last ? endOfStop(last) : driveStart(plan, index);
+}

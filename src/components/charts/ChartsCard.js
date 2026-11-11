@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { useStyles } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
+import { radius } from '../../theme';
 import { elevationSeries, speedByDistanceSeries, stepDistance } from '../../utils/chartData';
 import { distanceUnit, formatElevation, speedUnit, toDistance, toSpeed } from '../../utils/format';
 import SectionHeader from '../ui/SectionHeader';
+import SegmentedSwitch from '../ui/SegmentedSwitch';
 import LineChart from './LineChart';
 
 const MIN_ELEVATION_RANGE_M = 40; // keep near-flat drives from looking mountainous
@@ -87,24 +88,7 @@ export default function ChartsCard({
       <View style={styles.header}>
         <SectionHeader title="Charts" style={styles.title} />
         {hasElevation && !speedHidden ? (
-          <View style={styles.switch} role="radiogroup">
-            {OPTIONS.map(([value, label]) => {
-              const on = showing === value;
-              return (
-                <Pressable
-                  key={value}
-                  onPress={() => select(value)}
-                  style={[styles.option, on && styles.optionOn]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: on }}
-                >
-                  <Text style={[type.label, on ? styles.optionTextOn : styles.optionText]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <SegmentedSwitch options={OPTIONS} value={showing} onChange={select} />
         ) : null}
       </View>
       <View style={styles.card}>
@@ -145,24 +129,6 @@ const makeStyles = (c) => ({
     marginBottom: 12,
   },
   title: { marginTop: 0, marginBottom: 0 },
-  switch: {
-    flexDirection: 'row',
-    gap: 4,
-    backgroundColor: c.track,
-    borderRadius: 20,
-    padding: 4,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: 32,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-  },
-  optionOn: { backgroundColor: c.accent },
-  optionText: { color: c.textMuted },
-  optionTextOn: { color: c.onAccent },
   card: {
     backgroundColor: c.card,
     ...c.cardShadow,

@@ -1,5 +1,5 @@
 import { getRoad } from '../iconicRoads';
-import { drivePoints, driveStart } from '../plans';
+import { dateKey, dateOf, drivePoints, driveStart, groupPlans, planKicker, planOutline, roadReversedFrom } from '../plans';
 
 const bealach = getRoad('bealach-na-ba');
 const place = (name, latitude, longitude, source = 'pin') => ({
@@ -75,5 +75,62 @@ describe('drivePoints', () => {
     const points = drivePoints(p, 1, { fromStart: true });
     expect(points[0].name).toBe('Fort William');
     expect(points).toHaveLength(2);
+  });
+});
+
+describe('groupPlans', () => {
+  const p = (id, startDate, createdAt, driveIds) => ({
+    id,
+    startDate,
+    createdAt,
+    drives: driveIds.map((d) => ({ id: d, stops: [] })),
+  });
+  it('puts dated plans in Coming up (soonest first), undated in Someday, driven in Done', () => {
+    const plans = [
+      p(1, '2027-05-14', 1, [11, 12]),
+      p(2, null, 2, [21]),
+      p(3, '2026-12-01', 3, [31]),
+      p(4, '2026-10-11', 4, [41, 42]),
+      p(5, null, 5, [51]),
+    ];
+    const { comingUp, someday, done } = groupPlans(plans, new Set([11, 41, 42]));
+    expect(comingUp.map((x) => x.id)).toEqual([3, 1]);
+    expect(someday.map((x) => x.id)).toEqual([5, 2]);
+    expect(done.map((x) => x.id)).toEqual([4]);
+  });
+});
+
+describe('planKicker', () => {
+  it('counts the drives, after the start date when there is one', () => {
+    const drives = [{ stops: [] }, { stops: [] }];
+    expect(planKicker({ startDate: null, drives })).toBe('2 DRIVES');
+    expect(planKicker({ startDate: null, drives: [{ stops: [] }] })).toBe('1 DRIVE');
+    expect(planKicker({ startDate: '2027-05-14', drives })).toMatch(/2027 · 2 DRIVES$/);
+  });
+});
+
+describe('dateKey', () => {
+  it('round-trips a start date', () => {
+    expect(dateKey(dateOf('2027-05-04'))).toBe('2027-05-04');
+  });
+});
+
+describe('planOutline', () => {
+  it('joins each drive from its start through its stops, a road along its line', () => {
+    const p = plan({ stops: [fortWilliam] }, { stops: [eileanDonan, road()] });
+    const [one, two] = planOutline(p);
+    expect(one.coordinates).toHaveLength(1);
+    // Drive 2: Fort William (linked start), Eilean Donan, then every point of the road.
+    expect(two.coordinates).toHaveLength(2 + bealach.line.length);
+  });
+});
+
+describe('roadReversedFrom', () => {
+  it('drives a road from whichever end is nearer', () => {
+    const [startLat, startLng] = bealach.line[0];
+    const [endLat, endLng] = bealach.line.at(-1);
+    expect(roadReversedFrom(bealach, { latitude: startLat - 0.1, longitude: startLng })).toBe(false);
+    expect(roadReversedFrom(bealach, { latitude: endLat, longitude: endLng - 0.05 })).toBe(true);
+    expect(roadReversedFrom(bealach, null)).toBe(false);
   });
 });

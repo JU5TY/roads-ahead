@@ -1,4 +1,4 @@
-import { Tabs, router, usePathname } from 'expo-router';
+import { Tabs, router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -63,9 +63,12 @@ function RecordPill() {
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const { view } = useGlobalSearchParams();
   const { drive } = useActiveDrive();
 
   if (pathname !== '/' && pathname !== '/trips') return null;
+  // Trips' Planned view has Plan a trip in this spot.
+  if (pathname === '/trips' && view === 'planned') return null;
   const label = drive ? null : 'Record';
 
   return (
