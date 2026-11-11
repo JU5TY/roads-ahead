@@ -8,6 +8,13 @@ module.exports = defineConfig([
     ignores: ['dist/*'],
   },
   {
+    // Jest's globals, in the tests only (npm test).
+    files: ['**/__tests__/**/*.js'],
+    languageOptions: {
+      globals: { describe: 'readonly', it: 'readonly', expect: 'readonly', jest: 'readonly' },
+    },
+  },
+  {
     rules: {
       // Installed, but the import resolver can't follow these packages' `exports` maps.
       'import/no-unresolved': [

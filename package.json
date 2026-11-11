@@ -44,11 +44,17 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "jest"
   },
   "private": true,
   "devDependencies": {
     "eslint": "^9.0.0",
-    "eslint-config-expo": "~58.0.4"
+    "eslint-config-expo": "~58.0.4",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.14"
+  },
+  "jest": {
+    "preset": "jest-expo"
   }
 }
