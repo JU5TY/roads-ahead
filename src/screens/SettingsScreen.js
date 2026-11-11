@@ -231,7 +231,7 @@ export default function SettingsScreen() {
               <Icon name="directions_car" filled size={22} color={c.onAccentContainer} />
             </View>
           }
-          // Just make and model here; the nickname and registration show on drives.
+          // Just make and model here; the registration shows on drives.
           title={`${v.make} ${v.model}`.trim()}
           subtitle={vehicleSubtitle(v, vehicles, units)}
           onPress={() => setEditing(v)}

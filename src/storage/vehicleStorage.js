@@ -4,12 +4,11 @@ import { normalizeRegistration, vehicleLabel } from '../utils/vehicles';
 import { getDb } from './db';
 
 /** Columns as saved: trimmed, registration normalized, `name` the label, `mpg` and `milesPerKwh` numbers or null. */
-function toColumns({ make, model, registration, nickname, electric, mpg, milesPerKwh }) {
+function toColumns({ make, model, registration, electric, mpg, milesPerKwh }) {
   const v = {
     make: make.trim(),
     model: model.trim(),
     registration: normalizeRegistration(registration),
-    nickname: nickname?.trim() || null,
     electric: electric ? 1 : 0,
     mpg: mpg ?? null,
     milesPerKwh: milesPerKwh ?? null,
@@ -19,13 +18,13 @@ function toColumns({ make, model, registration, nickname, electric, mpg, milesPe
 
 /**
  * All vehicles, default first, with their totals:
- * [{ id, make, model, registration, nickname, electric, mpg, milesPerKwh, isDefault,
+ * [{ id, make, model, registration, electric, mpg, milesPerKwh, isDefault,
  *    distanceM, tripCount }].
  */
 export async function listVehicles() {
   const db = await getDb();
   const rows = await db.getAllAsync(
-    `SELECT v.id, v.make, v.model, v.registration, v.nickname, v.electric, v.mpg, v.miles_per_kwh,
+    `SELECT v.id, v.make, v.model, v.registration, v.electric, v.mpg, v.miles_per_kwh,
             v.is_default,
             COALESCE(SUM(json_extract(d.stats, '$.distanceM')), 0) AS distance_m,
             COUNT(DISTINCT d.trip_id) AS trip_count
@@ -39,7 +38,6 @@ export async function listVehicles() {
     make: r.make ?? '',
     model: r.model ?? '',
     registration: r.registration,
-    nickname: r.nickname,
     electric: r.electric === 1,
     mpg: r.mpg,
     milesPerKwh: r.miles_per_kwh,
@@ -50,7 +48,7 @@ export async function listVehicles() {
 }
 
 /**
- * Add a vehicle ({ make, model, registration?, nickname?, electric?, mpg?, milesPerKwh? }). The first one
+ * Add a vehicle ({ make, model, registration?, electric?, mpg?, milesPerKwh? }). The first one
  * becomes the default, and every drive recorded before the Garage existed is
  * put down to it.
  */
@@ -60,13 +58,12 @@ export async function addVehicle(fields) {
   await db.withTransactionAsync(async () => {
     const any = await db.getFirstAsync('SELECT 1 FROM vehicles LIMIT 1');
     const res = await db.runAsync(
-      `INSERT INTO vehicles (name, make, model, registration, nickname, electric, mpg, miles_per_kwh, is_default, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO vehicles (name, make, model, registration, electric, mpg, miles_per_kwh, is_default, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       v.name,
       v.make,
       v.model,
       v.registration,
-      v.nickname,
       v.electric,
       v.mpg,
       v.milesPerKwh,
@@ -86,13 +83,12 @@ export async function updateVehicle(id, fields) {
   const db = await getDb();
   const v = toColumns(fields);
   await db.runAsync(
-    `UPDATE vehicles SET name = ?, make = ?, model = ?, registration = ?, nickname = ?,
+    `UPDATE vehicles SET name = ?, make = ?, model = ?, registration = ?,
        electric = ?, mpg = ?, miles_per_kwh = ? WHERE id = ?`,
     v.name,
     v.make,
     v.model,
     v.registration,
-    v.nickname,
     v.electric,
     v.mpg,
     v.milesPerKwh,

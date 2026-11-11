@@ -8,9 +8,12 @@ export function normalizeRegistration(text) {
   return reg || null;
 }
 
-/** What a vehicle is called: its nickname, else "Mazda MX-5". */
+/**
+ * What a vehicle is called: "Mazda MX-5". Nicknames were dropped; any saved
+ * one stays in the database but isn't shown.
+ */
 export function vehicleLabel(vehicle) {
-  return vehicle.nickname || [vehicle.make, vehicle.model].filter(Boolean).join(' ');
+  return [vehicle.make, vehicle.model].filter(Boolean).join(' ');
 }
 
 /** Whether another of `vehicles` has the same make and model as `vehicle`. */

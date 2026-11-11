@@ -41,7 +41,6 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
   const [fields, setFields] = useState({
     make: vehicle?.make ?? '',
     model: vehicle?.model ?? '',
-    nickname: vehicle?.nickname ?? '',
     registration: vehicle?.registration ?? '',
     electric: vehicle?.electric ?? false,
     mpg: vehicle?.mpg != null ? String(vehicle.mpg) : '',
@@ -119,13 +118,6 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
           returnKeyType="next"
         />
         <Field
-          label="Nickname"
-          value={fields.nickname}
-          onChangeText={set('nickname')}
-          autoCapitalize="sentences"
-          returnKeyType="next"
-        />
-        <Field
           ref={registrationRef}
           label="Registration"
           error={problem}
@@ -185,7 +177,7 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
 /**
  * Add a vehicle (no `vehicle`) or edit / remove one. `others` are the Garage's
  * other vehicles, to tell when a registration is needed. onSave gets
- * { make, model, nickname, registration } as typed, `electric`, and mpg and
+ * { make, model, registration } as typed, `electric`, and mpg and
  * milesPerKwh as numbers or null. Without onDelete there's no Remove;
  * `focusEfficiency` starts a saved vehicle's sheet in its mpg (or miles per
  * kWh) field, for Add fuel cost on a plan.

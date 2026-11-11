@@ -7,8 +7,8 @@ import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
 
 /**
- * The Trip page's "Vehicle" section: the vehicle's name (nickname, else make
- * and model) with its registration under it, and Change when `onChange` is
+ * The Trip page's "Vehicle" section: the vehicle's make and model with its
+ * registration under it, and Change when `onChange` is
  * given (a drive). For a whole trip driven in `count` vehicles it says
  * "2 vehicles". Without a vehicle it offers Choose, or shows nothing when
  * there's nothing to choose from. The vehicle's totals live in the Garage.
