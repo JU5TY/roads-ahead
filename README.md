@@ -25,6 +25,9 @@ src/
   services/locationService.js   LOCATION_TRACKING_TASK, start/stop/resume a drive
   services/placeService.js      reverse-geocoded place names per drive, and names for dropped pins
   services/placeSearch.js       the planner's place search (Photon); the only file that talks to it
+  services/routing.js           the planner's road routes (Google Routes); the only file that talks to it
+  storage/routeStorage.js       road lines kept for up to 30 days
+  hooks/usePlanRoutes.js        asks for the drive being looked at; miles and times kept in memory only
   storage/db.js                 SQLite connection + schema migrations
   storage/tripStorage.js        trips (name, notes) and listing
   storage/driveStorage.js       drives (one START→STOP recording) and their GPS points
@@ -65,6 +68,18 @@ The search box uses [Photon](https://photon.komoot.io), Komoot's free public sea
 
 Photon's public server has no guarantee of service. If the app outgrows it, run our own Photon or switch service, as above.
 
+### Road routes: Google Routes
+
+A drive's miles, time and the line along the real roads come from Google's [Routes API](https://developers.google.com/maps/documentation/routes) on Android. Until a route comes back, or if it can't, the map draws straight dotted lines between the stops.
+
+- **One file:** `src/services/routing.js` is the only code that talks to Google. `routeDrive(points)` returns `{ metres, seconds, legs, line }`, or `{ failed: true }` / `{ limited: true }`, and never throws.
+- **Google's rules decide what's kept.** Its routes may only be shown on a Google map, so plan card thumbnails stay straight lines between the stops. The line may be kept for 30 days (`routeStorage.js` deletes older ones, and they're never in the backup file). Miles and times may not be kept, so they're held in memory until the app closes.
+- **Asked for sparingly:** only the drive being looked at, once per app run unless its stops change. The Planned list never asks.
+- **Cheaper tier only:** no live traffic and at most 10 points between origin and destination, so a longer drive is asked for in parts. That keeps every request in Google's Essentials tier (about 10,000 free a month).
+- **Cost limits:** a daily quota in Google Cloud (320 requests, once the account is off the free trial), each phone's own limit of 100 requests a day, and a budget alert by email.
+- **Key:** `GOOGLE_ROUTES_API_KEY` in EAS (environment preview), a separate key locked to the Android app and the Routes API. Google checks the package name and the signing certificate's SHA-1, set in `app.config.js`.
+- **iPhone:** Google's routes can't be shown on Apple Maps. The plan is Apple's own routing (MapKit directions) behind the same file, before the iPhone release.
+
 ## How the metrics work
 
 All data is stored in metric (metres, m/s). The Settings page switches the display between km and miles.
@@ -85,6 +100,60 @@ npm test
 ```
 
 Jest with jest-expo (development only, nothing added to the app). The tests cover the metrics rules, the sat nav links, the planner's rules and place search, with Photon's replies faked.
+
+## Outside services and costs
+
+Everything the app (and its print server) relies on outside the phone, what's free, and what stops a bill. Checked 11 Nov 2026; providers change their prices, so check the linked pages now and then. **Rule: nothing may cost money while nobody's using it.**
+
+| Service | What it does | Free allowance | After that | Status |
+|---|---|---|---|---|
+| Google Maps SDK for Android | The map on Android | Unlimited ($0 per map load) | Free | Live |
+| Google Routes API | Planner: miles, times, lines along the roads | ~10,000 requests a month (Essentials) | ~$5 per 1,000 | Built, Android |
+| Apple Maps (MapKit) | The map on iPhone | Free, built into iOS | Free | Live (iPhone untested) |
+| The phone's geocoder | Place names for drives, stops and dropped pins | Free, part of Android and iOS | Free (the phone slows heavy use) | Live |
+| Photon (Komoot) | Planner: place search | Free public server, fair use | Free (no paid tier) | Live |
+| Google Maps, Waze, Apple Maps links | Handing a drive to the sat nav | Free, just links | Free | Live |
+| Expo EAS | App builds and over-the-air updates | 15 Android + 15 iOS builds a month; updates for 1,000 users a month | Free plan stops; paid plans from $19 a month | Live |
+| Cloudflare Workers + R2 | Print server and its PDFs | 100,000 requests a day; R2 10 GB and 1M writes a month | Workers free plan stops; R2 bills overage | Built, not deployed |
+| Stripe | Print payments | No monthly fee | 1.5% + 20p per UK card payment | Built, not live |
+| Prodigi | Printing and posting | No monthly fee | The print and postage, per order | Built, not live |
+| Google Play / App Store | Selling Premium | | Planned: 15% of sales | Not built |
+
+### Google Cloud (Maps SDK and Routes API)
+
+- **Account:** one Google Cloud project, **on the free trial until 27 January 2027**. The trial can't charge anything, but it can't change quotas either. **Before 27 January 2027, upgrade to a paid account, or the Android map stops working for everyone.** Straight after upgrading, set the Routes cap below.
+- **Keys** (EAS, environment preview): `GOOGLE_MAPS_API_KEY` ("Maps Platform API Key") for the map, and `GOOGLE_ROUTES_API_KEY` ("Routes API Key") for routing, locked to the Android app (`com.justinwoodford.roadtrip`, signing SHA-1 in `app.config.js`) and to the Routes API only. Google refuses the routing key from anywhere else (tested).
+- **What stops a bill:**
+  - The map is free at any volume (no map IDs or Street View are used, which would be billed).
+  - Routes: a daily quota of **320** on "Directions - ComputeRoutes per request quota per day" (31 × 320 = 9,920, under the free 10,000), set once off the trial. If the budget's "Spend cap enforcement" offers the Routes API, a cap on it alone also works; never cap all services, or the map pauses too.
+  - Each phone keeps to **100** routing requests a day (`services/routing.js`).
+  - Requests stay in the cheaper Essentials tier: no live traffic, at most 10 points in between.
+  - A **£1 monthly budget alert** emails at 50, 90, 100 and 150%. It warns; it doesn't stop anything.
+  - Don't add a "turn billing off" switch: it would break the map too.
+- **Terms to keep:** Routes results only on a Google map (so not in plan card thumbnails, and not on Apple Maps: the iPhone will use Apple's own routing). Route lines kept at most 30 days; miles and times not kept at all. Details under Road routes above.
+
+### Photon
+
+- [photon.komoot.io](https://photon.komoot.io): free, no account or key, no paid tier, so it can never bill. Fair use: ask only after a pause in typing, from 3 letters, and cancel the last search when a new one starts (`services/placeSearch.js`).
+- **Terms:** OpenStreetMap data under the ODbL. Credit "© OpenStreetMap contributors" under the results; results may be kept.
+- **Risk:** no guaranteed service. Search failing never breaks the app; dropped pins still work.
+
+### Expo EAS
+
+- Free plan: about 15 Android and 15 iOS builds a month (they reset on the 1st), and updates for 1,000 monthly users. The free plan has no overage charges: at the limit, builds wait until next month and updates stop reaching new users.
+- Updates go to the `preview` channel (`npx eas-cli@latest update --channel preview --environment preview`).
+- **Watch:** past 1,000 users a month, updates need the $19 Starter plan.
+
+### Print server (Cloudflare, Stripe, Prodigi)
+
+- Setup and running are in `server/poster/README.md`. Not deployed yet: until `EXPO_PUBLIC_POSTER_API` is set, Order says "coming soon".
+- **Cloudflare:** the Workers free plan (100,000 requests a day) has no bill to run up. **R2 does bill** past its free 10 GB a month, so its PDFs are deleted after 14 days; a few orders a day stay far under it.
+- **Stripe and Prodigi** charge only per order (Stripe 1.5% + 20p a UK card; Prodigi the print and postage), and the price set on the server covers both. Test with Stripe's test keys and Prodigi's `sandbox_` key, which never charge.
+
+### Data in the app
+
+- Iconic Roads and the example trip: © OpenStreetMap contributors (ODbL), credited on the You screen.
+- Country borders: Natural Earth (public domain).
 
 ## Running on your phone
 

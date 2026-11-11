@@ -13,6 +13,8 @@ import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
 import Icon from '../components/ui/Icon';
 import { useHere } from '../hooks/useHere';
+import { usePlanRoutes } from '../hooks/usePlanRoutes';
+import { useSettings } from '../context/SettingsContext';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import {
   addPlanDrive,
@@ -27,6 +29,7 @@ import {
   setPlanStartDate,
 } from '../storage/planStorage';
 import { dayColorFor, pressedOpacity, spacing, type } from '../theme';
+import { formatDistance, formatDurationShort } from '../utils/format';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
   driveMarkers,
@@ -75,6 +78,8 @@ export default function PlanScreen() {
   // On the map, a Drive 1 with no start runs from where the phone is.
   const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
+  const routes = usePlanRoutes(mapPlan, picked);
+  const { units } = useSettings();
 
   if (!plan) {
     return (
@@ -138,12 +143,28 @@ export default function PlanScreen() {
 
   const markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
 
+  // Miles and times for the picked drive: '142 mi · 3h 10m', and each leg's.
+  const { status, route, legStops } = routes.picked;
+  const miles = (metres) => formatDistance(metres, units, metres < 16000 ? 1 : 0);
+  const time = (seconds) => formatDurationShort(seconds * 1000);
+  let routeSummary = null;
+  if (status === 'done') routeSummary = `${miles(route.metres)} · ${time(route.seconds)}`;
+  else if (status === 'failed' || status === 'limited') routeSummary = 'Road times unavailable right now';
+  const legTexts = {};
+  if (status === 'done') {
+    route.legs.forEach((leg, k) => {
+      const stop = drive.stops[legStops[k]];
+      if (stop) legTexts[stop.id] = `${miles(leg.metres)} · ${time(leg.seconds)}`;
+    });
+  }
+
   const map = outline.some((d) => d.coordinates.length) ? (
     <RouteMap
       flat
       segments={outline.map(({ index, coordinates }) => ({
         key: `drive-${index}`,
-        coordinates,
+        // Along the roads once routed (or from a line saved in the last 30 days), else straight.
+        coordinates: routes.lines[index] ?? coordinates,
         // The picked drive stands out; the rest fade back, as on a trip.
         color: index === picked ? colorOf(index) : `${colorOf(index)}40`,
         dotted: true,
@@ -290,11 +311,14 @@ export default function PlanScreen() {
           {finish ? `${start?.name ?? 'Your location'} → ${finish.name ?? 'Dropped pin'}` : `From ${start?.name ?? 'your location'}`}
         </Text>
         <Text style={[type.bodySmall, styles.muted]}>
-          {stops === 0 ? 'No stops yet' : `${stops} ${stops === 1 ? 'stop' : 'stops'}`}
+          {[stops === 0 ? 'No stops yet' : `${stops} ${stops === 1 ? 'stop' : 'stops'}`, routeSummary]
+            .filter(Boolean)
+            .join(' · ')}
         </Text>
       </View>
 
       <PlanTimeline
+        legTexts={legTexts}
         drive={drive}
         index={picked}
         start={start}

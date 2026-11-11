@@ -3,6 +3,7 @@ import {
   dateKey,
   dateOf,
   drivePoints,
+  driveRoute,
   driveStart,
   fromHere,
   groupPlans,
@@ -178,5 +179,37 @@ describe('fromHere', () => {
     expect(fromHere(set, here)).toBe(set);
     const p = plan({ stops: [] });
     expect(fromHere(p, null)).toBe(p);
+  });
+});
+
+describe('driveRoute', () => {
+  it('runs from the start through each place, a leg arriving at each', () => {
+    const p = plan({ stops: [fortWilliam] }, { stops: [fortAugustus, eileanDonan] });
+    const { points, legStops } = driveRoute(p, 1);
+    expect(points.map((x) => x.via)).toEqual([false, false, false]);
+    expect(points[0]).toMatchObject({ latitude: fortWilliam.latitude });
+    expect(legStops).toEqual([0, 1]);
+  });
+
+  it('drives through an Iconic Road, ending at its far end when it is last', () => {
+    const p = plan({ stops: [eileanDonan, road()] });
+    const { points, legStops } = driveRoute(fromHere(p, { latitude: 57.0, longitude: -5.0 }), 0);
+    expect(points.map((x) => x.via)).toEqual([false, false, true, true, false]);
+    expect(points.at(-1)).toMatchObject({ latitude: bealach.line.at(-1)[0] });
+    expect(legStops).toEqual([0, 1]);
+  });
+
+  it('drives a road in the middle through, the next place getting the leg', () => {
+    const p = plan({ stops: [eileanDonan, road(), applecross] });
+    const { points, legStops } = driveRoute(p, 0);
+    // Drive 1 with no start begins at its first stop.
+    expect(points[0]).toMatchObject({ latitude: eileanDonan.latitude, via: false });
+    expect(points.filter((x) => x.via)).toHaveLength(3);
+    expect(legStops).toEqual([2]);
+  });
+
+  it('has nothing to route with nowhere to go', () => {
+    expect(driveRoute(plan({ stops: [fortAugustus] }), 0)).toBeNull();
+    expect(driveRoute(plan({ stops: [] }), 0)).toBeNull();
   });
 });

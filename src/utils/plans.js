@@ -121,7 +121,8 @@ export function stopCounts(drives) {
 /**
  * Each drive's planned outline for a map or thumbnail: [{ index, coordinates }],
  * from its start (when known) through its stops, an Iconic Road along its own
- * line. Straight between stops: real roads come with leg routing.
+ * line. Straight between stops: the plan card thumbnail, and the map until
+ * the road route comes back (hooks/usePlanRoutes.js).
  */
 export function planOutline(plan) {
   return plan.drives.map((drive, index) => {
@@ -223,4 +224,44 @@ export function fromHere(plan, here) {
   const [first, ...rest] = plan.drives;
   if (!here || !first || first.start) return plan;
   return { ...plan, drives: [{ ...first, start: { name: 'Your location', ...here } }, ...rest] };
+}
+
+/**
+ * What to ask the routing service for drive `index`: { points, legStops }, or
+ * null with nowhere to go. `points` ([{ latitude, longitude, via }]) run from
+ * the start through each stop; an Iconic Road is driven through (its start,
+ * middle and end as `via` points), ending the drive at its far end if it's
+ * last. `legStops` gives, for each leg the route comes back with, the index of
+ * the stop it arrives at. Pass the map's plan (fromHere) for Drive 1 to start
+ * where the phone is.
+ */
+export function driveRoute(plan, index) {
+  const drive = plan.drives[index];
+  const points = [];
+  const owners = [];
+  const add = (latitude, longitude, via, owner) => {
+    points.push({ latitude, longitude, via });
+    owners.push(owner);
+  };
+  const start = driveStart(plan, index);
+  if (start) add(start.latitude, start.longitude, false, null);
+  drive.stops.forEach((stop, i) => {
+    const road = stop.roadId ? getRoad(stop.roadId) : null;
+    if (stop.roadId && !road) return;
+    if (!road) {
+      add(stop.latitude, stop.longitude, false, i);
+      return;
+    }
+    const line = stop.reversed ? [...road.line].reverse() : road.line;
+    const [middle] = roadGuidePoints(road, 1, { reversed: stop.reversed });
+    add(line[0][0], line[0][1], true, null);
+    add(middle.latitude, middle.longitude, true, null);
+    const last = i === drive.stops.length - 1;
+    add(line.at(-1)[0], line.at(-1)[1], !last, last ? i : null);
+  });
+  const legStops = owners.slice(1).filter((owner, k) => !points[k + 1].via);
+  if (points.length < 2 || legStops.length === 0) return null;
+  // The first point is where the route starts, whatever it is.
+  points[0] = { ...points[0], via: false };
+  return { points, legStops };
 }

@@ -115,11 +115,21 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * dot; linked when it's where the drive before ends) with Change, a ring per
  * stop, an Iconic Road as a chip on the leg it's driven on, and the
  * last place as the red finish. Stops are dragged by their handle to reorder
- * them; tapping one opens its options. Leg distances come with leg routing.
- * `start` is driveStart(); onStopPress(stop), onStartPress(),
+ * them; tapping one opens its options.
+ * `start` is driveStart(); `legTexts` ("33 mi · 45m") are by the id of the
+ * stop each leg arrives at; onStopPress(stop), onStartPress(),
  * onMove(stop, position).
  */
-export default function PlanTimeline({ drive, index, start, color, onStopPress, onStartPress, onMove }) {
+export default function PlanTimeline({
+  drive,
+  index,
+  start,
+  color,
+  legTexts = {},
+  onStopPress,
+  onStartPress,
+  onMove,
+}) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [layouts, setLayouts] = useState({}); // each stop's rows: { y, height }, by index
@@ -207,13 +217,18 @@ export default function PlanTimeline({ drive, index, start, color, onStopPress, 
   const unitRows = (stop, i, handlers) => {
     const road = stop.roadId ? getRoad(stop.roadId) : null;
     if (road) {
-      return <LegRow color={color} road={road.name} onPress={() => onStopPress(stop)} handlers={handlers} />;
+      // A road shows the leg to the place after it (or to its own end, last).
+      const next = stops[i + 1];
+      const text = next && !next.roadId ? legTexts[next.id] : legTexts[stop.id];
+      return (
+        <LegRow color={color} road={road.name} text={text} onPress={() => onStopPress(stop)} handlers={handlers} />
+      );
     }
     const finish = i === stops.length - 1 && i === lastPlace;
     return (
       <>
         {/* A leg leads into each place, unless an Iconic Road's leg already did. */}
-        {stops[i - 1]?.roadId ? null : <LegRow color={color} />}
+        {stops[i - 1]?.roadId ? null : <LegRow color={color} text={legTexts[stop.id]} />}
         <EventRow
           kind={finish ? 'finish' : 'stop'}
           color={color}
