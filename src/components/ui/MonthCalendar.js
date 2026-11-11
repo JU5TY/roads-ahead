@@ -5,8 +5,9 @@ import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, type } from '../../theme';
 import IconButton from './IconButton';
 
+// Always true or false: Android crashes on a null `selected` in accessibilityState.
 const sameDay = (a, b) =>
-  a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 // Spelled out: the phone's JavaScript engine (Hermes) crashes on `dateStyle`.
 const FULL_DATE = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
