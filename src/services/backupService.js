@@ -29,6 +29,8 @@ const CARRIED_KEYS = [
   'settings.showIconicRoads',
   'settings.theme',
   'settings.mapView',
+  'settings.fuelPrice',
+  'settings.chargePrice',
   'exampleTrip.id',
   'roads.checkedVersion',
   'countries.checkedVersion',

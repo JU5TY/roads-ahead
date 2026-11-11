@@ -19,6 +19,10 @@ export function SettingsProvider({ children }) {
   const [showIconicRoads, setShowIconicRoads] = useState(settingsStorage.getShowIconicRoads);
   const [theme, setTheme] = useState(settingsStorage.getTheme);
   const [mapView, setMapView] = useState(settingsStorage.getMapView);
+  const [prices, setPrices] = useState(() => ({
+    fuel: settingsStorage.getPrice('fuel'),
+    charge: settingsStorage.getPrice('charge'),
+  }));
 
   // Pin the app (and the maps and system bars) to light or dark, or follow the phone.
   useEffect(() => {
@@ -62,6 +66,14 @@ export function SettingsProvider({ children }) {
         setMapView(next);
         save(settingsStorage.setMapView(next));
       },
+      // { fuel, charge }: each { price, setAt } (pounds a litre / a kWh) or null.
+      prices,
+      // Remembers when, so an old price is noticed on You.
+      setPrice: (kind, price) => {
+        const next = { price, setAt: Date.now() };
+        setPrices((prev) => ({ ...prev, [kind]: next }));
+        save(settingsStorage.setPrice(kind, next));
+      },
       onboarded,
       finishOnboarding: () => {
         setOnboarded(true);
@@ -73,7 +85,7 @@ export function SettingsProvider({ children }) {
         save(settingsStorage.setOnboarded(false));
       },
     }),
-    [units, breakReminderMinutes, theme, showIconicRoads, mapView, onboarded]
+    [units, breakReminderMinutes, theme, showIconicRoads, mapView, prices, onboarded]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

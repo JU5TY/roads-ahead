@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BannerCard from '../components/ui/BannerCard';
 import { showDialog, showMessage } from '../components/ui/DialogHost';
 import ActionSheet from '../components/ActionSheet';
+import PriceSheet from '../components/PriceSheet';
 import VehicleSheet from '../components/VehicleSheet';
 import Icon from '../components/ui/Icon';
 import ListRow from '../components/ui/ListRow';
@@ -28,6 +29,7 @@ import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStor
 import { spacing, type } from '../theme';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
+import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/fuel';
 import { ICONIC_ROADS, ROADS_ATTRIBUTION } from '../utils/iconicRoads';
 import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
 import { hasTwin } from '../utils/vehicles';
@@ -56,17 +58,26 @@ function PremiumRow() {
 }
 
 /**
- * "Default · 1,020 mi · 6 trips", led by the registration ("AB12 CDE · …")
- * when another vehicle has the same make and model, to tell them apart.
+ * "Default · 40 mpg · 1,020 mi · 6 trips" (or "3.5 mi/kWh"), led by the registration
+ * ("AB12 CDE · …") when another vehicle has the same make and model, to tell
+ * them apart.
  */
 function vehicleSubtitle(v, vehicles, units) {
   const d = distanceParts(v.distanceM, units);
   return [
     ...(v.registration && hasTwin(v, vehicles) ? [v.registration] : []),
     ...(v.isDefault ? ['Default'] : []),
+    ...(formatEfficiency(v) ? [formatEfficiency(v)] : []),
     `${d.value} ${d.unit}`,
     `${v.tripCount} ${v.tripCount === 1 ? 'trip' : 'trips'}`,
   ].join(' · ');
+}
+
+/** "£1.46 · set 14 Oct" or "24.5p · set 14 Oct"; "Not set" until then. */
+function priceValue(saved, format) {
+  if (!saved) return 'Not set';
+  const day = new Date(saved.setAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return `${format(saved.price)} · set ${day}`;
 }
 
 /** The "You" tab: preferences and about. Every setting is the same row style. */
@@ -80,6 +91,8 @@ export default function SettingsScreen() {
     setShowIconicRoads,
     theme,
     setTheme,
+    prices,
+    setPrice,
     replayOnboarding,
   } = useSettings();
   const { c } = useTheme();
@@ -88,10 +101,14 @@ export default function SettingsScreen() {
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [picking, setPicking] = useState(false);
+  const [pricing, setPricing] = useState(null); // null | 'fuel' | 'charge'
   const version = Constants.expoConfig?.version ?? '—';
   const [vehicles, reloadVehicles] = useVehicles();
   const [editing, setEditing] = useState(null); // null | 'new' | vehicle
   const premium = usePremium();
+  // Charging price once there's an electric car; fuel price unless every car is electric.
+  const hasElectricCar = !!vehicles?.some((v) => v.electric);
+  const hasFuelCar = !vehicles?.length || vehicles.some((v) => !v.electric);
   // Free: one vehicle in the Garage; Premium: as many as you like.
   const canAddVehicle = premium || !vehicles?.length;
   const [exporting, setExporting] = useState(null); // null | "Exporting trip 3 of 12"
@@ -181,6 +198,16 @@ export default function SettingsScreen() {
         }))}
         onClose={() => setPicking(false)}
       />
+      <PriceSheet
+        visible={pricing !== null}
+        kind={pricing ?? 'fuel'}
+        price={prices[pricing]?.price}
+        onSave={(price) => {
+          setPrice(pricing, price);
+          setPricing(null);
+        }}
+        onClose={() => setPricing(null)}
+      />
       <VehicleSheet
         visible={editing !== null}
         vehicle={editing === 'new' ? null : editing}
@@ -264,6 +291,25 @@ export default function SettingsScreen() {
         onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}
         divider
       />
+      {/* "£1.46 · set 14 Oct": when it was set, so an old price is noticed. */}
+      {hasFuelCar ? (
+        <ListRow
+          icon="local_gas_station"
+          title="Fuel price"
+          value={priceValue(prices.fuel, formatFuelPrice)}
+          onPress={() => setPricing('fuel')}
+          divider
+        />
+      ) : null}
+      {hasElectricCar ? (
+        <ListRow
+          icon="ev_station"
+          title="Charging price"
+          value={priceValue(prices.charge, formatChargePrice)}
+          onPress={() => setPricing('charge')}
+          divider
+        />
+      ) : null}
       <ListRow
         icon="contrast"
         title="Theme"

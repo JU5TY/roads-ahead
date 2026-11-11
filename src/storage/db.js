@@ -151,6 +151,13 @@ const MIGRATIONS = [
     CREATE INDEX idx_plan_stops_drive ON plan_stops (plan_drive_id, position);
     ALTER TABLE drives ADD COLUMN plan_drive_id INTEGER REFERENCES plan_drives(id);
   `,
+  // 9: for plans' fuel cost: whether a vehicle is electric, and its average
+  // mpg (UK gallons) or miles per kWh (null: not set).
+  `
+    ALTER TABLE vehicles ADD COLUMN electric INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE vehicles ADD COLUMN mpg REAL;
+    ALTER TABLE vehicles ADD COLUMN miles_per_kwh REAL;
+  `,
 ];
 
 /** The schema this build writes (PRAGMA user_version once migrated); a newer backup can't be restored. */

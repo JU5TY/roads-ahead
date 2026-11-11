@@ -4,10 +4,12 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 
 import ActionSheet from '../components/ActionSheet';
 import DetailLayout from '../components/detail/DetailLayout';
+import PriceSheet from '../components/PriceSheet';
 import { TitleBlock } from '../components/detail/TripStats';
 import PlanSheet from '../components/plan/PlanSheet';
 import PlanTimeline from '../components/plan/PlanTimeline';
 import RouteMap from '../components/RouteMap';
+import VehicleSheet from '../components/VehicleSheet';
 import Button from '../components/ui/Button';
 import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
@@ -16,6 +18,7 @@ import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
 import { useSettings } from '../context/SettingsContext';
 import { useStyles, useTheme } from '../hooks/useTheme';
+import { useVehicles } from '../hooks/useVehicles';
 import {
   addPlanDrive,
   addPlanStop,
@@ -28,8 +31,10 @@ import {
   setPlanDriveStart,
   setPlanStartDate,
 } from '../storage/planStorage';
+import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { dayColorFor, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
+import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
   driveMarkers,
@@ -54,7 +59,7 @@ export default function PlanScreen() {
   const styles = useStyles(makeStyles);
   const [plan, setPlan] = useState(null);
   const [picked, setPicked] = useState(0);
-  const [menu, setMenu] = useState(null); // 'options' | 'edit' | 'road' | 'start' | { stop }
+  const [menu, setMenu] = useState(null); // 'options' | 'edit' | 'road' | 'start' | 'vehicle' | 'price' | { stop }
   const { here } = useHere();
 
   const reload = useCallback(
@@ -79,7 +84,10 @@ export default function PlanScreen() {
   const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const routes = usePlanRoutes(mapPlan, picked);
-  const { units } = useSettings();
+  const { units, prices, setPrice } = useSettings();
+  const [vehicles, reloadVehicles] = useVehicles();
+  // Plans aren't tied to a car: the fuel is worked out for the default one.
+  const vehicle = vehicles?.find((v) => v.isDefault) ?? null;
 
   if (!plan) {
     return (
@@ -150,6 +158,30 @@ export default function PlanScreen() {
   let routeSummary = null;
   if (status === 'done') routeSummary = `${miles(route.metres)} · ${time(route.seconds)}`;
   else if (status === 'failed' || status === 'limited') routeSummary = 'Road times unavailable right now';
+  // '£19 fuel' (or '£8 charging') once the car's own figure and its price are
+  // both set; until then, a link to add them.
+  const electric = !!vehicle?.electric;
+  const priceKind = electric ? 'charge' : 'fuel';
+  const pounds =
+    status === 'done' && vehicle
+      ? driveCost(route.metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price })
+      : null;
+  if (pounds != null) routeSummary += ` · ${formatDriveCost(pounds, electric)}`;
+  const askCost = status === 'done' && pounds == null && vehicles != null;
+  const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
+  // The car's figure first (adding the car if there's none), then the price.
+  const addCost = () => setMenu(vehicle && hasFigure(vehicle) ? 'price' : 'vehicle');
+  const saveVehicle = async (fields) => {
+    try {
+      if (vehicle) await updateVehicle(vehicle.id, fields);
+      else await addVehicle(fields);
+    } catch (err) {
+      console.warn('[garage] save failed', err);
+    }
+    // Reloaded first, so the price sheet opens for the car's fuel as saved.
+    await reloadVehicles();
+    setMenu(hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'] ? 'price' : null);
+  };
   const legTexts = {};
   if (status === 'done') {
     route.legs.forEach((leg, k) => {
@@ -208,6 +240,24 @@ export default function PlanScreen() {
             await setPlanStartDate(plan.id, startDate);
           })()
         }
+        onClose={() => setMenu(null)}
+      />
+      <VehicleSheet
+        visible={menu === 'vehicle'}
+        vehicle={vehicle}
+        others={(vehicles ?? []).filter((v) => v !== vehicle)}
+        focusEfficiency
+        onSave={saveVehicle}
+        onClose={() => setMenu(null)}
+      />
+      <PriceSheet
+        visible={menu === 'price'}
+        kind={priceKind}
+        price={prices[priceKind]?.price}
+        onSave={(price) => {
+          setPrice(priceKind, price);
+          setMenu(null);
+        }}
         onClose={() => setMenu(null)}
       />
       <ActionSheet
@@ -315,6 +365,14 @@ export default function PlanScreen() {
           {[stops === 0 ? 'No stops yet' : `${stops} ${stops === 1 ? 'stop' : 'stops'}`, routeSummary]
             .filter(Boolean)
             .join(' · ')}
+          {askCost ? (
+            <>
+              {' · '}
+              <Text style={styles.link} onPress={addCost} accessibilityRole="link">
+                {electric ? 'Add charging cost' : 'Add fuel cost'}
+              </Text>
+            </>
+          ) : null}
         </Text>
       </View>
 
@@ -373,5 +431,6 @@ const makeStyles = (c) => ({
   button: { flex: 1 },
   text: { color: c.text },
   muted: { color: c.textMuted },
+  link: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
   pressed: { opacity: pressedOpacity },
 });

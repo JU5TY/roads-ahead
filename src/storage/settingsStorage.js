@@ -78,6 +78,24 @@ export function setMapView(view) {
   return Storage.setItemAsync(MAP_VIEW_KEY, view);
 }
 
+// Prices for plans' fuel cost (utils/fuel.js), each saved as { price, setAt }:
+// pounds a litre or a kWh, and when it was set. Null until set: no defaults.
+const PRICE_KEYS = { fuel: 'settings.fuelPrice', charge: 'settings.chargePrice' };
+
+/** The 'fuel' (a litre) or 'charge' (a kWh) price, or null. */
+export function getPrice(kind) {
+  try {
+    const saved = JSON.parse(Storage.getItemSync(PRICE_KEYS[kind]));
+    return saved?.price > 0 ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setPrice(kind, saved) {
+  return Storage.setItemAsync(PRICE_KEYS[kind], JSON.stringify(saved));
+}
+
 const RECORD_MAP_HIDDEN_KEY = 'recordMapHidden';
 
 /** Whether Record's map was hidden last time, so the next drive starts the same way. */
