@@ -17,6 +17,7 @@ export const MAP_HEIGHT = 400;
  * the screen) floats over the content, which leaves room for it at the end.
  * actions: [{ icon, label, onPress }], left to right; label is for screen readers.
  * `mapHeight` below the status bar: 400 on Trip, 380 on Day, 360 on a road.
+ * `scrollEnabled` false holds the page still (while a plan's stop is dragged).
  * `footer` is pinned under the content, outside the scroll (a ready-made route's Copy).
  */
 export default function DetailLayout({
@@ -24,6 +25,7 @@ export default function DetailLayout({
   mapHeight = MAP_HEIGHT,
   actions = [],
   scrollRef,
+  scrollEnabled = true,
   footer,
   floating,
   children,
@@ -42,6 +44,7 @@ export default function DetailLayout({
     <View style={styles.screen}>
       <Animated.ScrollView
         ref={scrollRef}
+        scrollEnabled={scrollEnabled}
         // The panel's own colour runs to the end of the page.
         contentContainerStyle={styles.scrollContent}
         scrollEventThrottle={16}

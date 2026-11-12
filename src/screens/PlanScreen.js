@@ -76,6 +76,7 @@ export default function PlanScreen() {
   // 'options' | 'edit' | 'road' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop, at } | { start, at }
   // (`at`: the day the stop or start is in)
   const [menu, setMenu] = useState(null);
+  const [dragging, setDragging] = useState(false); // a stop is being dragged: the page holds still
   const { here } = useHere();
   const insets = useSafeAreaInsets();
 
@@ -316,6 +317,7 @@ export default function PlanScreen() {
           .then(reload)
           .catch((err) => console.warn('[plan] move failed', err))
       }
+      onDragging={setDragging}
       locked={locked}
     />
   );
@@ -323,6 +325,7 @@ export default function PlanScreen() {
   return (
     <DetailLayout
       map={map}
+      scrollEnabled={!dragging}
       actions={[{ icon: 'more_vert', label: 'More options', onPress: () => setMenu('options') }]}
       floating={
         // Starts the picked drive (on All, the next one not yet driven), once it goes somewhere.

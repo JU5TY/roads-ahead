@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 
 const RAIL_W = 22;
+const HOLD_MS = 300; // how long a handle is held before its stop lifts
 
 /** Green start dot, a ring in the drive's colour for a stop, red finish dot (as on a trip). */
 function Marker({ kind, color }) {
@@ -159,6 +160,7 @@ export default function PlanTimeline({
   onStartPress,
   onArrange,
   onBackPress,
+  onDragging,
   numbered = false,
   locked = false,
 }) {
@@ -167,6 +169,7 @@ export default function PlanTimeline({
   const [layouts, setLayouts] = useState({}); // each unit's rows: { y, height }, by index
   const [dy] = useState(() => new Animated.Value(0));
   const [drag, setDrag] = useState(null); // { from, to, y0 } while a stop is dragged
+  const hold = useRef(null); // { timer, y } while a handle is held, before it lifts
   // A dropped stop stays where it was dropped until the saved order comes back.
   const [dropped, setDropped] = useState(null); // { key, units }
   const route = days.length > 1;
@@ -221,19 +224,36 @@ export default function PlanTimeline({
     dy.setValue(0);
     setDrag(null);
   };
-  // On a stop's handle: the drag is the handle's from the first touch, not the page's scrolling.
+  // On a stop's handle: held still for a moment, the stop lifts and the page stops
+  // scrolling (onDragging); a swipe before then is left to the page.
+  const letGo = () => {
+    clearTimeout(hold.current?.timer);
+    hold.current = null;
+    end();
+    onDragging?.(false);
+  };
   const handlersFor = (i) => ({
     onStartShouldSetResponder: () => true,
-    onMoveShouldSetResponder: () => true,
-    onResponderTerminationRequest: () => false,
+    onResponderTerminationRequest: () => !drag,
     onResponderGrant: (e) => {
-      dy.setValue(0);
-      setDrag({ from: i, to: i, y0: e.nativeEvent.pageY });
-      return true; // and keeps the scroll view out of it
+      const y = e.nativeEvent.pageY;
+      hold.current = {
+        y,
+        timer: setTimeout(() => {
+          dy.setValue(0);
+          setDrag({ from: i, to: i, y0: hold.current.y });
+          onDragging?.(true);
+        }, HOLD_MS),
+      };
+      return false; // the scroll view can still take a swipe
     },
-    onResponderMove: (e) => move(e.nativeEvent.pageY),
-    onResponderRelease: end,
-    onResponderTerminate: end,
+    onResponderMove: (e) => {
+      const y = e.nativeEvent.pageY;
+      if (drag) move(y);
+      else if (hold.current && Math.abs(y - hold.current.y) > 8) clearTimeout(hold.current.timer);
+    },
+    onResponderRelease: letGo,
+    onResponderTerminate: letGo,
   });
   // How far unit j slides to make room while another is dragged.
   const shiftOf = (j) => {
