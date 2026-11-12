@@ -157,9 +157,8 @@ export default function PastTripsScreen() {
       <Text style={[type.headline, styles.h1]} role="heading">
         Trips
       </Text>
-      {trips?.length && !planned ? (
-        <Text style={[type.body, styles.muted, styles.summary]}>{summaryLine(trips, units)}</Text>
-      ) : null}
+      {/* The switch sits right under the title, so it stays put going between the two;
+          Driven's summary line goes below it. */}
       <SegmentedSwitch
         options={VIEWS}
         value={planned ? 'planned' : 'driven'}
@@ -167,6 +166,9 @@ export default function PastTripsScreen() {
         stretch
         style={styles.switch}
       />
+      {trips?.length && !planned ? (
+        <Text style={[type.body, styles.muted, styles.summary]}>{summaryLine(trips, units)}</Text>
+      ) : null}
       {planned ? null : <RecordingBar style={styles.recording} />}
     </View>
   );
@@ -238,7 +240,7 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
   h1: { color: c.text, marginHorizontal: 4, marginTop: 8, height: 56, textAlignVertical: 'center' },
-  summary: { marginHorizontal: 4, marginTop: 2 },
+  summary: { marginHorizontal: 4, marginTop: 16 },
   switch: { marginTop: 16 },
   recording: { marginTop: 20 },
   month: { marginTop: 20, marginBottom: 4 },
