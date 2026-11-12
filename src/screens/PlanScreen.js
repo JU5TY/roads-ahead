@@ -217,11 +217,13 @@ export default function PlanScreen() {
       return { status: 'failed', text: 'Road times unavailable right now' };
     }
     if (!asked.length || asked.some((r) => r.status !== 'done')) return { status: asked.length ? 'loading' : 'none' };
+    // Miles on the road (a ferry's crossing isn't driven, so isn't in the fuel either); time door to door.
     const metres = asked.reduce((sum, r) => sum + r.route.metres, 0);
     const seconds = asked.reduce((sum, r) => sum + r.route.seconds, 0);
+    const ferry = asked.some((r) => r.route.ferry) ? ' · includes a ferry' : '';
     const pounds = vehicle ? driveCost(metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
     const cost = pounds != null ? ` · ${formatDriveCost(pounds, electric)}` : '';
-    return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${cost}`, costed: pounds != null };
+    return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${ferry}${cost}`, costed: pounds != null };
   };
   const summary = summaryOf(all ? routes.drives : [routes.drives[picked]]);
   const routeSummary = summary.text ?? null;
@@ -242,16 +244,19 @@ export default function PlanScreen() {
     await reloadVehicles();
     setMenu(hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'] ? 'price' : null);
   };
-  // Drive i's leg texts, by the id of the stop each leg arrives at.
-  const legTextsOf = (i) => {
+  // Drive i's leg texts and which legs take a ferry, by the id of the stop each leg arrives at.
+  const legsOf = (i) => {
     const { status, route, legStops } = routes.drives[i];
-    const texts = {};
-    if (status !== 'done') return texts;
+    const legTexts = {};
+    const ferryLegs = new Set();
+    if (status !== 'done') return { legTexts, ferryLegs };
     route.legs.forEach((leg, k) => {
       const stop = mapPlan.drives[i].stops[legStops[k]];
-      if (stop) texts[stop.id] = `${miles(leg.metres)} · ${time(leg.seconds)}`;
+      if (!stop) return;
+      legTexts[stop.id] = `${miles(leg.metres)} · ${time(leg.seconds)}`;
+      if (leg.ferry) ferryLegs.add(stop.id);
     });
-    return texts;
+    return { legTexts, ferryLegs };
   };
 
   const map = outline.some((d) => d.coordinates.length) ? (
@@ -502,7 +507,7 @@ export default function PlanScreen() {
             style={({ pressed }) => pressed && styles.pressed}
           >
             <PlanTimeline
-              legTexts={legTextsOf(i)}
+              {...legsOf(i)}
               drive={{ ...d, stops: mapPlan.drives[i].stops }}
               index={i}
               start={driveStart(plan, i)}
@@ -514,7 +519,7 @@ export default function PlanScreen() {
         ))
       ) : (
         <PlanTimeline
-          legTexts={legTextsOf(picked)}
+          {...legsOf(picked)}
           drive={{ ...drive, stops: wayStops }}
           index={picked}
           start={start}

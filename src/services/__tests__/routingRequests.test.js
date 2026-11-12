@@ -65,6 +65,37 @@ describe('routeDrive', () => {
     expect(route.line).toHaveLength(3); // the shared point once
   });
 
+  it('leaves a ferry crossing out of the miles but not the time', async () => {
+    const steps = [
+      { distanceMeters: 4000, navigationInstruction: { maneuver: 'TURN_LEFT' } },
+      { distanceMeters: 12000, navigationInstruction: { maneuver: 'FERRY' } },
+      { distanceMeters: 2000, navigationInstruction: { maneuver: 'STRAIGHT' } },
+    ];
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            routes: [
+              {
+                legs: [
+                  { distanceMeters: 18000, duration: '3600s', steps },
+                  { distanceMeters: 1000, duration: '60s' },
+                ],
+                polyline: { encodedPolyline: '_p~iF~ps|U' },
+              },
+            ],
+          }),
+      })
+    );
+    const route = await routeDrive([at(1), at(2), at(3)]);
+    expect(route.legs).toEqual([{ metres: 6000, seconds: 3600, ferry: true }, { metres: 1000, seconds: 60 }]);
+    expect(route).toMatchObject({ metres: 7000, seconds: 3660, ferry: true });
+    const [, { headers }] = global.fetch.mock.calls[0];
+    expect(headers['X-Goog-FieldMask']).toContain('routes.legs.steps.navigationInstruction.maneuver');
+  });
+
   it("says it's limited when Google's daily cap is reached", async () => {
     global.fetch = jest.fn(() => reply([], 429));
     expect(await routeDrive([at(1), at(2)])).toEqual({ limited: true });

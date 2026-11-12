@@ -9,6 +9,9 @@
 // 10 points between origin and destination, so a longer drive is asked in parts.
 // A daily cap set in Google Cloud stops it costing more; each phone also keeps
 // to its own daily limit, so one phone with a bug can't use up everyone's day.
+// Each step's distance and manoeuvre come back too (not a pricier tier: Google
+// bills by the features asked for, not the fields), so a ferry's crossing can
+// be left out of the miles: the miles are on the road, the time door to door.
 import Constants from 'expo-constants';
 import Storage from 'expo-sqlite/kv-store';
 
@@ -19,7 +22,11 @@ const FIELDS = [
   'routes.polyline.encodedPolyline',
   'routes.legs.distanceMeters',
   'routes.legs.duration',
+  'routes.legs.steps.distanceMeters',
+  'routes.legs.steps.navigationInstruction.maneuver',
 ].join(',');
+// Steps crossing water: the ferry, or the train onto one (Le Shuttle).
+const FERRY_MANEUVERS = new Set(['FERRY', 'FERRY_TRAIN']);
 const MAX_BETWEEN = 10; // more than this between origin and destination costs more
 const TIMEOUT_MS = 10000;
 const DAILY_LIMIT = 100; // requests a day from one phone
@@ -71,6 +78,18 @@ export function routeParts(points) {
 }
 
 const seconds = (duration) => Number(String(duration ?? '0').replace('s', '')) || 0;
+
+/** A leg from Google's: { metres (on the road), seconds (door to door), ferry? }. */
+function legOf(leg) {
+  const ferrySteps = (leg.steps ?? []).filter((s) => FERRY_MANEUVERS.has(s.navigationInstruction?.maneuver));
+  const sea = ferrySteps.reduce((sum, s) => sum + (s.distanceMeters ?? 0), 0);
+  return {
+    metres: Math.max(0, (leg.distanceMeters ?? 0) - sea),
+    seconds: seconds(leg.duration),
+    ...(ferrySteps.length ? { ferry: true } : {}),
+  };
+}
+
 const waypoint = (p) => ({
   location: { latLng: { latitude: p.latitude, longitude: p.longitude } },
   ...(p.via ? { via: true } : {}),
@@ -124,8 +143,10 @@ async function askGoogle(part, signal) {
 /**
  * The road route through `points` ([{ latitude, longitude, via? }], in driving
  * order; `via` points are driven through, the rest are places to stop). Never
- * throws: resolves to { metres, seconds, legs: [{ metres, seconds }] (one per
- * place after the first), line: [{ latitude, longitude }] }, or { failed: true }
+ * throws: resolves to { metres, seconds, ferry, legs: [{ metres, seconds,
+ * ferry? }] (one per place after the first), line: [{ latitude, longitude }] }
+ * with `metres` on the road (a ferry's crossing left out) and `seconds` door to
+ * door, `ferry` when any leg takes one; or { failed: true }
  * (offline, an error, too slow), { limited: true } (Google's daily cap or the
  * phone's own), or { cancelled: true } when `signal` aborts it.
  */
@@ -143,13 +164,14 @@ export async function routeDrive(points, { signal } = {}) {
     for (const [i, part] of parts.entries()) {
       if (!(await takeRequest())) return { limited: true };
       const route = await askGoogle(part, controller.signal);
-      const partLegs = (route.legs ?? []).map((l) => ({ metres: l.distanceMeters ?? 0, seconds: seconds(l.duration) }));
+      const partLegs = (route.legs ?? []).map(legOf);
       // A part that starts at a point driven through carries on the leg before.
       if (i > 0 && part[0].via && legs.length && partLegs.length) {
         const first = partLegs.shift();
         legs[legs.length - 1] = {
           metres: legs.at(-1).metres + first.metres,
           seconds: legs.at(-1).seconds + first.seconds,
+          ...(legs.at(-1).ferry || first.ferry ? { ferry: true } : {}),
         };
       }
       legs.push(...partLegs);
@@ -159,6 +181,7 @@ export async function routeDrive(points, { signal } = {}) {
     return {
       metres: legs.reduce((sum, l) => sum + l.metres, 0),
       seconds: legs.reduce((sum, l) => sum + l.seconds, 0),
+      ferry: legs.some((l) => l.ferry),
       legs,
       line,
     };

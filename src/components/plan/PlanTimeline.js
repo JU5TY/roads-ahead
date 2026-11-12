@@ -60,8 +60,11 @@ function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, hand
   );
 }
 
-/** Between two rows: the drive's bar, with an Iconic Road's chip when the leg drives one. */
-function LegRow({ color, road, text, onPress, handlers, held }) {
+/**
+ * Between two rows: the drive's bar, with an Iconic Road's chip when the leg
+ * drives one, and a boat when it takes a ferry (its miles are on the road).
+ */
+function LegRow({ color, road, text, ferry, onPress, handlers, held }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const body = (
@@ -70,6 +73,7 @@ function LegRow({ color, road, text, onPress, handlers, held }) {
         <View style={[styles.bar, { backgroundColor: color }]} />
       </View>
       <View style={styles.legText}>
+        {text && ferry ? <Icon name="directions_boat" size={16} color={c.textMuted} /> : null}
         {text ? <Text style={[type.label, styles.muted, styles.regular]}>{text}</Text> : null}
         {road ? (
           <View style={styles.roadChip}>
@@ -117,7 +121,8 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * stop, an Iconic Road as a chip on the leg it's driven on, and the
  * last place as the red finish. Stops are dragged by their handle to reorder
  * them; tapping one opens its options.
- * `start` is driveStart(); `legTexts` ("33 mi · 45m") are by the id of the
+ * `start` is driveStart(); `legTexts` ("33 mi · 45m") and `ferryLegs` (a Set,
+ * the legs taking a ferry) are by the id of the
  * stop each leg arrives at; onStopPress(stop), onStartPress(),
  * onMove(stop, position). `locked` (a copied ready-made route) leaves out the
  * handles and taps: nothing can be changed. A round trip's way back (the last
@@ -130,6 +135,7 @@ export default function PlanTimeline({
   start,
   color,
   legTexts = {},
+  ferryLegs,
   onStopPress,
   onStartPress,
   onMove,
@@ -230,12 +236,14 @@ export default function PlanTimeline({
     if (road) {
       // A road shows the leg to the place after it (or to its own end, last).
       const next = stops[i + 1] ?? home;
-      const text = next && !next.roadId ? texts[next.id] : texts[stop.id];
+      const legId = next && !next.roadId ? next.id : stop.id;
+      const text = texts[legId];
       return (
         <LegRow
           color={color}
           road={road.name}
           text={text}
+          ferry={ferryLegs?.has(legId)}
           onPress={onPress}
           handlers={handlers}
           held={drag?.from === i}
@@ -246,7 +254,9 @@ export default function PlanTimeline({
     return (
       <>
         {/* A leg leads into each place, unless an Iconic Road's leg already did. */}
-        {stops[i - 1]?.roadId ? null : <LegRow color={color} text={texts[stop.id]} />}
+        {stops[i - 1]?.roadId ? null : (
+          <LegRow color={color} text={texts[stop.id]} ferry={ferryLegs?.has(stop.id)} />
+        )}
         <EventRow
           kind={finish ? 'finish' : 'stop'}
           color={color}
@@ -285,7 +295,7 @@ export default function PlanTimeline({
       {home ? (
         <>
           {/* An Iconic Road's leg already leads into it. */}
-          {last?.roadId ? null : <LegRow color={color} text={texts[home.id]} />}
+          {last?.roadId ? null : <LegRow color={color} text={texts[home.id]} ferry={ferryLegs?.has(home.id)} />}
           <EventRow
             kind="finish"
             name={home.name}
