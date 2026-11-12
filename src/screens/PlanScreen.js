@@ -165,7 +165,9 @@ export default function PlanScreen() {
   // "Fort William → Applecross"; Drive 1 with no start runs from wherever you are.
   const startName = start?.name ?? 'Your location';
   let routeName = finish ? `${startName} → ${finish.name ?? 'Dropped pin'}` : null;
-  if (finish?.home && picked === 0) routeName = `Round trip from ${startName}`;
+  // A round trip's way back is the last stop (driveReach gives its place, not that it's the way back).
+  const goesHome = !!wayStops.at(-1)?.home;
+  if (goesHome) routeName = picked === 0 ? `Round trip from ${startName}` : `${startName} → back to the start`;
   // All: where the trip starts and where it ends.
   const lastIndex = plan.drives.length - 1;
   const tripStart = driveStart(plan, 0)?.name;
@@ -173,7 +175,8 @@ export default function PlanScreen() {
   let tripName = tripEnd
     ? `${tripStart ?? 'Your location'} → ${tripEnd.name ?? 'Dropped pin'}`
     : `From ${tripStart ?? 'your location'}`;
-  if (tripEnd?.home) tripName = `Round trip from ${tripStart ?? 'Your location'}`;
+  const tripGoesHome = !!mapPlan.drives[lastIndex].stops.at(-1)?.home;
+  if (tripGoesHome) tripName = `Round trip from ${tripStart ?? 'Your location'}`;
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
   const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
 
@@ -187,7 +190,7 @@ export default function PlanScreen() {
       ...end.map((m) => ({ ...m, key: 'trip-finish', color: colorOf(lastIndex) })),
     ];
     // A round trip starts and ends in the same place: one dot.
-    if (tripEnd?.home) markers = markers.filter((m) => m.key !== 'trip-start');
+    if (tripGoesHome) markers = markers.filter((m) => m.key !== 'trip-start');
   }
 
   // Miles and times: '142 mi · 3h 10m', for the picked drive or (All) the whole

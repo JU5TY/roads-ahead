@@ -176,7 +176,7 @@ export default function PastTripsScreen() {
       <View style={styles.noPlans}>
         <Text style={[type.section, styles.text]}>No plans yet</Text>
         <Text style={[type.body, styles.muted, styles.center]}>
-          Plan a trip as a set of drives, then hand each one to your sat nav
+          Plan a trip day by day, then hand each day to your sat nav
         </Text>
       </View>
     ) : null
