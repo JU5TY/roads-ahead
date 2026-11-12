@@ -10,6 +10,7 @@ import IconButton from '../components/ui/IconButton';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
 import { useHere } from '../hooks/useHere';
+import { useSavedLines } from '../hooks/usePlanRoutes';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { MIN_SEARCH_LENGTH, SEARCH_CREDIT, searchPlaces } from '../services/placeSearch';
 import { pinName } from '../services/placeService';
@@ -102,6 +103,7 @@ export default function AddStopScreen() {
   const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const nothingYet = plan != null && outline.every((d) => d.coordinates.length === 0);
+  const lines = useSavedLines(mapPlan);
 
   // With nothing planned yet and no location, the map opens on Britain.
   const region = here ? { ...here, latitudeDelta: 0.5, longitudeDelta: 0.5 } : BRITAIN;
@@ -194,9 +196,10 @@ export default function AddStopScreen() {
             flat
             segments={outline.map(({ index: i, coordinates }) => ({
               key: `drive-${i}`,
-              coordinates,
+              // Along the roads when the plan's map has saved its line, else straight.
+              coordinates: lines[i] ?? coordinates,
               color: i === index ? color : `${dayColorFor(c, i + 1)}40`,
-              dotted: true,
+              dotted: !lines[i],
             }))}
             fitTo={pickedCoords.length > 1 ? pickedCoords : undefined}
             region={nothingYet ? region : undefined}

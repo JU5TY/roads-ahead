@@ -28,6 +28,17 @@ export async function getSavedLine(key, now = Date.now()) {
   }
 }
 
+/** getSavedLine, read at once, so a map can draw its saved lines from the first frame. */
+export function getSavedLineSync(key, now = Date.now()) {
+  try {
+    const saved = JSON.parse(Storage.getItemSync(PREFIX + key) ?? 'null');
+    if (!saved || now - saved.savedAt > KEEP_MS) return null;
+    return saved.line;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveLine(key, line) {
   await Storage.setItemAsync(PREFIX + key, JSON.stringify({ savedAt: Date.now(), line }));
 }
