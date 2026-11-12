@@ -14,6 +14,17 @@ import { getRoad } from './iconicRoads';
 export const READY_ROUTES = data.routes;
 export const READY_ROUTES_ATTRIBUTION = data.attribution;
 
+/** "The UK's top 3 road trips and Europe's top 2, waiting to be driven.": the list's intro, like Iconic Roads'. */
+const UK = new Set(['England', 'Scotland', 'Wales', 'Northern Ireland']);
+export function tripsIntro(routes = READY_ROUTES) {
+  const top = (n) => (n === 1 ? 'top road trip' : `top ${n} road trips`);
+  const uk = routes.filter((r) => UK.has(r.country)).length;
+  const europe = routes.length - uk;
+  if (!europe) return `The UK's ${top(uk)}, waiting to be driven.`;
+  if (!uk) return `Europe's ${top(europe)}, waiting to be driven.`;
+  return `The UK's top ${uk} road trips and Europe's top ${europe}, waiting to be driven.`;
+}
+
 export const getReadyRoute = (id) => READY_ROUTES.find((r) => r.id === id) ?? null;
 
 /** The route as a plan's drives, for createPlan: Drive 1's start set, the rest following on. */

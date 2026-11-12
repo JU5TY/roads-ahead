@@ -9,8 +9,8 @@ const STROKE = 12;
 const R = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * R;
 
-/** Teal progress ring: "2 of 11" Iconic Roads completed. */
-export default function RoadsRing({ completed, total }) {
+/** Teal progress ring: "2 of 11" Iconic Roads (or `of`, e.g. Iconic Trips) completed. */
+export default function RoadsRing({ completed, total, of = 'Iconic Roads' }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const share = total > 0 ? completed / total : 0;
@@ -18,7 +18,7 @@ export default function RoadsRing({ completed, total }) {
     <View
       style={styles.wrap}
       accessible
-      accessibilityLabel={`${completed} of ${total} Iconic Roads completed`}
+      accessibilityLabel={`${completed} of ${total} ${of} completed`}
     >
       <Svg width={SIZE} height={SIZE} style={styles.svg}>
         <Circle

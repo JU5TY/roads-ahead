@@ -6,6 +6,7 @@ import {
   routeDriveLine,
   routeDriveTitle,
   routePlanDrives,
+  tripsIntro,
 } from '../readyRoutes';
 
 const nc500 = getReadyRoute('nc500');
@@ -70,5 +71,20 @@ describe('route coverage', () => {
     const n = line.length;
     expect(routeCompleted(nc500, along(0, Math.ceil(n * 0.92)))).toBe(true);
     expect(routeCompleted(nc500, along(0, Math.floor(n * 0.85)))).toBe(false);
+  });
+});
+
+describe('tripsIntro', () => {
+  const trip = (country) => ({ country });
+
+  it('counts the UK and Europe, like Iconic Roads', () => {
+    expect(tripsIntro([trip('Scotland'), trip('Northern Ireland'), trip('France')])).toBe(
+      "The UK's top 2 road trips and Europe's top 1, waiting to be driven."
+    );
+  });
+
+  it('leaves out a side with none, and says one trip as one', () => {
+    expect(tripsIntro([trip('Scotland')])).toBe("The UK's top road trip, waiting to be driven.");
+    expect(tripsIntro([trip('France'), trip('Italy')])).toBe("Europe's top 2 road trips, waiting to be driven.");
   });
 });

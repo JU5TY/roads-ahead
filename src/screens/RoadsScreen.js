@@ -137,7 +137,7 @@ const makeStyles = (c) => ({
   content: { paddingHorizontal: spacing.md },
   back: { alignSelf: 'flex-start', marginLeft: -12 },
   collection: { paddingTop: 4, paddingBottom: 8, alignItems: 'center' },
-  h1: { alignSelf: 'stretch', color: c.text, marginHorizontal: 4, marginBottom: 12 },
+  h1: { alignSelf: 'stretch', color: c.text, marginHorizontal: 4, marginBottom: 24 }, // 24 under a title, as on Trips
   text: { color: c.text },
   summary: { marginTop: 14 },
   intro: {

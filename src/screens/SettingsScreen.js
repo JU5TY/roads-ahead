@@ -429,5 +429,5 @@ const makeStyles = (c) => ({
   vehicleRow: { minHeight: 64 },
   addTitle: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
   flex: { flex: 1, minWidth: 0 },
-  premium: { marginTop: 12 },
+  premium: { marginTop: 16 }, // 24 under the title (8 of it inside h1), as on Trips
 });
