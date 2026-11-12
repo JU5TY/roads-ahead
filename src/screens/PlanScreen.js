@@ -28,6 +28,7 @@ import {
   deletePlanDrive,
   deletePlanStop,
   getPlan,
+  getPlanDrives,
   movePlanStop,
   renamePlan,
   setPlanDriveStart,
@@ -53,8 +54,8 @@ import {
 } from '../utils/plans';
 
 /**
- * A plan: its map, the Drive tabs (+ adds one), and the picked drive as a
- * timeline. Stops are added and reordered here; the menu edits the name,
+ * A plan: its map, the Drive tabs (All once there are two; + adds one), and
+ * the picked drive as a timeline, or on All every drive's, to look at. Stops are added and reordered here; the menu edits the name,
  * date and one way or round trip, or deletes a drive or the plan. Params: `id`.
  */
 export default function PlanScreen() {
@@ -63,18 +64,21 @@ export default function PlanScreen() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [plan, setPlan] = useState(null);
-  const [picked, setPicked] = useState(0);
+  // The tab: a drive's index, or null for All (shown once there are two drives).
+  const [tab, setTab] = useState(0);
+  const [driven, setDriven] = useState(() => new Set()); // planned drive ids with a recording
   // 'options' | 'edit' | 'road' | 'start' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop }
   const [menu, setMenu] = useState(null);
   const { here } = useHere();
 
   const reload = useCallback(
     () =>
-      getPlan(planId)
-        .then((p) => {
+      Promise.all([getPlan(planId), getPlanDrives(planId)])
+        .then(([p, drives]) => {
           if (!p) return router.back();
           setPlan(p);
-          setPicked((i) => Math.min(i, p.drives.length - 1));
+          setDriven(new Set(drives.keys()));
+          setTab((i) => (i === null ? (p.drives.length > 1 ? null : 0) : Math.min(i, p.drives.length - 1)));
         })
         .catch((err) => console.warn('[plan] load failed', err)),
     [planId]
@@ -90,7 +94,7 @@ export default function PlanScreen() {
   // phone is, and a round trip comes back there.
   const mapPlan = useMemo(() => (plan ? mapPlanOf(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
-  const routes = usePlanRoutes(mapPlan, picked);
+  const routes = usePlanRoutes(mapPlan, tab);
   const { units, prices, setPrice, navApp } = useSettings();
   const [vehicles, reloadVehicles] = useVehicles();
   // Plans aren't tied to a car: the fuel is worked out for the default one.
@@ -104,14 +108,19 @@ export default function PlanScreen() {
     );
   }
 
+  const all = tab === null;
+  // The drive in focus: the tab's, or on All the next one not yet driven (for Start drive).
+  const next = plan.drives.findIndex((d) => !driven.has(d.id));
+  const picked = tab ?? (next >= 0 ? next : plan.drives.length - 1);
   const drive = plan.drives[picked];
   // The plan with a round trip's way back (its last drive's final stop, id 'home').
   const wayPlan = withWayBack(plan, here);
   const wayStops = mapPlan.drives[picked].stops;
   const start = driveStart(plan, picked);
-  const pickedCoords = outline[picked]?.coordinates ?? [];
+  const fitCoords = all ? outline.flatMap((d) => d.coordinates) : (outline[picked]?.coordinates ?? []);
   const finish = wayStops.length ? driveReach(wayPlan, picked) : null;
   const { stops } = stopCounts([drive]);
+  const shownStops = all ? stopCounts(plan.drives).stops : stops;
   const act = (fn) => () => {
     setMenu(null);
     fn().then(reload).catch((err) => console.warn('[plan] change failed', err));
@@ -121,7 +130,7 @@ export default function PlanScreen() {
   const addDrive = () =>
     addPlanDrive(plan.id)
       .then(reload)
-      .then(() => setPicked(plan.drives.length))
+      .then(() => setTab(plan.drives.length))
       .catch((err) => console.warn('[plan] add drive failed', err));
   const pickPlace = (mode) => {
     setMenu(null);
@@ -146,7 +155,7 @@ export default function PlanScreen() {
       destructive: true,
       onConfirm: () =>
         deletePlanDrive(drive.id)
-          .then(() => setPicked(Math.max(0, picked - 1)))
+          .then(() => setTab(Math.max(0, picked - 1)))
           .then(reload),
     });
   };
@@ -167,28 +176,55 @@ export default function PlanScreen() {
   const startName = start?.name ?? 'Your location';
   let routeName = finish ? `${startName} → ${finish.name ?? 'Dropped pin'}` : null;
   if (finish?.home && picked === 0) routeName = `Round trip from ${startName}`;
+  // All: where the trip starts and where it ends.
+  const lastIndex = plan.drives.length - 1;
+  const tripStart = driveStart(plan, 0)?.name;
+  const tripEnd = mapPlan.drives.some((d) => d.stops.length) ? driveReach(wayPlan, lastIndex) : null;
+  let tripName = tripEnd
+    ? `${tripStart ?? 'Your location'} → ${tripEnd.name ?? 'Dropped pin'}`
+    : `From ${tripStart ?? 'your location'}`;
+  if (tripEnd?.home) tripName = `Round trip from ${tripStart ?? 'Your location'}`;
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
   const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
 
-  const markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
+  // The picked drive's start, stops and finish; on All, just where the trip starts and ends.
+  let markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
+  if (all) {
+    const first = driveMarkers(mapPlan, 0).filter((m) => m.kind === 'start');
+    const end = driveMarkers(mapPlan, lastIndex).filter((m) => m.kind === 'finish');
+    markers = [
+      ...first.map((m) => ({ ...m, key: 'trip-start', color: colorOf(0) })),
+      ...end.map((m) => ({ ...m, key: 'trip-finish', color: colorOf(lastIndex) })),
+    ];
+    // A round trip starts and ends in the same place: one dot.
+    if (tripEnd?.home) markers = markers.filter((m) => m.key !== 'trip-start');
+  }
 
-  // Miles and times for the picked drive: '142 mi · 3h 10m', and each leg's.
-  const { status, route, legStops } = routes.picked;
+  // Miles and times: '142 mi · 3h 10m', for the picked drive or (All) the whole
+  // trip once every drive has come back, and each leg's.
   const miles = (metres) => formatDistance(metres, units, metres < 16000 ? 1 : 0);
   const time = (seconds) => formatDurationShort(seconds * 1000);
-  let routeSummary = null;
-  if (status === 'done') routeSummary = `${miles(route.metres)} · ${time(route.seconds)}`;
-  else if (status === 'failed' || status === 'limited') routeSummary = 'Road times unavailable right now';
   // '£19 fuel' (or '£8 charging') once the car's own figure and its price are
   // both set; until then, a link to add them.
   const electric = !!vehicle?.electric;
   const priceKind = electric ? 'charge' : 'fuel';
-  const pounds =
-    status === 'done' && vehicle
-      ? driveCost(route.metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price })
-      : null;
-  if (pounds != null) routeSummary += ` · ${formatDriveCost(pounds, electric)}`;
-  const askCost = status === 'done' && pounds == null && vehicles != null;
+  const summaryOf = (results) => {
+    const asked = results.filter((r) => r.status !== 'none');
+    if (asked.some((r) => r.status === 'failed' || r.status === 'limited')) {
+      return { status: 'failed', text: 'Road times unavailable right now' };
+    }
+    if (!asked.length || asked.some((r) => r.status !== 'done')) return { status: asked.length ? 'loading' : 'none' };
+    const metres = asked.reduce((sum, r) => sum + r.route.metres, 0);
+    const seconds = asked.reduce((sum, r) => sum + r.route.seconds, 0);
+    const pounds = vehicle ? driveCost(metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
+    const cost = pounds != null ? ` · ${formatDriveCost(pounds, electric)}` : '';
+    return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${cost}`, costed: pounds != null };
+  };
+  const summary = summaryOf(all ? routes.drives : [routes.drives[picked]]);
+  const routeSummary = summary.text ?? null;
+  // Start drive's sheet is always about one drive.
+  const goSummary = summaryOf([routes.drives[picked]]);
+  const askCost = summary.status === 'done' && !summary.costed && vehicles != null;
   const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
   // The car's figure first (adding the car if there's none), then the price.
   const addCost = () => setMenu(vehicle && hasFigure(vehicle) ? 'price' : 'vehicle');
@@ -203,13 +239,17 @@ export default function PlanScreen() {
     await reloadVehicles();
     setMenu(hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'] ? 'price' : null);
   };
-  const legTexts = {};
-  if (status === 'done') {
+  // Drive i's leg texts, by the id of the stop each leg arrives at.
+  const legTextsOf = (i) => {
+    const { status, route, legStops } = routes.drives[i];
+    const texts = {};
+    if (status !== 'done') return texts;
     route.legs.forEach((leg, k) => {
-      const stop = wayStops[legStops[k]];
-      if (stop) legTexts[stop.id] = `${miles(leg.metres)} · ${time(leg.seconds)}`;
+      const stop = mapPlan.drives[i].stops[legStops[k]];
+      if (stop) texts[stop.id] = `${miles(leg.metres)} · ${time(leg.seconds)}`;
     });
-  }
+    return texts;
+  };
 
   const map = outline.some((d) => d.coordinates.length) ? (
     <RouteMap
@@ -218,12 +258,12 @@ export default function PlanScreen() {
         key: `drive-${index}`,
         // Along the roads once routed (or from a line saved in the last 30 days), else straight.
         coordinates: routes.lines[index] ?? coordinates,
-        // The picked drive stands out; the rest fade back, as on a trip.
-        color: index === picked ? colorOf(index) : `${colorOf(index)}40`,
+        // The picked drive stands out; the rest fade back, as on a trip. All shows them all.
+        color: all || index === picked ? colorOf(index) : `${colorOf(index)}40`,
         // Solid along the roads; dotted while it's still a straight guess, as a trip dots a ferry.
         dotted: !routes.lines[index],
       }))}
-      fitTo={pickedCoords.length > 1 ? pickedCoords : undefined}
+      fitTo={fitCoords.length > 1 ? fitCoords : undefined}
       markers={markers}
     />
   ) : (
@@ -253,7 +293,7 @@ export default function PlanScreen() {
         visible={menu === 'go'}
         number={picked + 1}
         route={routeName}
-        detail={status === 'done' ? routeSummary : null}
+        detail={goSummary.status === 'done' ? goSummary.text : null}
         color={colorOf(picked)}
         handover={handover}
         units={units}
@@ -271,7 +311,7 @@ export default function PlanScreen() {
         visible={menu === 'options'}
         actions={[
           { icon: 'edit', label: 'Edit name, date and route', onPress: () => setMenu('edit') },
-          ...(plan.drives.length > 1 && !locked
+          ...(plan.drives.length > 1 && !locked && !all
             ? [{ icon: 'delete', label: 'Delete this drive', style: 'destructive', onPress: confirmDeleteDrive }]
             : []),
           { icon: 'delete', label: 'Delete plan', style: 'destructive', onPress: confirmDeletePlan },
@@ -397,13 +437,15 @@ export default function PlanScreen() {
           contentContainerStyle={styles.tabs}
           role="radiogroup"
         >
+          {/* All, as on a trip, once there's more than one drive. */}
+          {plan.drives.length > 1 ? <FilterChip label="All" selected={all} onPress={() => setTab(null)} /> : null}
           {plan.drives.map((d, i) => (
             <FilterChip
               key={d.id}
               label={`Drive ${i + 1}`}
               dot={colorOf(i)}
-              selected={i === picked}
-              onPress={() => setPicked(i)}
+              selected={i === tab}
+              onPress={() => setTab(i)}
             />
           ))}
         </ScrollView>
@@ -422,10 +464,10 @@ export default function PlanScreen() {
 
       <View style={styles.heading}>
         <Text style={[type.section, styles.text]} numberOfLines={2}>
-          {finish ? routeName : `From ${start?.name ?? 'your location'}`}
+          {all ? tripName : finish ? routeName : `From ${start?.name ?? 'your location'}`}
         </Text>
         <Text style={[type.bodySmall, styles.muted]}>
-          {[stops === 0 ? 'No stops yet' : `${stops} ${stops === 1 ? 'stop' : 'stops'}`, routeSummary]
+          {[shownStops === 0 ? 'No stops yet' : `${shownStops} ${shownStops === 1 ? 'stop' : 'stops'}`, routeSummary]
             .filter(Boolean)
             .join(' · ')}
           {askCost ? (
@@ -439,21 +481,54 @@ export default function PlanScreen() {
         </Text>
       </View>
 
-      <PlanTimeline
-        legTexts={legTexts}
-        drive={{ ...drive, stops: wayStops }}
-        index={picked}
-        start={start}
-        roundTrip={plan.roundTrip}
-        onBackPress={locked ? undefined : () => setMenu('back')}
-        color={colorOf(picked)}
-        onStopPress={(s) => setMenu({ stop: s })}
-        onStartPress={locked ? undefined : () => setMenu('start')}
-        onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
-        locked={locked}
-      />
+      {all ? (
+        // Every drive's timeline in turn, to look at: tap one to change it on its own tab.
+        plan.drives.map((d, i) => (
+          <Pressable
+            key={d.id}
+            onPress={() => setTab(i)}
+            accessibilityRole="button"
+            accessibilityLabel={`Drive ${i + 1}, open to change it`}
+            style={({ pressed }) => [styles.allDrive, pressed && styles.pressed]}
+          >
+            <View style={styles.allHeading}>
+              <View style={[styles.allDot, { backgroundColor: colorOf(i) }]} />
+              <View style={styles.flex}>
+                <Text style={[type.bodyStrong, styles.text]}>Drive {i + 1}</Text>
+                {summaryOf([routes.drives[i]]).text ? (
+                  <Text style={[type.small, styles.muted]}>{summaryOf([routes.drives[i]]).text}</Text>
+                ) : null}
+              </View>
+              <Icon name="chevron_right" size={22} color={c.textMuted} />
+            </View>
+            <PlanTimeline
+              legTexts={legTextsOf(i)}
+              drive={{ ...d, stops: mapPlan.drives[i].stops }}
+              index={i}
+              start={driveStart(plan, i)}
+              roundTrip={plan.roundTrip}
+              color={colorOf(i)}
+              locked
+            />
+          </Pressable>
+        ))
+      ) : (
+        <PlanTimeline
+          legTexts={legTextsOf(picked)}
+          drive={{ ...drive, stops: wayStops }}
+          index={picked}
+          start={start}
+          roundTrip={plan.roundTrip}
+          onBackPress={locked ? undefined : () => setMenu('back')}
+          color={colorOf(picked)}
+          onStopPress={(s) => setMenu({ stop: s })}
+          onStartPress={locked ? undefined : () => setMenu('start')}
+          onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
+          locked={locked}
+        />
+      )}
 
-      {locked ? (
+      {all ? null : locked ? (
         <View style={styles.lockedNote}>
           <Icon name="info" size={20} color={c.textMuted} />
           <Text style={[type.label, styles.muted, styles.regular, styles.flex]}>
@@ -488,6 +563,10 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   center: { alignItems: 'center', justifyContent: 'center' },
   noMap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: c.mapLand },
+  // All: each drive's heading over its timeline.
+  allDrive: { marginTop: spacing.md },
+  allHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
+  allDot: { width: 12, height: 12, borderRadius: 6, marginHorizontal: 5 },
   tabsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, marginRight: -spacing.md },
   tabsScroll: { flexGrow: 1, flexShrink: 1, marginLeft: -spacing.md },
   tabs: { gap: 8, paddingLeft: spacing.md },

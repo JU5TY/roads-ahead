@@ -34,18 +34,21 @@ export function useSavedLines(plan) {
 }
 
 /**
- * A plan's road routes (pass the map's plan, fromHere). Only the `picked` drive
- * is asked for, once per app run unless its stops change; the other drives
- * draw from lines saved in the last 30 days. Returns { picked, lines }:
- * picked = { status: 'none' | 'loading' | 'done' | 'failed' | 'limited',
- * route?: { metres, seconds, legs, line }, legStops }, and lines[i] is drive
- * i's road line or null (draw it straight).
+ * A plan's road routes (pass the map's plan, mapPlanOf). Only the `picked`
+ * drive is asked for, or every drive when `picked` is null (the All tab),
+ * once per app run unless its stops change; the rest draw from lines saved in
+ * the last 30 days. Returns { drives, lines }: drives[i] = { status: 'none' |
+ * 'loading' | 'done' | 'failed' | 'limited', route?: { metres, seconds, legs,
+ * line }, legStops }, 'none' for a drive with nowhere to go or not asked for;
+ * lines[i] is drive i's road line or null (draw it straight).
  */
 export function usePlanRoutes(plan, picked) {
   const asks = useMemo(() => (plan ? plan.drives.map((_, i) => driveRoute(plan, i)) : []), [plan]);
   const keys = asks.map((a) => (a ? routeKey(a.points) : null));
-  const pickedKey = keys[picked] ?? null;
-  const [answer, setAnswer] = useState({ key: null, status: 'loading' });
+  const wanted = (picked == null ? keys : [keys[picked]]).filter(Boolean);
+  const wantedId = wanted.join('|');
+  // How each asked-for route came back, by its key: 'failed' | 'limited' (a found one is in `memory`).
+  const [answers, setAnswers] = useState({});
 
   useEffect(() => {
     if (swept) return;
@@ -54,25 +57,30 @@ export function usePlanRoutes(plan, picked) {
   }, []);
 
   useEffect(() => {
-    if (!pickedKey || memory.has(pickedKey)) return;
-    const ask = asks[picked];
     const controller = new AbortController();
-    routeDrive(ask.points, { signal: controller.signal }).then((result) => {
-      if (result.cancelled) return;
-      if (result.line) {
-        memory.set(pickedKey, result);
-        saveLine(pickedKey, result.line).catch(() => {});
-      }
-      setAnswer({ key: pickedKey, status: result.limited ? 'limited' : result.failed ? 'failed' : 'done' });
-    });
+    for (const key of new Set(wanted)) {
+      if (memory.has(key)) continue;
+      const ask = asks[keys.indexOf(key)];
+      routeDrive(ask.points, { signal: controller.signal }).then((result) => {
+        if (result.cancelled) return;
+        if (result.line) {
+          memory.set(key, result);
+          saveLine(key, result.line).catch(() => {});
+        }
+        setAnswers((a) => ({ ...a, [key]: result.limited ? 'limited' : result.failed ? 'failed' : 'done' }));
+      });
+    }
     return () => controller.abort();
-    // `asks` changes with `pickedKey`; the key alone says when to ask again.
+    // `asks` changes with the keys; the keys alone say when to ask again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickedKey]);
+  }, [wantedId]);
 
-  const route = pickedKey ? memory.get(pickedKey) : undefined;
-  let status = 'none';
-  if (pickedKey) status = route ? 'done' : answer.key === pickedKey ? answer.status : 'loading';
-  const lines = keys.map(lineFor);
-  return { picked: { status, route, legStops: asks[picked]?.legStops ?? [] }, lines };
+  const drives = keys.map((key, i) => {
+    const route = key ? memory.get(key) : undefined;
+    let status = 'none';
+    if (key && (route || wanted.includes(key))) status = route ? 'done' : (answers[key] ?? 'loading');
+    if (status === 'done' && !route) status = 'failed';
+    return { status, route, legStops: asks[i]?.legStops ?? [] };
+  });
+  return { drives, lines: keys.map(lineFor) };
 }
