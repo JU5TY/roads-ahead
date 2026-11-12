@@ -19,9 +19,7 @@ import { ensureDrivePlaces } from '../services/placeService';
 import { createPlan, drivenPlanDates, drivenPlanDriveIds, listPlans } from '../storage/planStorage';
 import { listTrips } from '../storage/tripStorage';
 import { bottomSpace, floating, spacing, type } from '../theme';
-import { distanceParts } from '../utils/format';
 import { groupPlans } from '../utils/plans';
-import { computeTotals } from '../utils/tripSummary';
 
 const VIEWS = [
   ['driven', 'Driven'],
@@ -76,17 +74,6 @@ function withMonthHeaders(trips) {
     rows.push({ key: `trip-${trip.id}`, trip });
   }
   return rows;
-}
-
-/** "2026 · 4 trips · 1,260 km", or all-time totals when nothing was driven this year. */
-function summaryLine(trips, units) {
-  const year = new Date().getFullYear();
-  const thisYear = computeTotals(trips, new Date(year, 0, 1).getTime());
-  const totals = thisYear.tripCount > 0 ? thisYear : computeTotals(trips);
-  const distance = distanceParts(totals.distanceM, units);
-  const count = `${totals.tripCount} ${totals.tripCount === 1 ? 'trip' : 'trips'}`;
-  const prefix = thisYear.tripCount > 0 ? `${year} · ` : 'All time · ';
-  return `${prefix}${count} · ${distance.value} ${distance.unit}`;
 }
 
 export default function PastTripsScreen() {
@@ -157,8 +144,6 @@ export default function PastTripsScreen() {
       <Text style={[type.headline, styles.h1]} role="heading">
         Trips
       </Text>
-      {/* The switch sits right under the title, so it stays put going between the two;
-          Driven's summary line goes below it. */}
       <SegmentedSwitch
         options={VIEWS}
         value={planned ? 'planned' : 'driven'}
@@ -166,9 +151,6 @@ export default function PastTripsScreen() {
         stretch
         style={styles.switch}
       />
-      {trips?.length && !planned ? (
-        <Text style={[type.body, styles.muted, styles.summary]}>{summaryLine(trips, units)}</Text>
-      ) : null}
       {planned ? null : <RecordingBar style={styles.recording} />}
     </View>
   );
@@ -240,7 +222,6 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
   h1: { color: c.text, marginHorizontal: 4, marginTop: 8, height: 56, textAlignVertical: 'center' },
-  summary: { marginHorizontal: 4, marginTop: 16 },
   switch: { marginTop: 16 },
   recording: { marginTop: 20 },
   month: { marginTop: 20, marginBottom: 4 },
