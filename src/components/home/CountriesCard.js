@@ -24,7 +24,7 @@ export default function CountriesCard({ trips }) {
   if (countries.length === 0) return null;
   return (
     <>
-      <SectionHeader variant="overline" title="Countries" />
+      <SectionHeader title="Countries" />
       <View style={styles.card}>
         <View style={styles.count}>
           <Text style={[type.stat, styles.number]}>{countries.length}</Text>

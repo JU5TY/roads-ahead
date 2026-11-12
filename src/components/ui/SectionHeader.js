@@ -5,11 +5,12 @@ import { type } from '../../theme';
 
 /**
  * Section heading.
- * variant 'title': 18px, for sections of the Trip page ("Details"), with
- *   an optional grey `subtitle` line under it ("Whole trip").
- * variant 'overline': uppercase 14px, for groups on Home, Trips and Iconic
- *   Roads ("LATEST TRIP", month headers). 'label' is the same with less space
- *   under it, for the You screen's groups of rows.
+ * variant 'title': 18px, for a section of content on a page (Home's "Latest
+ *   trip", the Trip page's "Details"), with an optional grey `subtitle` line
+ *   under it ("Whole trip").
+ * variant 'overline': uppercase 14px, a label over a group of rows or cards in
+ *   a list (Trips' month headers, "COMPLETED · 2" on Iconic Roads). 'label' is
+ *   the same with less space under it, for the You screen's groups of rows.
  * `actionLabel` adds a blue link on the right ("All trips").
  */
 export default function SectionHeader({

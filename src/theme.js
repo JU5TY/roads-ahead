@@ -182,7 +182,7 @@ export const type = {
   headline: { fontFamily: fonts.regular, fontSize: 32, lineHeight: 40 },
   title: { fontFamily: fonts.regular, fontSize: 28, lineHeight: 34 },
   section: { fontFamily: fonts.medium, fontSize: 18, lineHeight: 24 },
-  // Uppercase group labels on Home, Trips and You ("LATEST TRIP").
+  // Uppercase group labels on Trips, Iconic Roads and You ("NOVEMBER").
   overline: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, letterSpacing: 0.8 },
   // All-time and trip distance (Home, Your map, Trip), with totalUnit.
   total: { fontFamily: fonts.medium, fontSize: 36, lineHeight: 40, letterSpacing: -0.5 },

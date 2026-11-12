@@ -26,7 +26,6 @@ function RoadsCard() {
   return (
     <>
       <SectionHeader
-        variant="overline"
         title="Iconic Roads"
         actionLabel="All roads"
         onAction={() => router.push('/roads')}
@@ -100,7 +99,6 @@ export default function HomeScreen() {
       <YourMap trips={trips} units={units} scrollY={scrollY} />
       <WeekDistance trips={trips} units={units} now={now} />
       <SectionHeader
-        variant="overline"
         title="Latest trip"
         actionLabel="All trips"
         onAction={() => router.navigate('/trips')}
