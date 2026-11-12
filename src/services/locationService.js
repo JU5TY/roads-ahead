@@ -155,9 +155,13 @@ async function startUpdates() {
     throw new Error('Location access is needed to record a trip.');
   }
   if (await canTrackInBackground()) {
-    if (!(await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACKING_TASK))) {
-      await Location.startLocationUpdatesAsync(LOCATION_TRACKING_TASK, TRACKING_OPTIONS);
+    // Started again even when it says it's running: after the app was killed
+    // mid-drive the task is still registered, but Android won't restart its
+    // service from the background, so nothing would be recorded until it is.
+    if (await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACKING_TASK)) {
+      await Location.stopLocationUpdatesAsync(LOCATION_TRACKING_TASK);
     }
+    await Location.startLocationUpdatesAsync(LOCATION_TRACKING_TASK, TRACKING_OPTIONS);
     return { background: true };
   }
   if (!foregroundSubscription) {
