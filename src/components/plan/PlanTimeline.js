@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
@@ -122,11 +122,15 @@ export function OvernightRow({ place }) {
  */
 function Draggable({ index, shift, dragging, dy, handlers, onLayout, children }) {
   const styles = useStyles(makeStyles);
+  // Its own Animated value, not a plain number: switching from `dy` to a plain
+  // number can leave the row where it was dropped; switching values sets it again.
+  const [still] = useState(() => new Animated.Value(0));
+  useLayoutEffect(() => still.setValue(shift), [still, shift]);
   return (
     <Animated.View
       onLayout={(e) => onLayout(index, e.nativeEvent.layout)}
       style={
-        dragging ? [styles.dragging, { transform: [{ translateY: dy }] }] : { transform: [{ translateY: shift }] }
+        dragging ? [styles.dragging, { transform: [{ translateY: dy }] }] : { transform: [{ translateY: still }] }
       }
     >
       {children(handlers)}
