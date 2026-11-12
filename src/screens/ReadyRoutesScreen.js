@@ -71,7 +71,7 @@ export default function ReadyRoutesScreen() {
       <Text style={[type.headline, styles.h1]} role="heading">
         Ready-made routes
       </Text>
-      <Text style={[type.body, styles.intro]}>Copy one to your plans, then drive it a drive at a time</Text>
+      <Text style={[type.body, styles.intro]}>Copy one to your plans, then drive it a day at a time</Text>
 
       {completed.length ? (
         <>
