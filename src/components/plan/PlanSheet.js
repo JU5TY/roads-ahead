@@ -81,9 +81,6 @@ function PlanForm({ plan, onSave }) {
             onChange={(v) => setRoundTrip(v === 'roundTrip')}
             stretch
           />
-          <Text style={styles.hint}>
-            {roundTrip ? 'The last day ends back where Day 1 starts' : 'The last day ends at its last stop'}
-          </Text>
         </>
       )}
 
@@ -113,7 +110,6 @@ export default function PlanSheet({ visible, plan, onSave, onClose }) {
 const makeStyles = (c) => ({
   sheet: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm },
-  hint: { ...type.small, color: c.textMuted },
   input: {
     ...type.bodyLarge,
     backgroundColor: c.card,
