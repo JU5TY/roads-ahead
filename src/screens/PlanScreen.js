@@ -136,7 +136,10 @@ export default function PlanScreen() {
 
   // The day a sheet is about (a stop's, or a start's), and where new stops go:
   // the day's tab, or on All the end of the trip.
-  const at = menu?.at ?? picked;
+  // Only a stop's or a start's sheet is an object; the rest are names (and a
+  // name's `.at` is String's own function, so never read it off one).
+  const sheet = menu && typeof menu === 'object' ? menu : null;
+  const at = sheet?.at ?? picked;
   const atDrive = plan.drives[at];
   const addAt = tab ?? plan.drives.length - 1;
   const pickPlace = (mode, day = addAt) => {
@@ -265,7 +268,7 @@ export default function PlanScreen() {
     </View>
   );
 
-  const stop = menu?.stop;
+  const stop = sheet?.stop;
   const stopIndex = stop ? atDrive.stops.findIndex((s) => s.id === stop.id) : -1;
   // A place you stay at ends its day; the last place of a day (not the trip's) is where you stay.
   const staying = stop && stopIndex === atDrive.stops.length - 1 && at < plan.drives.length - 1;
@@ -403,7 +406,7 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
       <ActionSheet
-        visible={!!menu?.start}
+        visible={!!sheet?.start}
         message={`Where Day ${at + 1} starts`}
         actions={[
           at === 0
