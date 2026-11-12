@@ -208,12 +208,12 @@ export default function PlanScreen() {
     }
     if (!asked.length || asked.some((r) => r.status !== 'done')) return { status: asked.length ? 'loading' : 'none' };
     // Miles on the road (a ferry's crossing isn't driven, so isn't in the fuel either); time door to door.
+    // A ferry is marked on its leg in the timeline (a boat), not here, so the line stays short.
     const metres = asked.reduce((sum, r) => sum + r.route.metres, 0);
     const seconds = asked.reduce((sum, r) => sum + r.route.seconds, 0);
-    const ferry = asked.some((r) => r.route.ferry) ? ' · includes a ferry' : '';
     const pounds = vehicle ? driveCost(metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
     const cost = pounds != null ? ` · ${formatDriveCost(pounds, electric)}` : '';
-    return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${ferry}${cost}`, costed: pounds != null };
+    return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${cost}`, costed: pounds != null };
   };
   const summary = summaryOf(all ? routes.drives : [routes.drives[picked]]);
   const routeSummary = summary.text ?? null;
