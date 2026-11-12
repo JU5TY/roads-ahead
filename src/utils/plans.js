@@ -1,11 +1,13 @@
 // The trip planner's rules, as pure functions over a plan from planStorage:
-// { id, name, startDate, routeId, createdAt,
+// { id, name, startDate, routeId, roundTrip, createdAt, setOff,
 //   drives: [{ id, position, start, stops: [{ id, position, name, latitude,
 //              longitude, source, roadId, reversed }] }] }
 // A drive's `start` is { name, latitude, longitude } when set by hand ("Start
 // somewhere else"), or null: where the drive before ends, or for Drive 1,
 // wherever the phone is when it starts. A stop with `roadId` is an Iconic Road
-// driven through, not a place to stop.
+// driven through, not a place to stop. A round trip's last drive ends back
+// where Drive 1 starts (withWayBack); `setOff` is where Drive 1 was recorded
+// setting off, or null (getPlan only).
 import { haversineDistance } from './geoMath';
 import { ICONIC_ROADS, getRoad } from './iconicRoads';
 import { NAV_APPS, navLinks, roadGuidePoints, takesWholeDrive } from './navLinks';
@@ -208,8 +210,10 @@ export function driveMarkers(plan, index) {
   const places = drive.stops.filter((s) => !s.roadId);
   // The last place is the finish, unless an Iconic Road comes after it.
   if (finish && !drive.stops.at(-1).roadId) places.pop();
+  // A round trip of one drive ends where it starts: one dot for both.
+  const loop = drive.stops.at(-1)?.home && index === 0;
   return [
-    ...(start ? [{ key: 'start', kind: 'start', coordinate: start, title: start.name ?? 'Start' }] : []),
+    ...(start && !loop ? [{ key: 'start', kind: 'start', coordinate: start, title: start.name ?? 'Start' }] : []),
     ...places.map((s) => ({ key: `stop-${s.id}`, kind: 'stop', coordinate: s, title: s.name ?? 'Dropped pin' })),
     ...(finish ? [{ key: 'finish', kind: 'finish', coordinate: finish, title: finish.name ?? 'Finish' }] : []),
   ];
@@ -218,12 +222,43 @@ export function driveMarkers(plan, index) {
 /**
  * The plan for its map: a Drive 1 with no start set starts at `here` (where the
  * phone is, { latitude, longitude }), so its line runs from there. Unchanged
- * without `here`. The timeline keeps "Wherever you are when you start".
+ * without `here`. The timeline keeps "Your location".
  */
 export function fromHere(plan, here) {
   const [first, ...rest] = plan.drives;
   if (!here || !first || first.start) return plan;
   return { ...plan, drives: [{ ...first, start: { name: 'Your location', ...here } }, ...rest] };
+}
+
+/**
+ * A round trip with its way back as the last drive's final stop: { id: 'home',
+ * home: true }, at Drive 1's start as set, else where Drive 1 was recorded
+ * setting off (`setOff`), else `here` (the phone, before setting off). One way,
+ * or with nowhere to go back to, the plan as it is. A lone drive needs a stop
+ * first; a later drive goes back even with none (Drive 3: home).
+ */
+export function withWayBack(plan, here) {
+  const first = plan.drives[0];
+  const last = plan.drives.at(-1);
+  if (!plan.roundTrip || !first) return plan;
+  const to = first.start ?? plan.setOff ?? here;
+  if (!to || (plan.drives.length === 1 && last.stops.length === 0)) return plan;
+  const home = {
+    id: 'home',
+    home: true,
+    name: first.start?.name ?? 'Where you set off',
+    latitude: to.latitude,
+    longitude: to.longitude,
+    source: 'pin', // sent to the sat nav as a point, not a name
+    roadId: null,
+    reversed: false,
+  };
+  return { ...plan, drives: [...plan.drives.slice(0, -1), { ...last, stops: [...last.stops, home] }] };
+}
+
+/** The plan as its map draws it: the way back added, and Drive 1 from where it set off or where the phone is. */
+export function mapPlanOf(plan, here) {
+  return fromHere(withWayBack(plan, here), plan.setOff ?? here);
 }
 
 /**
@@ -281,12 +316,19 @@ export const PASSED_M = 500;
  */
 export function stopsPassed(plan, index, points) {
   const { stops } = plan.drives[index];
-  for (let i = stops.length - 1; i >= 0; i--) {
+  // A round trip sets off from where it ends, so the way back only counts
+  // once every stop is passed and you're back there now.
+  const back = stops.at(-1)?.home ? stops.length - 1 : stops.length;
+  const here = points.at(-1);
+  const isBack = back < stops.length && !!here && haversineDistance(here, stops[back]) <= PASSED_M;
+  for (let i = back - 1; i >= 0; i--) {
     const road = stops[i].roadId ? getRoad(stops[i].roadId) : null;
     const targets = [endOfStop(stops[i]), ...(road ? roadGuidePoints(road, 1) : [])].filter(Boolean);
-    if (points.some((p) => targets.some((t) => haversineDistance(p, t) <= PASSED_M))) return i + 1;
+    if (points.some((p) => targets.some((t) => haversineDistance(p, t) <= PASSED_M))) {
+      return i === back - 1 && isBack ? stops.length : i + 1;
+    }
   }
-  return 0;
+  return back === 0 && isBack ? stops.length : 0;
 }
 
 /** "Fort Augustus", "Fort Augustus and Eilean Donan", "A, B and C". */
@@ -366,6 +408,7 @@ export function planHandover(plan, index, { here, app, underway = false, passed 
       ...roads,
     ];
     if (endsOnRoad) summary = parts.length ? `${listed(parts)}, ending on ${lastRoad}` : `Along ${lastRoad}`;
+    else if (drive.stops.at(-1)?.home) summary = parts.length ? `${listed(parts)}, then back to the start` : 'Straight back to the start';
     else summary = parts.length ? `${listed(parts)}, to ${finishName}` : `Straight to ${finishName}`;
   }
   return {

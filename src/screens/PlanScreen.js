@@ -31,6 +31,7 @@ import {
   movePlanStop,
   renamePlan,
   setPlanDriveStart,
+  setPlanRoundTrip,
   setPlanStartDate,
 } from '../storage/planStorage';
 import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
@@ -42,18 +43,19 @@ import {
   driveMarkers,
   driveReach,
   driveStart,
-  fromHere,
+  mapPlanOf,
   planKicker,
   planHandover,
   planOutline,
   roadStop,
   stopCounts,
+  withWayBack,
 } from '../utils/plans';
 
 /**
  * A plan: its map, the Drive tabs (+ adds one), and the picked drive as a
- * timeline. Stops are added and reordered here; the menu edits the name and
- * date, or deletes a drive or the plan. Params: `id`.
+ * timeline. Stops are added and reordered here; the menu edits the name,
+ * date and one way or round trip, or deletes a drive or the plan. Params: `id`.
  */
 export default function PlanScreen() {
   const { id } = useLocalSearchParams();
@@ -62,7 +64,7 @@ export default function PlanScreen() {
   const styles = useStyles(makeStyles);
   const [plan, setPlan] = useState(null);
   const [picked, setPicked] = useState(0);
-  // 'options' | 'edit' | 'road' | 'start' | 'vehicle' | 'price' | 'go' | 'nav' | { stop }
+  // 'options' | 'edit' | 'road' | 'start' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop }
   const [menu, setMenu] = useState(null);
   const { here } = useHere();
 
@@ -84,8 +86,9 @@ export default function PlanScreen() {
   );
 
   const colorOf = useCallback((i) => dayColorFor(c, i + 1), [c]);
-  // On the map, a Drive 1 with no start runs from where the phone is.
-  const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
+  // On the map, a Drive 1 with no start runs from where it set off or where the
+  // phone is, and a round trip comes back there.
+  const mapPlan = useMemo(() => (plan ? mapPlanOf(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const routes = usePlanRoutes(mapPlan, picked);
   const { units, prices, setPrice, navApp } = useSettings();
@@ -102,19 +105,24 @@ export default function PlanScreen() {
   }
 
   const drive = plan.drives[picked];
+  // The plan with a round trip's way back (its last drive's final stop, id 'home').
+  const wayPlan = withWayBack(plan, here);
+  const wayStops = mapPlan.drives[picked].stops;
   const start = driveStart(plan, picked);
   const pickedCoords = outline[picked]?.coordinates ?? [];
-  const finish = drive.stops.length ? driveReach(plan, picked) : null;
+  const finish = wayStops.length ? driveReach(wayPlan, picked) : null;
   const { stops } = stopCounts([drive]);
   const act = (fn) => () => {
     setMenu(null);
     fn().then(reload).catch((err) => console.warn('[plan] change failed', err));
   };
 
-  const addDrive = act(async () => {
-    await addPlanDrive(plan.id);
-    setPicked(plan.drives.length);
-  });
+  // The new drive is picked once the plan has it, or the screen reads a drive that isn't there yet.
+  const addDrive = () =>
+    addPlanDrive(plan.id)
+      .then(reload)
+      .then(() => setPicked(plan.drives.length))
+      .catch((err) => console.warn('[plan] add drive failed', err));
   const pickPlace = (mode) => {
     setMenu(null);
     router.push({ pathname: '/plans/add-stop', params: { plan: plan.id, drive: picked, mode } });
@@ -156,9 +164,11 @@ export default function PlanScreen() {
   // A copied ready-made route can't be changed for now: its drives and stops are as they came.
   const locked = !!plan.routeId;
   // "Fort William → Applecross"; Drive 1 with no start runs from wherever you are.
-  const routeName = finish ? `${start?.name ?? 'Your location'} → ${finish.name ?? 'Dropped pin'}` : null;
+  const startName = start?.name ?? 'Your location';
+  let routeName = finish ? `${startName} → ${finish.name ?? 'Dropped pin'}` : null;
+  if (finish?.home && picked === 0) routeName = `Round trip from ${startName}`;
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
-  const handover = drive.stops.length ? planHandover(plan, picked, { here, app: navApp }) : null;
+  const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
 
   const markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
 
@@ -196,7 +206,7 @@ export default function PlanScreen() {
   const legTexts = {};
   if (status === 'done') {
     route.legs.forEach((leg, k) => {
-      const stop = drive.stops[legStops[k]];
+      const stop = wayStops[legStops[k]];
       if (stop) legTexts[stop.id] = `${miles(leg.metres)} · ${time(leg.seconds)}`;
     });
   }
@@ -234,7 +244,7 @@ export default function PlanScreen() {
         <Button
           label={`Start drive ${picked + 1}`}
           icon="play_arrow"
-          disabled={!drive.stops.length}
+          disabled={!wayStops.length}
           onPress={() => setMenu('go')}
         />
       }
@@ -260,7 +270,7 @@ export default function PlanScreen() {
       <ActionSheet
         visible={menu === 'options'}
         actions={[
-          { icon: 'edit', label: 'Edit name and date', onPress: () => setMenu('edit') },
+          { icon: 'edit', label: 'Edit name, date and route', onPress: () => setMenu('edit') },
           ...(plan.drives.length > 1 && !locked
             ? [{ icon: 'delete', label: 'Delete this drive', style: 'destructive', onPress: confirmDeleteDrive }]
             : []),
@@ -271,10 +281,11 @@ export default function PlanScreen() {
       <PlanSheet
         visible={menu === 'edit'}
         plan={plan}
-        onSave={({ name, startDate }) =>
+        onSave={({ name, startDate, roundTrip }) =>
           act(async () => {
             await renamePlan(plan.id, name);
             await setPlanStartDate(plan.id, startDate);
+            await setPlanRoundTrip(plan.id, roundTrip);
           })()
         }
         onClose={() => setMenu(null)}
@@ -335,6 +346,19 @@ export default function PlanScreen() {
             detail: picked === 0 ? 'Pick a place, or drop a pin' : 'After a ferry, train or hire car',
             selected: !!drive.start,
             onPress: () => pickPlace('start'),
+          },
+        ]}
+        onClose={() => setMenu(null)}
+      />
+      <ActionSheet
+        visible={menu === 'back'}
+        message="A round trip ends back where Drive 1 starts"
+        actions={[
+          {
+            icon: 'arrow_forward',
+            label: 'Make it one way',
+            detail: `Drive ${plan.drives.length} ends at its last stop`,
+            onPress: act(() => setPlanRoundTrip(plan.id, false)),
           },
         ]}
         onClose={() => setMenu(null)}
@@ -417,9 +441,11 @@ export default function PlanScreen() {
 
       <PlanTimeline
         legTexts={legTexts}
-        drive={drive}
+        drive={{ ...drive, stops: wayStops }}
         index={picked}
         start={start}
+        roundTrip={plan.roundTrip}
+        onBackPress={locked ? undefined : () => setMenu('back')}
         color={colorOf(picked)}
         onStopPress={(s) => setMenu({ stop: s })}
         onStartPress={locked ? undefined : () => setMenu('start')}

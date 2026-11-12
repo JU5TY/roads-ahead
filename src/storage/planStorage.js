@@ -24,6 +24,7 @@ function rowToPlan(row, driveRows, stopRows) {
     name: row.name,
     startDate: row.start_date, // 'YYYY-MM-DD', or null for Someday
     routeId: row.route_id,
+    roundTrip: row.round_trip === 1,
     createdAt: row.created_at,
     drives: driveRows
       .filter((d) => d.plan_id === row.id)
@@ -60,7 +61,17 @@ export async function getPlan(planId) {
       planId
     ),
   ]);
-  return rowToPlan(row, drives, stops);
+  const plan = rowToPlan(row, drives, stops);
+  // Where Drive 1 was recorded setting off, for a round trip's way back (utils/plans.js withWayBack).
+  const first = drives[0]
+    ? await db.getFirstAsync(
+        `SELECT p.latitude, p.longitude FROM drives d JOIN points p ON p.drive_id = d.id
+         WHERE d.plan_drive_id = ? ORDER BY d.started_at, p.timestamp LIMIT 1`,
+        drives[0].id
+      )
+    : null;
+  plan.setOff = first ? { latitude: first.latitude, longitude: first.longitude } : null;
+  return plan;
 }
 
 async function insertStop(db, planDriveId, position, stop) {
@@ -79,19 +90,20 @@ async function insertStop(db, planDriveId, position, stop) {
 }
 
 /**
- * Save a new plan: { name, startDate?, routeId?, drives?: [{ start?, stops? }] }
+ * Save a new plan: { name, startDate?, routeId?, roundTrip?, drives?: [{ start?, stops? }] }
  * (a ready-made route's copy has its drives; a new plan starts with one empty
  * drive). Returns its id.
  */
-export async function createPlan({ name, startDate = null, routeId = null, drives = [{}] }) {
+export async function createPlan({ name, startDate = null, routeId = null, roundTrip = false, drives = [{}] }) {
   const db = await getDb();
   let planId;
   await db.withTransactionAsync(async () => {
     const { lastInsertRowId } = await db.runAsync(
-      'INSERT INTO plans (name, start_date, route_id, created_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO plans (name, start_date, route_id, round_trip, created_at) VALUES (?, ?, ?, ?, ?)',
       name,
       startDate,
       routeId,
+      roundTrip ? 1 : 0,
       Date.now()
     );
     planId = lastInsertRowId;
@@ -119,6 +131,12 @@ export async function renamePlan(planId, name) {
 export async function setPlanStartDate(planId, startDate) {
   const db = await getDb();
   await db.runAsync('UPDATE plans SET start_date = ? WHERE id = ?', startDate, planId);
+}
+
+/** One way, or a round trip (the last drive ends back where Drive 1 starts). */
+export async function setPlanRoundTrip(planId, roundTrip) {
+  const db = await getDb();
+  await db.runAsync('UPDATE plans SET round_trip = ? WHERE id = ?', roundTrip ? 1 : 0, planId);
 }
 
 /** Delete a plan with its drives and stops. Recorded drives keep their trips, unlinked. */

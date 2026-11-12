@@ -22,7 +22,7 @@ import {
   driveMarkers,
   driveReach,
   driveStart,
-  fromHere,
+  mapPlanOf,
   planOutline,
   roadStop,
   roadsNear,
@@ -99,8 +99,8 @@ export default function AddStopScreen() {
       .catch((err) => console.warn('[plan] load failed', err));
   }, [planId]);
 
-  // On the map, a Drive 1 with no start runs from where the phone is.
-  const mapPlan = useMemo(() => (plan ? fromHere(plan, here) : null), [plan, here]);
+  // The map as the plan's: Drive 1 from where it set off or the phone, a round trip's way back.
+  const mapPlan = useMemo(() => (plan ? mapPlanOf(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const nothingYet = plan != null && outline.every((d) => d.coordinates.length === 0);
   const lines = useSavedLines(mapPlan);

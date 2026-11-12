@@ -146,9 +146,9 @@ export default function PastTripsScreen() {
     [planned, plans, trips]
   );
 
-  const plan = async ({ name, startDate }) => {
+  const plan = async ({ name, startDate, roundTrip }) => {
     setPlanning(false);
-    const id = await createPlan({ name, startDate });
+    const id = await createPlan({ name, startDate, roundTrip });
     router.push(`/plans/${id}`);
   };
 

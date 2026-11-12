@@ -5,6 +5,7 @@ import {
   dateOf,
   drivePoints,
   driveRoute,
+  driveMarkers,
   driveStart,
   fromHere,
   groupPlans,
@@ -16,6 +17,7 @@ import {
   roadsNear,
   stopName,
   stopsPassed,
+  withWayBack,
 } from '../plans';
 
 const bealach = getRoad('bealach-na-ba');
@@ -346,5 +348,60 @@ describe('planProgress', () => {
     const done = planProgress(drive, 0, [near(applecross)]);
     expect(done).toMatchObject({ finished: true, next: null, then: null });
     expect(stopName(done.at)).toBe('Applecross');
+  });
+});
+
+describe('withWayBack', () => {
+  const home = place('Home', 56.5, -4.0);
+  const near = (p) => ({ latitude: p.latitude + 0.002, longitude: p.longitude });
+  const loop = (...drives) => ({ ...plan(...drives), roundTrip: true });
+
+  it('leaves a one way plan as it is', () => {
+    const p = plan({ start: home, stops: [fortAugustus] });
+    expect(withWayBack(p, fortWilliam)).toBe(p);
+  });
+
+  it("ends the last drive back at Drive 1's start", () => {
+    const p = withWayBack(loop({ start: home, stops: [fortAugustus] }, { stops: [applecross] }), fortWilliam);
+    expect(p.drives[0].stops).toHaveLength(1);
+    expect(p.drives[1].stops.at(-1)).toMatchObject({ home: true, name: 'Home', latitude: 56.5, source: 'pin' });
+  });
+
+  it('goes back to where Drive 1 set off, else where the phone is', () => {
+    const setOff = { latitude: 55.0, longitude: -3.0 };
+    expect(withWayBack({ ...loop({ stops: [fortAugustus] }), setOff }, fortWilliam).drives[0].stops[1]).toMatchObject({
+      name: 'Where you set off',
+      latitude: 55.0,
+    });
+    expect(withWayBack(loop({ stops: [fortAugustus] }), fortWilliam).drives[0].stops[1].latitude).toBe(56.8198);
+    expect(withWayBack(loop({ stops: [fortAugustus] }), null).drives[0].stops).toHaveLength(1);
+  });
+
+  it('needs a stop on a lone drive, but a later drive can just go home', () => {
+    expect(withWayBack(loop({ stops: [] }), fortWilliam).drives[0].stops).toHaveLength(0);
+    expect(withWayBack(loop({ stops: [fortAugustus] }, { stops: [] }), fortWilliam).drives[1].stops).toHaveLength(1);
+  });
+
+  it('routes and hands over the way back as the finish', () => {
+    const p = withWayBack(loop({ start: home, stops: [fortAugustus, eileanDonan] }), null);
+    const { points, legStops } = driveRoute(p, 0);
+    expect(points.at(-1)).toMatchObject({ latitude: 56.5, longitude: -4.0 });
+    expect(legStops).toEqual([0, 1, 2]);
+    const h = planHandover(p, 0, { here: home, app: 'google' });
+    expect(h.links[0]).toContain('destination=56.500000%2C-4.000000');
+    expect(h.summary).toBe('2 stops, then back to the start');
+  });
+
+  it('draws one dot where a lone drive starts and ends', () => {
+    const p = withWayBack(loop({ start: home, stops: [fortAugustus] }), null);
+    expect(driveMarkers(p, 0).map((m) => m.kind)).toEqual(['stop', 'finish']);
+  });
+
+  it("isn't back until every stop is passed and you're there", () => {
+    const p = withWayBack(loop({ start: home, stops: [fortAugustus, eileanDonan] }), null);
+    expect(stopsPassed(p, 0, [near(home)])).toBe(0);
+    expect(stopsPassed(p, 0, [near(home), near(fortAugustus), near(eileanDonan)])).toBe(2);
+    expect(stopsPassed(p, 0, [near(home), near(fortAugustus), near(eileanDonan), near(home)])).toBe(3);
+    expect(planProgress(p, 0, [near(home), near(fortAugustus), near(eileanDonan)]).next.home).toBe(true);
   });
 });

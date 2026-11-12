@@ -158,6 +158,10 @@ const MIGRATIONS = [
     ALTER TABLE vehicles ADD COLUMN mpg REAL;
     ALTER TABLE vehicles ADD COLUMN miles_per_kwh REAL;
   `,
+  // 10: a plan can be a round trip: its last drive ends back where Drive 1 starts.
+  `
+    ALTER TABLE plans ADD COLUMN round_trip INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 /** The schema this build writes (PRAGMA user_version once migrated); a newer backup can't be restored. */

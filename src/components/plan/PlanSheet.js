@@ -8,6 +8,7 @@ import BottomSheet from '../ui/BottomSheet';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 import MonthCalendar from '../ui/MonthCalendar';
+import SegmentedSwitch from '../ui/SegmentedSwitch';
 
 // Mounted only while open, so it starts from the saved values each time.
 function PlanForm({ plan, onSave }) {
@@ -16,6 +17,9 @@ function PlanForm({ plan, onSave }) {
   const [name, setName] = useState(plan?.name ?? '');
   const [date, setDate] = useState(plan?.startDate ? dateOf(plan.startDate) : null);
   const [picking, setPicking] = useState(false);
+  const [roundTrip, setRoundTrip] = useState(plan?.roundTrip ?? false);
+  // A copied ready-made route stays as it came.
+  const locked = !!plan?.routeId;
   const trimmed = name.trim();
 
   return (
@@ -65,10 +69,28 @@ function PlanForm({ plan, onSave }) {
         />
       ) : null}
 
+      {locked ? null : (
+        <>
+          <Text style={styles.label}>Route</Text>
+          <SegmentedSwitch
+            options={[
+              ['oneWay', 'One way'],
+              ['roundTrip', 'Round trip'],
+            ]}
+            value={roundTrip ? 'roundTrip' : 'oneWay'}
+            onChange={(v) => setRoundTrip(v === 'roundTrip')}
+            stretch
+          />
+          <Text style={styles.hint}>
+            {roundTrip ? 'The last drive ends back where Drive 1 starts' : 'The last drive ends at its last stop'}
+          </Text>
+        </>
+      )}
+
       <Button
         label={plan ? 'Save' : 'Plan it'}
         disabled={!trimmed}
-        onPress={() => onSave({ name: trimmed, startDate: date ? dateKey(date) : null })}
+        onPress={() => onSave({ name: trimmed, startDate: date ? dateKey(date) : null, roundTrip })}
         style={styles.save}
       />
     </View>
@@ -76,8 +98,9 @@ function PlanForm({ plan, onSave }) {
 }
 
 /**
- * Name a plan and, if you like, its start date: a new plan ("Plan a trip"), or
- * editing one from its menu. With no date it waits under Someday.
+ * Name a plan and, if you like, its start date, and whether it's one way or a
+ * round trip: a new plan ("Plan a trip"), or editing one from its menu. With
+ * no date it waits under Someday.
  */
 export default function PlanSheet({ visible, plan, onSave, onClose }) {
   return (
@@ -90,6 +113,7 @@ export default function PlanSheet({ visible, plan, onSave, onClose }) {
 const makeStyles = (c) => ({
   sheet: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   label: { ...type.label, color: c.textMuted, marginTop: spacing.sm },
+  hint: { ...type.small, color: c.textMuted },
   input: {
     ...type.bodyLarge,
     backgroundColor: c.card,

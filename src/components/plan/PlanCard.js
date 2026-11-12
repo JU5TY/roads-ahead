@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
 import { formatDateRange } from '../../utils/format';
-import { planKicker, planOutline, stopCounts } from '../../utils/plans';
+import { planKicker, planOutline, stopCounts, withWayBack } from '../../utils/plans';
 import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
 
@@ -21,7 +21,7 @@ export default function PlanCard({ plan, done = false, drivenDates = null }) {
   const { stops, roads } = stopCounts(plan.drives);
   const segments = useMemo(
     () =>
-      planOutline(plan).map(({ index, coordinates }) => ({
+      planOutline(withWayBack(plan, null)).map(({ index, coordinates }) => ({
         key: `drive-${index}`,
         coordinates,
         color: c.accent,

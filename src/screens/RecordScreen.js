@@ -25,7 +25,7 @@ import { getPlanOfDrive, getPlanTripId } from '../storage/planStorage';
 import { getContinuableTrip, getTrip } from '../storage/tripStorage';
 import { liveMetrics } from '../utils/geoMath';
 import { NAV_APPS, NAV_APP_HOME, takesWholeDrive } from '../utils/navLinks';
-import { planHandover, planProgress, stopsPassed } from '../utils/plans';
+import { planHandover, planProgress, stopsPassed, withWayBack } from '../utils/plans';
 import { CONTINUE_WINDOW_MS, driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const REFRESH_MS = 1000;
@@ -255,9 +255,12 @@ export default function RecordScreen() {
         showMessage('Already recording', 'Stop the drive you’re recording, then start this one.');
         return;
       }
-      const { plan, index } = found;
+      const { index } = found;
+      const here = await lastPosition();
+      // A round trip that hasn't set off yet comes back to here.
+      const plan = withWayBack(found.plan, here);
       const tripId = await getPlanTripId(plan.id);
-      const { links, appName } = planHandover(plan, index, { here: await lastPosition(), app: navApp });
+      const { links, appName } = planHandover(plan, index, { here, app: navApp });
       await startRecording(tripId, {
         tripName: tripId ? null : plan.name,
         planDriveId: plan.drives[index].id,
@@ -276,7 +279,8 @@ export default function RecordScreen() {
     try {
       const found = drive?.planDriveId ? await getPlanOfDrive(drive.planDriveId) : null;
       if (!found) return home();
-      const { plan, index } = found;
+      const plan = withWayBack(found.plan, null);
+      const { index } = found;
       const passed = stopsPassed(plan, index, await getDrivePoints(drive.id));
       const { links, appName } = planHandover(plan, index, { here: null, app: navApp, underway: true, passed });
       return links.length ? openNav(links[0], appName) : home();
@@ -292,7 +296,9 @@ export default function RecordScreen() {
   let planCard = null;
   const routePoints = routeFor && routeFor.driveId === activeId ? routeFor.points : [];
   if (planOf && planOf.driveId === activeId && routePoints.length) {
-    const { plan, index } = planOf;
+    const { index } = planOf;
+    // Loaded as the drive began, so a round trip's first drive sets off from its first point.
+    const plan = withWayBack(planOf.plan, routePoints[0]);
     const whole = planHandover(plan, index, { here: null, app: navApp });
     planCard = (
       <PlanCard

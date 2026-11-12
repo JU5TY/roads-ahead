@@ -9,11 +9,22 @@ import Icon from '../ui/Icon';
 
 const RAIL_W = 22;
 
-/** Green start dot, a ring in the drive's colour for a stop, red finish dot (as on a trip). */
+/**
+ * Green start dot, a ring in the drive's colour for a stop, red finish dot (as
+ * on a trip). A round trip's start and finish, the same place, are half of each.
+ */
 function Marker({ kind, color }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   if (kind === 'stop') return <View style={[styles.ring, { borderColor: color }]} />;
+  if (kind === 'loop') {
+    return (
+      <View style={[styles.dot, styles.split]}>
+        <View style={[styles.half, { backgroundColor: c.start }]} />
+        <View style={[styles.half, { backgroundColor: c.finish }]} />
+      </View>
+    );
+  }
   return <View style={[styles.dot, { backgroundColor: kind === 'start' ? c.start : c.finish }]} />;
 }
 
@@ -120,7 +131,9 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * `start` is driveStart(); `legTexts` ("33 mi · 45m") are by the id of the
  * stop each leg arrives at; onStopPress(stop), onStartPress(),
  * onMove(stop, position). `locked` (a copied ready-made route) leaves out the
- * handles and taps: nothing can be changed.
+ * handles and taps: nothing can be changed. A round trip (`roundTrip`) starts
+ * Drive 1 on the half-green, half-red dot, and its way back (the last drive's
+ * final stop, `home`, from withWayBack) ends on it: onBackPress().
  */
 export default function PlanTimeline({
   drive,
@@ -131,6 +144,8 @@ export default function PlanTimeline({
   onStopPress,
   onStartPress,
   onMove,
+  onBackPress,
+  roundTrip = false,
   locked = false,
 }) {
   const { c } = useTheme();
@@ -140,7 +155,10 @@ export default function PlanTimeline({
   const [drag, setDrag] = useState(null); // { from, to, y0 } while a stop is dragged
   // A dropped stop stays where it was dropped until the saved order comes back.
   const [dropped, setDropped] = useState(null); // { before, order }
-  const stops = dropped?.before === drive.stops ? dropped.order : drive.stops;
+  // The way back stays at the end: it isn't dragged, and nothing is dragged past it.
+  const home = drive.stops.at(-1)?.home ? drive.stops.at(-1) : null;
+  const placed = home ? drive.stops.slice(0, -1) : drive.stops;
+  const stops = dropped?.before === drive.stops ? dropped.order : placed;
   // Distances are left off while a stop moves, and until the moved drive is routed again.
   const texts = drag || dropped?.before === drive.stops ? {} : legTexts;
 
@@ -193,14 +211,10 @@ export default function PlanTimeline({
   };
 
   const startName = start?.name ?? 'Your location';
-  const startSubtitle = start?.linked
-    ? `End of drive ${index}`
-    : start
-      ? 'Start'
-      : 'Wherever you are when you start';
+  const startSubtitle = start?.linked ? `End of drive ${index}` : 'Start';
   const startRow = (
     <EventRow
-      kind="start"
+      kind={roundTrip && index === 0 ? 'loop' : 'start'}
       name={startName}
       subtitle={startSubtitle}
       linked={start?.linked}
@@ -208,7 +222,7 @@ export default function PlanTimeline({
     />
   );
 
-  if (stops.length === 0) {
+  if (stops.length === 0 && !home) {
     return (
       <View>
         {startRow}
@@ -225,7 +239,7 @@ export default function PlanTimeline({
     const road = stop.roadId ? getRoad(stop.roadId) : null;
     if (road) {
       // A road shows the leg to the place after it (or to its own end, last).
-      const next = stops[i + 1];
+      const next = stops[i + 1] ?? home;
       const text = next && !next.roadId ? texts[next.id] : texts[stop.id];
       return (
         <LegRow
@@ -238,7 +252,7 @@ export default function PlanTimeline({
         />
       );
     }
-    const finish = i === stops.length - 1 && i === lastPlace;
+    const finish = !home && i === stops.length - 1 && i === lastPlace;
     return (
       <>
         {/* A leg leads into each place, unless an Iconic Road's leg already did. */}
@@ -258,7 +272,7 @@ export default function PlanTimeline({
 
   // A drive that ends on an Iconic Road finishes at its far end.
   const last = stops.at(-1);
-  const lastRoad = last.roadId ? getRoad(last.roadId) : null;
+  const lastRoad = last?.roadId ? getRoad(last.roadId) : null;
 
   return (
     <View>
@@ -278,7 +292,19 @@ export default function PlanTimeline({
           </Draggable>
         ))}
       </View>
-      {last.roadId ? (
+      {home ? (
+        <>
+          {/* An Iconic Road's leg already leads into it. */}
+          {last?.roadId ? null : <LegRow color={color} text={texts[home.id]} />}
+          <EventRow
+            kind="loop"
+            name={home.name}
+            subtitle="Back to the start"
+            linked
+            onPress={locked ? undefined : onBackPress}
+          />
+        </>
+      ) : last.roadId ? (
         <EventRow kind="finish" name={lastRoad ? `End of ${lastRoad.name}` : 'Finish'} subtitle="Finish" />
       ) : null}
     </View>
@@ -290,6 +316,8 @@ const makeStyles = (c) => ({
   leg: { flexDirection: 'row', alignItems: 'stretch', gap: 12, minHeight: 44 },
   rail: { width: RAIL_W, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8 },
+  split: { flexDirection: 'row', overflow: 'hidden' },
+  half: { flex: 1 },
   ring: { width: 16, height: 16, borderRadius: 8, borderWidth: 3, backgroundColor: c.background },
   bar: { width: 4, flex: 1, borderRadius: 2 },
   flex: { flex: 1, minWidth: 0 },
