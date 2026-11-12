@@ -216,6 +216,9 @@ export default function PlanTimeline({
       setDropped({ key, units: unitsOf(groups.map((g) => g.map((id) => byId.get(id)))) });
       onArrange(groups);
     }
+    // The lifted row is moved by `dy` outside React; back to 0 here, or once React
+    // swaps it for a plain 0 (which it thinks it already has) it stays where it was dropped.
+    dy.setValue(0);
     setDrag(null);
   };
   // On a stop's handle: the drag is the handle's from the first touch, not the page's scrolling.
