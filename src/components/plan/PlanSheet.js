@@ -99,7 +99,7 @@ function PlanForm({ plan, onSave }) {
 
 /**
  * Name a plan and, if you like, its start date, and whether it's one way or a
- * round trip: a new plan ("Plan a trip"), or editing one from its menu. With
+ * round trip: a new plan (Plan trip), or editing one from its menu. With
  * no date it waits under Someday.
  */
 export default function PlanSheet({ visible, plan, onSave, onClose }) {

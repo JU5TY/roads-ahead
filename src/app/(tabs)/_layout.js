@@ -2,10 +2,11 @@ import { Tabs, router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import FloatingButton from '../../components/ui/FloatingButton';
 import Icon from '../../components/ui/Icon';
 import { useActiveDrive } from '../../hooks/useActiveDrive';
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { floating, pressedOpacity, type } from '../../theme';
+import { floating, type } from '../../theme';
 
 const ICONS = { index: 'home', trips: 'route', settings: 'person' };
 const NAV_HEIGHT = 64;
@@ -60,32 +61,26 @@ function TabBar({ state, descriptors, emitter, navigateToTab, insets }) {
  */
 function RecordPill() {
   const { c } = useTheme();
-  const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { view } = useGlobalSearchParams();
   const { drive } = useActiveDrive();
 
   if (pathname !== '/' && pathname !== '/trips') return null;
-  // Trips' Planned view has Plan a trip in this spot.
+  // Trips' Planned view has Plan trip in this spot.
   if (pathname === '/trips' && view === 'planned') return null;
   const label = drive ? null : 'Record';
 
   return (
-    <Pressable
-      onPress={() => router.navigate('/record')}
-      accessibilityRole="button"
+    <FloatingButton
+      icon="radio_button_checked"
+      filled
+      iconColor={c.stop}
+      label={label}
       accessibilityLabel={label ?? 'Open recording'}
-      style={({ pressed }) => [
-        styles.pill,
-        !label && styles.pillRound,
-        { bottom: NAV_HEIGHT + insets.bottom + floating.recordPill.lift },
-        pressed && styles.pressed,
-      ]}
-    >
-      <Icon name="radio_button_checked" filled size={26} color={c.stop} />
-      {label ? <Text style={[type.button, styles.pillText]}>{label}</Text> : null}
-    </Pressable>
+      onPress={() => router.navigate('/record')}
+      style={{ bottom: NAV_HEIGHT + insets.bottom + floating.recordPill.lift }}
+    />
   );
 }
 
@@ -113,24 +108,4 @@ const makeStyles = (c) => ({
   row: { flexDirection: 'row', height: NAV_HEIGHT, alignItems: 'center' },
   tab: { flex: 1, alignItems: 'center', gap: 2 },
   iconBox: { width: 64, height: 28, alignItems: 'center', justifyContent: 'center' },
-  pill: {
-    position: 'absolute',
-    right: 16,
-    height: floating.recordPill.height,
-    borderRadius: floating.recordPill.height / 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingLeft: 16,
-    paddingRight: 22,
-    backgroundColor: c.floating,
-    shadowColor: c.shadow,
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  pillRound: { width: 56, paddingLeft: 0, paddingRight: 0, justifyContent: 'center' },
-  pillText: { color: c.text },
-  pressed: { opacity: pressedOpacity },
 });

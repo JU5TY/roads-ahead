@@ -9,22 +9,11 @@ import Icon from '../ui/Icon';
 
 const RAIL_W = 22;
 
-/**
- * Green start dot, a ring in the drive's colour for a stop, red finish dot (as
- * on a trip). A round trip's start and finish, the same place, are half of each.
- */
+/** Green start dot, a ring in the drive's colour for a stop, red finish dot (as on a trip). */
 function Marker({ kind, color }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   if (kind === 'stop') return <View style={[styles.ring, { borderColor: color }]} />;
-  if (kind === 'loop') {
-    return (
-      <View style={[styles.dot, styles.split]}>
-        <View style={[styles.half, { backgroundColor: c.start }]} />
-        <View style={[styles.half, { backgroundColor: c.finish }]} />
-      </View>
-    );
-  }
   return <View style={[styles.dot, { backgroundColor: kind === 'start' ? c.start : c.finish }]} />;
 }
 
@@ -131,9 +120,9 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * `start` is driveStart(); `legTexts` ("33 mi · 45m") are by the id of the
  * stop each leg arrives at; onStopPress(stop), onStartPress(),
  * onMove(stop, position). `locked` (a copied ready-made route) leaves out the
- * handles and taps: nothing can be changed. A round trip (`roundTrip`) starts
- * Drive 1 on the half-green, half-red dot, and its way back (the last drive's
- * final stop, `home`, from withWayBack) ends on it: onBackPress().
+ * handles and taps: nothing can be changed. A round trip's way back (the last
+ * drive's final stop, `home`, from withWayBack) is its finish: onBackPress(). `numbered`
+ * (the All tab, as a trip's days) starts the drive on "Drive 2 · Start".
  */
 export default function PlanTimeline({
   drive,
@@ -145,7 +134,7 @@ export default function PlanTimeline({
   onStartPress,
   onMove,
   onBackPress,
-  roundTrip = false,
+  numbered = false,
   locked = false,
 }) {
   const { c } = useTheme();
@@ -211,13 +200,14 @@ export default function PlanTimeline({
   };
 
   const startName = start?.name ?? 'Your location';
-  const startSubtitle = start?.linked ? `End of drive ${index}` : 'Start';
+  let startSubtitle = start?.linked ? `End of drive ${index}` : 'Start';
+  if (numbered) startSubtitle = `Drive ${index + 1} · Start`;
   const startRow = (
     <EventRow
-      kind={roundTrip && index === 0 ? 'loop' : 'start'}
+      kind="start"
       name={startName}
       subtitle={startSubtitle}
-      linked={start?.linked}
+      linked={start?.linked && !numbered}
       onChange={onStartPress}
     />
   );
@@ -297,7 +287,7 @@ export default function PlanTimeline({
           {/* An Iconic Road's leg already leads into it. */}
           {last?.roadId ? null : <LegRow color={color} text={texts[home.id]} />}
           <EventRow
-            kind="loop"
+            kind="finish"
             name={home.name}
             subtitle="Back to the start"
             linked
@@ -316,8 +306,6 @@ const makeStyles = (c) => ({
   leg: { flexDirection: 'row', alignItems: 'stretch', gap: 12, minHeight: 44 },
   rail: { width: RAIL_W, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8 },
-  split: { flexDirection: 'row', overflow: 'hidden' },
-  half: { flex: 1 },
   ring: { width: 16, height: 16, borderRadius: 8, borderWidth: 3, backgroundColor: c.background },
   bar: { width: 4, flex: 1, borderRadius: 2 },
   flex: { flex: 1, minWidth: 0 },

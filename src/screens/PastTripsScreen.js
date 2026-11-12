@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import NoTrips from '../components/NoTrips';
@@ -9,7 +9,7 @@ import PlanSheet from '../components/plan/PlanSheet';
 import RecordingBar from '../components/RecordingBar';
 import TripCard from '../components/TripCard';
 import BannerCard from '../components/ui/BannerCard';
-import Icon from '../components/ui/Icon';
+import FloatingButton from '../components/ui/FloatingButton';
 import SectionHeader from '../components/ui/SectionHeader';
 import SegmentedSwitch from '../components/ui/SegmentedSwitch';
 import { useSettings } from '../context/SettingsContext';
@@ -18,7 +18,7 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
 import { createPlan, drivenPlanDates, drivenPlanDriveIds, listPlans } from '../storage/planStorage';
 import { listTrips } from '../storage/tripStorage';
-import { bottomSpace, floating, pressedOpacity, spacing, type } from '../theme';
+import { bottomSpace, floating, spacing, type } from '../theme';
 import { distanceParts } from '../utils/format';
 import { groupPlans } from '../utils/plans';
 import { computeTotals } from '../utils/tripSummary';
@@ -98,7 +98,7 @@ export default function PastTripsScreen() {
   const [trips, setTrips] = useState(null);
   const [plans, setPlans] = useState(null); // { list, driven, dates }
   const [planning, setPlanning] = useState(false);
-  // Driven or Planned, kept in the route so the Record pill can step aside for Plan a trip.
+  // Driven or Planned, kept in the route so the Record pill can step aside for Plan trip.
   const planned = useLocalSearchParams().view === 'planned';
   const showView = (view) => router.setParams({ view: view === 'planned' ? 'planned' : undefined });
 
@@ -221,14 +221,13 @@ export default function PastTripsScreen() {
         }
       />
       {planned ? (
-        <Pressable
+        <FloatingButton
+          icon="add"
+          iconColor={c.accent}
+          label="Plan trip"
           onPress={() => setPlanning(true)}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.planButton, pressed && styles.pressed]}
-        >
-          <Icon name="add" size={24} color={c.onAccentContainer} />
-          <Text style={[type.button, styles.planButtonText]}>Plan a trip</Text>
-        </Pressable>
+          style={styles.planButton}
+        />
       ) : null}
       <PlanSheet visible={planning} onSave={plan} onClose={() => setPlanning(false)} />
     </View>
@@ -251,24 +250,5 @@ const makeStyles = (c) => ({
   routes: { marginTop: 20 },
   noPlans: { alignItems: 'center', gap: spacing.sm, paddingTop: 96, paddingHorizontal: spacing.lg },
   // Where the Record pill sits on Driven, so the two never overlap.
-  planButton: {
-    position: 'absolute',
-    right: 16,
-    bottom: floating.recordPill.lift,
-    height: floating.recordPill.height,
-    borderRadius: floating.recordPill.height / 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingLeft: 16,
-    paddingRight: 22,
-    backgroundColor: c.accentContainer,
-    shadowColor: c.shadow,
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  planButtonText: { color: c.onAccentContainer },
-  pressed: { opacity: pressedOpacity },
+  planButton: { bottom: floating.recordPill.lift },
 });

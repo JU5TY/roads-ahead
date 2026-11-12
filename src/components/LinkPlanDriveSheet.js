@@ -51,7 +51,7 @@ export default function LinkPlanDriveSheet({ visible, drive, onLinked, onClose }
   return (
     <ActionSheet
       visible={visible}
-      message={rows && rows.length === 0 ? 'There are no plans yet. Plan a trip on the Planned tab.' : undefined}
+      message={rows && rows.length === 0 ? 'There are no plans yet. Tap Plan trip on the Planned tab.' : undefined}
       actions={(rows ?? []).map((r) => ({
         key: `plan-drive-${r.id}`,
         icon: 'route',

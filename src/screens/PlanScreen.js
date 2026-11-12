@@ -1,6 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
 import DetailLayout from '../components/detail/DetailLayout';
@@ -15,6 +16,7 @@ import VehicleSheet from '../components/VehicleSheet';
 import Button from '../components/ui/Button';
 import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
+import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
 import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
@@ -36,7 +38,7 @@ import {
   setPlanStartDate,
 } from '../storage/planStorage';
 import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
-import { dayColorFor, pressedOpacity, spacing, type } from '../theme';
+import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
@@ -70,6 +72,7 @@ export default function PlanScreen() {
   // 'options' | 'edit' | 'road' | 'start' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop }
   const [menu, setMenu] = useState(null);
   const { here } = useHere();
+  const insets = useSafeAreaInsets();
 
   const reload = useCallback(
     () =>
@@ -280,13 +283,19 @@ export default function PlanScreen() {
     <DetailLayout
       map={map}
       actions={[{ icon: 'more_vert', label: 'More options', onPress: () => setMenu('options') }]}
-      footer={
-        <Button
-          label={`Start drive ${picked + 1}`}
-          icon="play_arrow"
-          disabled={!wayStops.length}
-          onPress={() => setMenu('go')}
-        />
+      floating={
+        // Starts the picked drive (on All, the next one not yet driven), once it goes somewhere.
+        wayStops.length ? (
+          <FloatingButton
+            icon="play_arrow"
+            filled
+            iconColor={c.start}
+            label={`Drive ${picked + 1}`}
+            accessibilityLabel={`Start drive ${picked + 1}`}
+            onPress={() => setMenu('go')}
+            style={{ bottom: insets.bottom + floating.recordPill.lift }}
+          />
+        ) : null
       }
     >
       <StartDriveSheet
@@ -482,32 +491,23 @@ export default function PlanScreen() {
       </View>
 
       {all ? (
-        // Every drive's timeline in turn, to look at: tap one to change it on its own tab.
+        // One timeline for the whole trip, as a trip's All: each drive in its
+        // colour from its "Drive 2 · Start". Tap a drive to change it on its own tab.
         plan.drives.map((d, i) => (
           <Pressable
             key={d.id}
             onPress={() => setTab(i)}
             accessibilityRole="button"
-            accessibilityLabel={`Drive ${i + 1}, open to change it`}
-            style={({ pressed }) => [styles.allDrive, pressed && styles.pressed]}
+            accessibilityHint={`Opens Drive ${i + 1} to change it`}
+            style={({ pressed }) => pressed && styles.pressed}
           >
-            <View style={styles.allHeading}>
-              <View style={[styles.allDot, { backgroundColor: colorOf(i) }]} />
-              <View style={styles.flex}>
-                <Text style={[type.bodyStrong, styles.text]}>Drive {i + 1}</Text>
-                {summaryOf([routes.drives[i]]).text ? (
-                  <Text style={[type.small, styles.muted]}>{summaryOf([routes.drives[i]]).text}</Text>
-                ) : null}
-              </View>
-              <Icon name="chevron_right" size={22} color={c.textMuted} />
-            </View>
             <PlanTimeline
               legTexts={legTextsOf(i)}
               drive={{ ...d, stops: mapPlan.drives[i].stops }}
               index={i}
               start={driveStart(plan, i)}
-              roundTrip={plan.roundTrip}
               color={colorOf(i)}
+              numbered
               locked
             />
           </Pressable>
@@ -518,7 +518,6 @@ export default function PlanScreen() {
           drive={{ ...drive, stops: wayStops }}
           index={picked}
           start={start}
-          roundTrip={plan.roundTrip}
           onBackPress={locked ? undefined : () => setMenu('back')}
           color={colorOf(picked)}
           onStopPress={(s) => setMenu({ stop: s })}
@@ -563,10 +562,6 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   center: { alignItems: 'center', justifyContent: 'center' },
   noMap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: c.mapLand },
-  // All: each drive's heading over its timeline.
-  allDrive: { marginTop: spacing.md },
-  allHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
-  allDot: { width: 12, height: 12, borderRadius: 6, marginHorizontal: 5 },
   tabsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, marginRight: -spacing.md },
   tabsScroll: { flexGrow: 1, flexShrink: 1, marginLeft: -spacing.md },
   tabs: { gap: 8, paddingLeft: spacing.md },

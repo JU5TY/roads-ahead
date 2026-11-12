@@ -4,7 +4,7 @@ import { Animated, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStyles } from '../../hooks/useTheme';
-import { spacing } from '../../theme';
+import { bottomSpace, spacing } from '../../theme';
 import IconButton from '../ui/IconButton';
 
 export const MAP_HEIGHT = 400;
@@ -13,10 +13,11 @@ export const MAP_HEIGHT = 400;
  * Trip page: a full-width map under the status bar with a round back button
  * top left and round action buttons top right, and the content below it on a
  * panel that slides up over the map (the map scrolls at half speed, so it
- * seems to stay behind). Nothing floats over the content.
+ * seems to stay behind). Only a `floating` button (FloatingButton, placed by
+ * the screen) floats over the content, which leaves room for it at the end.
  * actions: [{ icon, label, onPress }], left to right; label is for screen readers.
  * `mapHeight` below the status bar: 400 on Trip, 380 on Day, 360 on a road.
- * `footer` is pinned under the content, outside the scroll (a plan's Start drive).
+ * `footer` is pinned under the content, outside the scroll (a ready-made route's Copy).
  */
 export default function DetailLayout({
   map,
@@ -24,6 +25,7 @@ export default function DetailLayout({
   actions = [],
   scrollRef,
   footer,
+  floating,
   children,
 }) {
   const insets = useSafeAreaInsets();
@@ -55,13 +57,19 @@ export default function DetailLayout({
         >
           {map}
         </Animated.View>
-        <View style={[styles.content, { paddingBottom: spacing.xl + (footer ? 0 : insets.bottom) }]}>
+        <View
+          style={[
+            styles.content,
+            { paddingBottom: (floating ? bottomSpace.recordPill : spacing.xl) + (footer ? 0 : insets.bottom) },
+          ]}
+        >
           {children}
         </View>
       </Animated.ScrollView>
       {footer ? (
         <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>{footer}</View>
       ) : null}
+      {floating}
       <IconButton
         icon="arrow_back"
         variant="floating"
