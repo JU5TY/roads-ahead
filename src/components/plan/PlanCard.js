@@ -10,7 +10,7 @@ import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
 
 /**
- * A plan on the Planned tab, like a Trips card: blue date line (grey with no
+ * A plan on the Planned tab, like a Trips card: blue date line (just the days with no
  * date), name, "23 stops" (or "Straight to Inverness"), an Iconic Roads chip, and the planned outline dotted
  * in the round thumbnail. `done` adds a "Driven 11–12 Oct 2026" chip, its
  * dates from `drivenDates` ({ from, to }). Tapping opens the plan.
@@ -38,7 +38,7 @@ export default function PlanCard({ plan, done = false, drivenDates = null }) {
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <View style={styles.text}>
-        <Text style={[type.caps, plan.startDate ? styles.kicker : styles.muted]} numberOfLines={1}>
+        <Text style={[type.caps, styles.kicker]} numberOfLines={1}>
           {planKicker(plan)}
         </Text>
         <Text style={[type.bodyStrong, styles.title]} numberOfLines={1}>

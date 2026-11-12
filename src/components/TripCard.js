@@ -28,8 +28,6 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
   const timed = trip.drives.filter((d) => !d.stats.timesHidden);
   const movingTimeMs = timed.reduce((sum, d) => sum + (d.stats.movingTimeMs ?? 0), 0);
   const large = variant === 'large';
-  const countryCount = new Set(trip.drives.flatMap((d) => (d.countries ?? []).map((v) => v.code)))
-    .size;
   const roadChip =
     roadCount > 0 ? (
       <View style={[styles.chip, styles.roadChip]}>
@@ -37,14 +35,6 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
         <Text style={[type.nav, styles.roadChipText]}>
           {roadCount} {roadCount === 1 ? 'Iconic Road' : 'Iconic Roads'}
         </Text>
-      </View>
-    ) : null;
-  // The Trips list also counts countries, from two up.
-  const countryChip =
-    !large && countryCount > 1 ? (
-      <View style={[styles.chip, styles.countryChip]}>
-        <Icon name="public" size={14} color={c.textMuted} />
-        <Text style={[type.nav, styles.muted]}>{countryCount} countries</Text>
       </View>
     ) : null;
 
@@ -74,17 +64,10 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
               <Text style={[type.body, styles.muted]} numberOfLines={1}>
                 {formatDistance(summary.distanceM, units, summary.distanceM < 100000 ? 1 : 0)}
                 {timed.length > 0 ? ` · ${formatDurationShort(movingTimeMs)}` : ''}
-                {/* One drive a day goes without saying; more shows it's a trip, not a drive. */}
-                {trip.drives.length > dayCount ? ` · ${trip.drives.length} drives` : ''}
               </Text>
               {large ? roadChip : null}
             </View>
-            {!large && (roadChip || countryChip) ? (
-              <View style={styles.chipBelow}>
-                {roadChip}
-                {countryChip}
-              </View>
-            ) : null}
+            {!large && roadChip ? <View style={styles.chipBelow}>{roadChip}</View> : null}
           </View>
           {large ? null : <RouteThumb segments={segments ?? []} />}
         </>
@@ -123,13 +106,6 @@ const makeStyles = (c) => ({
     backgroundColor: c.roadContainer,
   },
   roadChipText: { color: c.onRoadContainer },
-  countryChip: {
-    paddingVertical: 1,
-    paddingLeft: 5,
-    paddingRight: 7,
-    borderWidth: 1,
-    borderColor: c.outline,
-  },
   kicker: { color: c.accent },
   title: { color: c.text },
   muted: { color: c.textMuted },
