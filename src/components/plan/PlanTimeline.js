@@ -250,7 +250,9 @@ export default function PlanTimeline({
       onChange={locked || !onStartPress ? undefined : () => onStartPress(d.index)}
     />
   );
-  const noStops = (k) => <LegRow key={`none-${k}`} color={c.outline} text="No stops yet. Add where this day goes" />;
+  // A day with nowhere to go yet; a day going home (the way back) needs no stops.
+  const goesHome = (d) => d.last && !!home;
+  const noStops = (k) => <LegRow key={`none-${k}`} color={c.outline} text="Add where this day goes" />;
   // After a stay (or an empty day): the night, then the next day's start; on
   // through any days with no stops, to the next one that goes somewhere.
   const nightsAfter = (p, place) => {
@@ -258,7 +260,7 @@ export default function PlanTimeline({
     for (let q = p; q + 1 < days.length; q += 1) {
       const next = days[q + 1];
       rows.push(<OvernightRow key={`night-${next.index}`} place={place} />, startRow(next));
-      if (ownStops(next).length) break;
+      if (ownStops(next).length || goesHome(next)) break;
       rows.push(noStops(next.index));
       place = next.start?.name ?? 'Dropped pin';
     }
@@ -324,7 +326,9 @@ export default function PlanTimeline({
   return (
     <View>
       {startRow(first)}
-      {ownStops(first).length ? null : [noStops(first.index), ...(route ? nightsAfter(0, first.start?.name ?? 'Dropped pin') : [])]}
+      {ownStops(first).length || goesHome(first)
+        ? null
+        : [noStops(first.index), ...(route ? nightsAfter(0, first.start?.name ?? 'Dropped pin') : [])]}
       <View style={styles.units}>
         {units.map((u, i) => (
           <Draggable

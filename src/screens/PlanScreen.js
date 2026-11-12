@@ -506,7 +506,11 @@ export default function PlanScreen() {
           {all ? tripName : finish ? routeName : `From ${start?.name ?? 'your location'}`}
         </Text>
         <Text style={[type.bodySmall, styles.muted]}>
-          {[shownStops === 0 ? 'No stops yet' : `${shownStops} ${shownStops === 1 ? 'stop' : 'stops'}`, routeSummary]
+          {[
+            // A day going straight somewhere (home, on a round trip) has its miles, not "No stops yet".
+            shownStops === 0 ? (wayStops.length ? null : 'No stops yet') : `${shownStops} ${shownStops === 1 ? 'stop' : 'stops'}`,
+            routeSummary,
+          ]
             .filter(Boolean)
             .join(' · ')}
           {askCost ? (
