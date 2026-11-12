@@ -30,9 +30,9 @@ function driveFrom(route, index) {
   return route.drives[index - 1].stops.at(-1).name;
 }
 
-/** "Drive 1 · Inverness → Applecross". */
+/** "Day 1 · Inverness → Applecross". */
 export const routeDriveTitle = (route, index) =>
-  `Drive ${index + 1} · ${driveFrom(route, index)} → ${route.drives[index].stops.at(-1).name}`;
+  `Day ${index + 1} · ${driveFrom(route, index)} → ${route.drives[index].stops.at(-1).name}`;
 
 /**
  * "81 mi · Bealach na Bà · 2 stops": the drive's miles, its Iconic Roads, and

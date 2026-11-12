@@ -95,6 +95,23 @@ function LegRow({ color, road, text, ferry, onPress, handlers, held }) {
   );
 }
 
+/** Between two days: the overnight break where you stay, as on a trip's timeline. */
+export function OvernightRow({ place }) {
+  const { c } = useTheme();
+  const styles = useStyles(makeStyles);
+  return (
+    <View style={styles.leg}>
+      <View style={styles.rail}>
+        <View style={[styles.bar, { backgroundColor: c.outline }]} />
+      </View>
+      <View style={styles.legText}>
+        <Icon name="bedtime" size={18} color={c.textMuted} />
+        <Text style={[type.label, styles.muted, styles.regular]}>Overnight in {place}</Text>
+      </View>
+    </View>
+  );
+}
+
 /**
  * One stop's rows, draggable by their handle (`handlers` go on it). While a
  * stop is dragged it follows the finger and the others slide out of its way
@@ -127,7 +144,7 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * onMove(stop, position). `locked` (a copied ready-made route) leaves out the
  * handles and taps: nothing can be changed. A round trip's way back (the last
  * drive's final stop, `home`, from withWayBack) is its finish: onBackPress(). `numbered`
- * (the All tab, as a trip's days) starts the drive on "Drive 2 · Start".
+ * (a plan of more than one day) starts it on "Day 2 · Start", as a trip's days.
  */
 export default function PlanTimeline({
   drive,
@@ -206,14 +223,12 @@ export default function PlanTimeline({
   };
 
   const startName = start?.name ?? 'Your location';
-  let startSubtitle = start?.linked ? `End of drive ${index}` : 'Start';
-  if (numbered) startSubtitle = `Drive ${index + 1} · Start`;
+  const startSubtitle = numbered ? `Day ${index + 1} · Start` : 'Start';
   const startRow = (
     <EventRow
       kind="start"
       name={startName}
       subtitle={startSubtitle}
-      linked={start?.linked && !numbered}
       onChange={onStartPress}
     />
   );
@@ -222,7 +237,7 @@ export default function PlanTimeline({
     return (
       <View>
         {startRow}
-        <LegRow color={c.outline} text="No stops yet. Add where this drive goes" />
+        <LegRow color={c.outline} text="No stops yet. Add where this day goes" />
       </View>
     );
   }

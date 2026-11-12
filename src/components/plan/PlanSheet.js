@@ -82,7 +82,7 @@ function PlanForm({ plan, onSave }) {
             stretch
           />
           <Text style={styles.hint}>
-            {roundTrip ? 'The last drive ends back where Drive 1 starts' : 'The last drive ends at its last stop'}
+            {roundTrip ? 'The last day ends back where Day 1 starts' : 'The last day ends at its last stop'}
           </Text>
         </>
       )}

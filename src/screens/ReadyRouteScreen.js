@@ -106,11 +106,11 @@ export default function ReadyRouteScreen() {
         style={styles.stats}
         stats={[
           { icon: 'straighten', ...distance, label: 'Distance' },
-          { icon: 'route', value: String(route.drives.length), label: 'Drives' },
+          { icon: 'route', value: String(route.drives.length), label: 'Days' },
         ]}
       />
 
-      <SectionHeader title="Drives" />
+      <SectionHeader title="Days" />
       <View style={styles.group}>
         {route.drives.map((d, i) => (
           <View key={i} style={[styles.drive, i > 0 && styles.divider]}>

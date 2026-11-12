@@ -14,8 +14,8 @@ function driveRoute(plan, index) {
 }
 
 /**
- * Link a drive recorded with plain Record to the planned drive it was: every
- * plan's drives, newest plan first ("Scotland 2027 · Drive 3", its route, and
+ * Link a drive recorded with plain Record to the planned day it was: every
+ * plan's days, newest plan first ("Scotland 2027 · Day 3", its route, and
  * "Driven" once one has a recording). Calls onLinked() once saved.
  */
 export default function LinkPlanDriveSheet({ visible, drive, onLinked, onClose }) {
@@ -29,7 +29,7 @@ export default function LinkPlanDriveSheet({ visible, drive, onLinked, onClose }
           plans.flatMap((plan) =>
             plan.drives.map((d, i) => ({
               id: d.id,
-              label: `${plan.name} · Drive ${i + 1}`,
+              label: `${plan.name} · Day ${i + 1}`,
               detail: driven.has(d.id) ? `${driveRoute(plan, i)} · Driven` : driveRoute(plan, i),
             }))
           )

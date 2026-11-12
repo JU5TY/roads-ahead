@@ -37,8 +37,8 @@ describe('ready-made routes', () => {
   });
 
   it('names its drives and says what is in them', () => {
-    expect(routeDriveTitle(nc500, 0)).toBe('Drive 1 · Inverness → Applecross');
-    expect(routeDriveTitle(nc500, 1)).toBe('Drive 2 · Applecross → Ullapool');
+    expect(routeDriveTitle(nc500, 0)).toBe('Day 1 · Inverness → Applecross');
+    expect(routeDriveTitle(nc500, 1)).toBe('Day 2 · Applecross → Ullapool');
     expect(routeDriveLine(nc500, 0, 'imperial')).toMatch(/^\d+ mi · Bealach na Bà · 2 stops$/);
     expect(routeDriveLine(nc500, 2, 'imperial')).toMatch(/^\d+ mi · 2 stops$/);
   });

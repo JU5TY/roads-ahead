@@ -37,7 +37,7 @@ function Row({ icon, title, detail, onPress }) {
 }
 
 /**
- * Start a planned drive: what it is ("Drive 3 · Fort William → Applecross" and
+ * Start a planned day: what it is ("Day 3 · Fort William → Applecross" and
  * `detail`, its miles, time and fuel), how far you are from its start when
  * you're away from it, what the sat nav gets, Navigate with, and Record and
  * navigate. `handover` is planHandover's answer (utils/plans.js).
@@ -67,7 +67,7 @@ export default function StartDriveSheet({
           </View>
           <View style={styles.flex}>
             <Text style={[type.section, styles.text]} numberOfLines={2}>
-              {`Drive ${number} · ${route}`}
+              {`Day ${number} · ${route}`}
             </Text>
             {detail ? <Text style={[type.bodySmall, styles.muted]}>{detail}</Text> : null}
           </View>
@@ -90,7 +90,7 @@ export default function StartDriveSheet({
 
         <Row
           icon="near_me"
-          title={wholeDrive ? `${appName} gets the whole drive` : `${appName} gets one stop at a time`}
+          title={wholeDrive ? `${appName} gets the whole route` : `${appName} gets one stop at a time`}
           detail={summary}
         />
         <Row icon="map" title="Navigate with" detail={appName} onPress={onPickApp} />

@@ -137,7 +137,7 @@ export default function AddStopScreen() {
   if (!plan) return <View style={styles.screen} />;
   const drive = plan.drives[index];
   if (!drive) return <View style={styles.screen} />;
-  const driveName = `Drive ${index + 1}`;
+  const driveName = `Day ${index + 1}`;
   const color = dayColorFor(c, index + 1);
 
   const dropPin = (coordinate) => {

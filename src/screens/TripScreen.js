@@ -58,7 +58,7 @@ import {
 const MAX_MAP_POINTS = 3000;
 
 export default function TripScreen() {
-  // `drive` picks one of the trip's drives on arrival (e.g. from an Iconic Road).
+  // `drive` opens on the day of one of the trip's drives (e.g. from an Iconic Road).
   const { id, drive: driveParam } = useLocalSearchParams();
   const { units, showIconicRoads } = useSettings();
   const premium = usePremium();
@@ -69,8 +69,10 @@ export default function TripScreen() {
   const [completions, setCompletions] = useState([]); // Iconic Roads on this trip
   const [pointsByDrive, setPointsByDrive] = useState(null); // driveId -> points
   const [missing, setMissing] = useState(false);
-  const [menu, setMenu] = useState(null); // null | 'options' | 'edit' | 'move' | 'link' | 'vehicle'
-  const [picked, setPicked] = useState(driveParam ? Number(driveParam) : null); // drive id, null = All
+  const [menu, setMenu] = useState(null); // null | 'options' | 'edit' | 'drive' | 'move' | 'link' | 'vehicle'
+  // The tab: a day's number, or null for All; until one's tapped, the day of `drive`.
+  const [pickedDay, setPickedDay] = useState(undefined);
+  const [menuDriveId, setMenuDriveId] = useState(null); // the drive whose ⋮ was tapped
   const [vehicles, setVehicles] = useState([]); // the Garage
   const [loads, setLoads] = useState(0); // bumped to load the trip again (after deleting or linking a drive)
   // The plans the trip's drives were planned as: planned drive id → { planId, planName, number }.
@@ -133,29 +135,36 @@ export default function TripScreen() {
   );
 
   const days = useMemo(() => (trip ? groupIntoDays(trip.drives) : []), [trip]);
-  const summary = useMemo(() => (trip ? summarizeDrives(trip.drives) : null), [trip]);
+  // The picked day (tabs show for a trip of more than one day): its number, or null for All.
+  const paramDay = driveParam
+    ? (days.find((day) => day.drives.some((d) => d.id === Number(driveParam)))?.number ?? null)
+    : null;
+  const dayNo = days.length > 1 ? (pickedDay === undefined ? paramDay : pickedDay) : null;
+  const dayDrives = dayNo ? (days[dayNo - 1]?.drives ?? null) : null;
+  // What All's sections cover: the picked day's drives, or the whole trip.
+  const viewDrives = useMemo(() => (trip ? (dayDrives ?? trip.drives) : []), [trip, dayDrives]);
+  const summary = useMemo(() => (viewDrives.length ? summarizeDrives(viewDrives) : null), [viewDrives]);
   // Drives that are just an Iconic Road keep their times hidden, so trip totals leave them out.
-  const hiddenCount = trip ? trip.drives.filter((d) => d.stats.timesHidden).length : 0;
+  const hiddenCount = viewDrives.filter((d) => d.stats.timesHidden).length;
   const timeSummary = useMemo(
-    () => (trip ? summarizeDrives(trip.drives.filter((d) => !d.stats.timesHidden)) : null),
-    [trip]
+    () => (viewDrives.length ? summarizeDrives(viewDrives.filter((d) => !d.stats.timesHidden)) : null),
+    [viewDrives]
   );
-  // The whole trip's timeline (Overnight rows between days), for All.
-  const timeline = useMemo(
-    () => (trip && pointsByDrive ? buildTripTimeline(trip, pointsByDrive) : []),
-    [trip, pointsByDrive]
-  );
+  // The whole trip's timeline (Overnight rows between days), for All; a day's rows for its tab.
+  const timeline = useMemo(() => {
+    const items = trip && pointsByDrive ? buildTripTimeline(trip, pointsByDrive) : [];
+    return dayNo ? items.filter((item) => item.day === dayNo) : items;
+  }, [trip, pointsByDrive, dayNo]);
 
   const dayColorOf = useCallback(
     (n) => (days.length > 1 ? dayColorFor(c, n) : c.accent),
     [days, c]
   );
 
-  // A trip of one drive is that drive; otherwise the picked pill, or null for All.
+  // A trip of one drive is that drive, and so is a picked day of one drive (the
+  // usual day); a day of several drives, or All, is null.
   const selectedId =
-    trip?.drives.length === 1
-      ? trip.drives[0].id
-      : (trip?.drives.find((d) => d.id === picked)?.id ?? null);
+    trip?.drives.length === 1 ? trip.drives[0].id : dayDrives?.length === 1 ? dayDrives[0].id : null;
 
   // A picked drive shows its rest stops (and border towns) by name; the first
   // time it's picked, fill in any names the trip view didn't need.
@@ -188,23 +197,25 @@ export default function TripScreen() {
             ({ latitude, longitude, timestamp }) => ({ latitude, longitude, timestamp })
           ),
           routeGaps(d),
-          // With one drive picked, the others fade back.
-          selectedId && d.id !== selectedId ? `${dayColorOf(day.number)}40` : dayColorOf(day.number)
+          // With one day picked, the others fade back.
+          dayNo && day.number !== dayNo ? `${dayColorOf(day.number)}40` : dayColorOf(day.number)
         )
       )
     );
-  }, [trip, pointsByDrive, days, dayColorOf, selectedId]);
-  // Frame the picked drive (the whole trip for All). From its points, not the
+  }, [trip, pointsByDrive, days, dayColorOf, dayNo]);
+  // Frame the picked day (the whole trip for All). From its points, not the
   // segments, so place names arriving don't move the map again.
   const fitTo = useMemo(
     () =>
-      selectedId && pointsByDrive
-        ? downsample(pointsByDrive.get(selectedId) ?? [], 200).map(({ latitude, longitude }) => ({
-            latitude,
-            longitude,
-          }))
+      dayDrives && pointsByDrive
+        ? dayDrives.flatMap((d) =>
+            downsample(pointsByDrive.get(d.id) ?? [], 200).map(({ latitude, longitude }) => ({
+              latitude,
+              longitude,
+            }))
+          )
         : undefined,
-    [pointsByDrive, selectedId]
+    [pointsByDrive, dayDrives]
   );
 
   const driveColors = useMemo(
@@ -223,13 +234,13 @@ export default function TripScreen() {
   const tracks = useMemo(
     () =>
       days.flatMap((day) =>
-        day.drives.map((d) => ({
+        day.drives.filter((d) => viewDrives.includes(d)).map((d) => ({
           key: `drive-${d.id}`,
           color: dayColorOf(day.number),
           points: withoutCrossings(pointsByDrive?.get(d.id) ?? [], routeGaps(d)),
         }))
       ),
-    [days, pointsByDrive, dayColorOf]
+    [days, pointsByDrive, dayColorOf, viewDrives]
   );
 
   if (missing || !trip) {
@@ -251,7 +262,8 @@ export default function TripScreen() {
   // Show the route under the title when the user's own name is the title.
   const subtitle = trip.name ? tripOneWayLabel(trip) : null;
 
-  const allHidden = hiddenCount === trip.drives.length;
+  // Every drive in view (the picked day's, or the trip's) is just an Iconic Road.
+  const allHidden = hiddenCount === viewDrives.length;
   const roadsShown = showIconicRoads ? completions : [];
   // Iconic Road rows name the drive ("Completed · Drive 2") when there's more than one.
   const driveOf =
@@ -281,28 +293,39 @@ export default function TripScreen() {
   const selectedLink = selected ? (planLinks.get(selected.planDriveId) ?? null) : null;
   const latestLink = [...trip.drives].reverse().map((d) => planLinks.get(d.planDriveId)).find(Boolean);
   const tripPlan = selectedLink ?? latestLink ?? null;
+  // The drive whose ⋮ (on its Start row in the Timeline) was tapped, and its plan link.
+  const menuDrive = trip.drives.find((d) => d.id === menuDriveId) ?? null;
+  const menuLink = menuDrive ? (planLinks.get(menuDrive.planDriveId) ?? null) : null;
+  const openDriveMenu = (driveId) => {
+    setMenuDriveId(driveId);
+    setMenu('drive');
+  };
   const unlinkDrive = () => {
     setMenu(null);
-    linkDriveToPlan(selected.id, null)
+    linkDriveToPlan(menuDrive.id, null)
       .then(() => setLoads((n) => n + 1))
       .catch((err) => console.warn('[trip] unlink failed', err));
   };
-  const pick = (driveId) => {
-    setPicked(driveId);
+  const pick = (dayNumber) => {
+    setPickedDay(dayNumber);
     setFocusedStop(null);
     showMap();
   };
   const dayNumberOf = (d) => days.find((day) => day.drives.includes(d))?.number ?? 1;
   // What the sections below cover: the picked drive, or the whole trip for All.
   const hideTimes = selected ? Boolean(selected.stats.timesHidden) : allHidden;
-  const viewRoads = selected ? roadsShown.filter((r) => r.driveId === selected.id) : roadsShown;
+  const viewRoads = selected
+    ? roadsShown.filter((r) => r.driveId === selected.id)
+    : roadsShown.filter((r) => viewDrives.some((d) => d.id === r.driveId));
   const viewPhotos = selected
     ? photos.filter((p) => p.time >= selected.startedAt && p.time <= selected.endedAt)
-    : photos;
+    : dayDrives
+      ? photos.filter((p) => p.time >= dayDrives[0].startedAt && p.time <= dayDrives.at(-1).endedAt)
+      : photos;
   const viewCountries = selected
     ? countryRows([selected])
-    : countryRows(trip.drives, days.length > 1 ? { dayOf: dayNumberOf } : {});
-  const usedVehicleIds = [...new Set(trip.drives.map((d) => d.vehicleId).filter((v) => v != null))];
+    : countryRows(viewDrives, days.length > 1 && !dayDrives ? { dayOf: dayNumberOf } : {});
+  const usedVehicleIds = [...new Set(viewDrives.map((d) => d.vehicleId).filter((v) => v != null))];
   const viewVehicle = selected
     ? (vehicles.find((v) => v.id === selected.vehicleId) ?? null)
     : usedVehicleIds.length === 1
@@ -331,8 +354,8 @@ export default function TripScreen() {
       confirmLabel: 'Delete',
       destructive: true,
       onConfirm: () =>
-        deleteDrive(selected.id).then(() => {
-          setPicked(null);
+        deleteDrive(menuDrive.id).then(() => {
+          setPickedDay(null);
           setLoads((n) => n + 1);
         }),
     });
@@ -437,37 +460,38 @@ export default function TripScreen() {
               exportTrip(trip);
             },
           },
-          // The picked drive (or a lone one) can move to another trip, e.g. "Continue" was missed.
-          ...(selected
+          { icon: 'delete', label: 'Delete trip', style: 'destructive', onPress: confirmDelete },
+        ]}
+        onClose={() => setMenu(null)}
+      />
+      {/* One drive's own actions, from the ⋮ on its Start row. */}
+      <ActionSheet
+        visible={menu === 'drive' && !!menuDrive}
+        message={menuDrive ? `Drive ${trip.drives.indexOf(menuDrive) + 1}` : null}
+        actions={
+          menuDrive
             ? [
+                // It can move to another trip, e.g. "Continue" was missed.
                 {
                   icon: 'drive_file_move',
                   label: single ? 'Add to another trip' : 'Move this drive to another trip',
                   onPress: () => setMenu('move'),
                 },
-                // A drive recorded with plain Record can be put down to the planned drive it was.
-                selectedLink
+                // A drive recorded with plain Record can be put down to the planned day it was.
+                menuLink
                   ? {
                       icon: 'link_off',
-                      label: `Unlink from ${selectedLink.planName}`,
-                      detail: `Drive ${selectedLink.number}`,
+                      label: `Unlink from ${menuLink.planName}`,
+                      detail: `Day ${menuLink.number}`,
                       onPress: unlinkDrive,
                     }
-                  : { icon: 'link', label: 'Link to a planned drive', onPress: () => setMenu('link') },
+                  : { icon: 'link', label: 'Link to a planned day', onPress: () => setMenu('link') },
+                ...(single
+                  ? []
+                  : [{ icon: 'delete', label: 'Delete this drive', style: 'destructive', onPress: confirmDeleteDrive }]),
               ]
-            : []),
-          ...(selected && !single
-            ? [
-                {
-                  icon: 'delete',
-                  label: 'Delete this drive',
-                  style: 'destructive',
-                  onPress: confirmDeleteDrive,
-                },
-              ]
-            : []),
-          { icon: 'delete', label: 'Delete trip', style: 'destructive', onPress: confirmDelete },
-        ]}
+            : []
+        }
         onClose={() => setMenu(null)}
       />
       <EditTripSheet
@@ -476,21 +500,21 @@ export default function TripScreen() {
         onSave={save}
         onClose={() => setMenu(null)}
       />
-      {selected ? (
+      {menuDrive ? (
         <LinkPlanDriveSheet
           visible={menu === 'link'}
-          drive={selected}
+          drive={menuDrive}
           onLinked={() => setLoads((n) => n + 1)}
           onClose={() => setMenu(null)}
         />
       ) : null}
-      {selected ? (
+      {menuDrive ? (
         <MoveDriveSheet
           visible={menu === 'move'}
-          drive={selected}
+          drive={menuDrive}
           allowNewTrip={!single}
           // Follow the drive to its new trip.
-          onMoved={(tripId) => router.replace(`/trips/${tripId}?drive=${selected.id}`)}
+          onMoved={(tripId) => router.replace(`/trips/${tripId}?drive=${menuDrive.id}`)}
           onClose={() => setMenu(null)}
         />
       ) : null}
@@ -516,8 +540,8 @@ export default function TripScreen() {
         subtitle={subtitle}
         notes={trip.notes}
       />
-      {single ? null : (
-        // One page per trip: All, or one drive at a time.
+      {days.length > 1 ? (
+        // One page per trip: All, or one day at a time.
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -525,18 +549,36 @@ export default function TripScreen() {
           contentContainerStyle={styles.pills}
           role="radiogroup"
         >
-          <FilterChip label="All" selected={!selected} onPress={() => pick(null)} />
-          {trip.drives.map((d, i) => (
+          <FilterChip label="All" selected={!dayNo} onPress={() => pick(null)} />
+          {days.map((day) => (
             <FilterChip
-              key={d.id}
-              label={`Drive ${i + 1}`}
-              dot={driveColors.get(d.id)}
-              selected={d.id === selectedId}
-              onPress={() => pick(d.id)}
+              key={day.number}
+              label={`Day ${day.number}`}
+              dot={dayColorOf(day.number)}
+              selected={day.number === dayNo}
+              onPress={() => pick(day.number)}
             />
           ))}
         </ScrollView>
-      )}
+      ) : null}
+      {dayDrives && dayDrives.length > 1 ? (
+        // A day of more than one drive: where it went, and when.
+        <View style={styles.picked}>
+          <Text style={[type.section, styles.text]} numberOfLines={1}>
+            {oneWayLabel({ start: dayDrives[0].places.start, end: dayDrives.at(-1).places.end }) ?? `Day ${dayNo}`}
+          </Text>
+          <Text style={[type.body, styles.muted]} numberOfLines={1}>
+            {[
+              `Day ${dayNo}`,
+              formatDayDate(dayDrives[0].startedAt),
+              `${dayDrives.length} drives`,
+              ...(hiddenCount
+                ? []
+                : [`${formatTime(dayDrives[0].startedAt)}–${formatTime(dayDrives.at(-1).endedAt)}`]),
+            ].join(' · ')}
+          </Text>
+        </View>
+      ) : null}
       {selected && !single ? (
         <View style={styles.picked}>
           <Text style={[type.section, styles.text]} numberOfLines={1}>
@@ -577,6 +619,7 @@ export default function TripScreen() {
           colorOfDay={selected || days.length === 1 ? undefined : dayColorOf}
           units={units}
           onStopPress={selected ? showDriveStop : showTripStop}
+          onDriveOptions={openDriveMenu}
           roads={viewRoads.map((r) => ({
             name: getRoad(r.roadId)?.name,
             completedAt: r.completedAt,
@@ -590,8 +633,8 @@ export default function TripScreen() {
         access={photoAccess}
         allow={allowPhotos}
         hideTimes={selected ? hideTimes : hiddenCount > 0}
-        // Like the print banner: "drive" only when one of several is picked.
-        what={selected && !single ? 'drive' : 'trip'}
+        // Like the print banner: a picked day, else the trip.
+        what={dayNo ? 'day' : 'trip'}
       />
       {/* Under Photos, whose picture of the trip it follows; under Timeline when there are none. */}
       <PrintBanner trip={trip} drive={single ? null : selected} />
@@ -640,7 +683,7 @@ export default function TripScreen() {
         elapsedMs={selected ? driveElapsedMs(selected) : timeSummary.elapsedMs}
         units={units}
         timesHidden={hideTimes}
-        subtitle={selected ? 'This drive' : 'Whole trip'}
+        subtitle={dayNo ? 'This day' : selected ? 'This drive' : 'Whole trip'}
         hiddenNote={
           !selected && hiddenCount > 0 && !allHidden
             ? `Times leave out ${hiddenCount === 1 ? 'a drive' : `${hiddenCount} drives`} that ${hiddenCount === 1 ? 'is' : 'are'} just an Iconic Road, for safety.`

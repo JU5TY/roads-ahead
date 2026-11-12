@@ -3,13 +3,14 @@
 // longitude, timestamp }, oldest first).
 //
 // Item types:
-//   { type: 'start' | 'finish', time, place, dayNumber? }        (trip timelines add `day`)
+//   { type: 'start' | 'finish', time, place, dayNumber?, driveId? } (trip timelines add `day`;
+//                                                                 a start has its drive's id)
 //   { type: 'leg', distanceM, durationMs }                      driving between events
 //   { type: 'stop', time, endTime, place, latitude, longitude } rest stop
 //   { type: 'crossing', time, country, from }                   crossed a border (names)
 //   { type: 'seaCrossing', kind, time, endTime, distanceM,      a ferry, tunnel or pause
 //     durationMs }                                              (kind 'pause'), between legs
-//   { type: 'break', durationMs }                               same-day gap between drives
+//   { type: 'break', durationMs, day }                          same-day gap between drives
 //   { type: 'overnight', durationMs, place }                    gap to the next driving day
 import { getCountry } from './countries';
 import { driveGaps } from './crossings';
@@ -120,7 +121,7 @@ export function buildDriveTimeline(drive, points, { dayNumber } = {}) {
     drive.stats.movingTimeMs
   );
 
-  const items = [{ type: 'start', time: drive.startedAt, place: drive.places.start, dayNumber }];
+  const items = [{ type: 'start', time: drive.startedAt, place: drive.places.start, dayNumber, driveId: drive.id }];
   legs.forEach(([from, to], i) => {
     // No empty leg beside a ferry or tunnel (e.g. a border right where it lands).
     const bySea = events[i - 1]?.type === 'seaCrossing' || events[i]?.type === 'seaCrossing';
@@ -151,7 +152,7 @@ export function buildTripTimeline(trip, pointsByDrive) {
         items.push(
           i === 0
             ? { type: 'overnight', durationMs: gap, place: prev.places.end }
-            : { type: 'break', durationMs: gap }
+            : { type: 'break', durationMs: gap, day: day.number }
         );
       }
       // Only label the first drive of each day with its day number.

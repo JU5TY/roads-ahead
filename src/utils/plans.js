@@ -103,10 +103,10 @@ export const dateOf = (startDate) => {
 export const dateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-/** "14 MAY 2027 · 7 DRIVES", or "7 DRIVES" with no date: the blue line above a plan's name. */
+/** "14 MAY 2027 · 7 DAYS", or "7 DAYS" with no date: the blue line above a plan's name. */
 export function planKicker(plan) {
   const n = plan.drives.length;
-  const drives = `${n} ${n === 1 ? 'DRIVE' : 'DRIVES'}`;
+  const drives = `${n} ${n === 1 ? 'DAY' : 'DAYS'}`;
   if (!plan.startDate) return drives;
   const date = dateOf(plan.startDate)
     .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })

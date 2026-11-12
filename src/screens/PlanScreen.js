@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
@@ -8,7 +8,7 @@ import DetailLayout from '../components/detail/DetailLayout';
 import PriceSheet from '../components/PriceSheet';
 import { TitleBlock } from '../components/detail/TripStats';
 import PlanSheet from '../components/plan/PlanSheet';
-import PlanTimeline from '../components/plan/PlanTimeline';
+import PlanTimeline, { OvernightRow } from '../components/plan/PlanTimeline';
 import StartDriveSheet from '../components/plan/StartDriveSheet';
 import NavAppSheet from '../components/NavAppSheet';
 import RouteMap from '../components/RouteMap';
@@ -24,21 +24,21 @@ import { useSettings } from '../context/SettingsContext';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { useVehicles } from '../hooks/useVehicles';
 import {
-  addPlanDrive,
   addPlanStop,
   deletePlan,
-  deletePlanDrive,
   deletePlanStop,
   getPlan,
   getPlanDrives,
+  joinPlanDriveWithNext,
   movePlanStop,
   renamePlan,
   setPlanDriveStart,
   setPlanRoundTrip,
   setPlanStartDate,
+  splitPlanDriveAt,
 } from '../storage/planStorage';
 import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
-import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
+import { dayColorFor, floating, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
@@ -56,9 +56,11 @@ import {
 } from '../utils/plans';
 
 /**
- * A plan: its map, the Drive tabs (All once there are two; + adds one), and
- * the picked drive as a timeline, or on All every drive's, to look at. Stops are added and reordered here; the menu edits the name,
- * date and one way or round trip, or deletes a drive or the plan. Params: `id`.
+ * A plan: its map, then the whole route as one timeline (All) to plan it in,
+ * or one day's. A stop's sheet makes it where you stay overnight, which ends
+ * its day (Day tabs show once there are two). The menu edits the name, date
+ * and one way or round trip, or deletes the plan. Params: `id`.
+ * Each day is stored as a planned drive (planStorage splitPlanDriveAt / joinPlanDriveWithNext).
  */
 export default function PlanScreen() {
   const { id } = useLocalSearchParams();
@@ -66,10 +68,12 @@ export default function PlanScreen() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [plan, setPlan] = useState(null);
-  // The tab: a drive's index, or null for All (shown once there are two drives).
-  const [tab, setTab] = useState(0);
+  // The tab: a day's index, or null for All, where the whole route is planned
+  // (tabs show once there are two days).
+  const [tab, setTab] = useState(null);
   const [driven, setDriven] = useState(() => new Set()); // planned drive ids with a recording
-  // 'options' | 'edit' | 'road' | 'start' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop }
+  // 'options' | 'edit' | 'road' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop, at } | { start, at }
+  // (`at`: the day the stop or start is in)
   const [menu, setMenu] = useState(null);
   const { here } = useHere();
   const insets = useSafeAreaInsets();
@@ -81,7 +85,7 @@ export default function PlanScreen() {
           if (!p) return router.back();
           setPlan(p);
           setDriven(new Set(drives.keys()));
-          setTab((i) => (i === null ? (p.drives.length > 1 ? null : 0) : Math.min(i, p.drives.length - 1)));
+          setTab((i) => (i === null || p.drives.length < 2 ? null : Math.min(i, p.drives.length - 1)));
         })
         .catch((err) => console.warn('[plan] load failed', err)),
     [planId]
@@ -129,44 +133,23 @@ export default function PlanScreen() {
     fn().then(reload).catch((err) => console.warn('[plan] change failed', err));
   };
 
-  // The new drive is picked once the plan has it, or the screen reads a drive that isn't there yet.
-  const addDrive = () =>
-    addPlanDrive(plan.id)
-      .then(reload)
-      .then(() => setTab(plan.drives.length))
-      .catch((err) => console.warn('[plan] add drive failed', err));
-  const pickPlace = (mode) => {
+  // The day a sheet is about (a stop's, or a start's), and where new stops go:
+  // the day's tab, or on All the end of the trip.
+  const at = menu?.at ?? picked;
+  const atDrive = plan.drives[at];
+  const addAt = tab ?? plan.drives.length - 1;
+  const pickPlace = (mode, day = addAt) => {
     setMenu(null);
-    router.push({ pathname: '/plans/add-stop', params: { plan: plan.id, drive: picked, mode } });
+    router.push({ pathname: '/plans/add-stop', params: { plan: plan.id, drive: day, mode } });
   };
-  // Where the drive would start if it followed on (Drive 1: wherever the phone is).
-  const followOn = driveStart({ ...plan, drives: plan.drives.map((d) => (d === drive ? { ...d, start: null } : d)) }, picked);
-  const addRoad = (road) => act(() => addPlanStop(drive.id, roadStop(plan, picked, road)))();
-  const confirmDeleteDrive = () => {
-    setMenu(null);
-    const next = plan.drives[picked + 1];
-    showDialog({
-      title: `Delete Drive ${picked + 1}?`,
-      message: [
-        stops ? `Its ${stops === 1 ? 'stop goes' : `${stops} stops go`} too.` : null,
-        next && !next.start ? `Drive ${picked + 2} will start where Drive ${picked} ends.` : null,
-        "This can't be undone.",
-      ]
-        .filter(Boolean)
-        .join(' '),
-      confirmLabel: 'Delete',
-      destructive: true,
-      onConfirm: () =>
-        deletePlanDrive(drive.id)
-          .then(() => setTab(Math.max(0, picked - 1)))
-          .then(reload),
-    });
-  };
+  // Where the day would start if it followed on (Day 1: wherever the phone is).
+  const followOn = driveStart({ ...plan, drives: plan.drives.map((d) => (d === atDrive ? { ...d, start: null } : d)) }, at);
+  const addRoad = (road) => act(() => addPlanStop(plan.drives[addAt].id, roadStop(plan, addAt, road)))();
   const confirmDeletePlan = () => {
     setMenu(null);
     showDialog({
       title: `Delete ${plan.name}?`,
-      message: "Its drives and stops go too. Trips you've driven stay. This can't be undone.",
+      message: "Its days and stops go too. Trips you've driven stay. This can't be undone.",
       confirmLabel: 'Delete',
       destructive: true,
       onConfirm: () => deletePlan(plan.id).then(() => router.back()),
@@ -282,7 +265,41 @@ export default function PlanScreen() {
   );
 
   const stop = menu?.stop;
-  const stopIndex = stop ? drive.stops.findIndex((s) => s.id === stop.id) : -1;
+  const stopIndex = stop ? atDrive.stops.findIndex((s) => s.id === stop.id) : -1;
+  // A place you stay at ends its day; the last place of a day (not the trip's) is where you stay.
+  const staying = stop && stopIndex === atDrive.stops.length - 1 && at < plan.drives.length - 1;
+  const stay = stop && !stop.roadId && !locked
+    ? staying
+      ? {
+          icon: 'bedtime',
+          label: 'Don’t stay here',
+          detail: `Joins Day ${at + 1} and Day ${at + 2} into one`,
+          onPress: act(() => joinPlanDriveWithNext(atDrive.id)),
+        }
+      : {
+          icon: 'bedtime',
+          label: 'Stay overnight here',
+          detail: `Day ${at + 1} ends here and Day ${at + 2} starts here the next morning`,
+          onPress: act(() => splitPlanDriveAt(stop.id)),
+        }
+    : null;
+  // A day's timeline, to change: its stops dragged, tapped for their sheet, its start changed.
+  const dayTimeline = (i) => (
+    <PlanTimeline
+      key={plan.drives[i].id}
+      {...legsOf(i)}
+      drive={{ ...plan.drives[i], stops: mapPlan.drives[i].stops }}
+      index={i}
+      start={driveStart(plan, i)}
+      numbered={plan.drives.length > 1}
+      color={colorOf(i)}
+      onBackPress={locked ? undefined : () => setMenu('back')}
+      onStopPress={(s) => setMenu({ stop: s, at: i })}
+      onStartPress={locked ? undefined : () => setMenu({ start: true, at: i })}
+      onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
+      locked={locked}
+    />
+  );
 
   return (
     <DetailLayout
@@ -295,8 +312,8 @@ export default function PlanScreen() {
             icon="play_arrow"
             filled
             iconColor={c.start}
-            label={`Drive ${picked + 1}`}
-            accessibilityLabel={`Start drive ${picked + 1}`}
+            label={`Day ${picked + 1}`}
+            accessibilityLabel={`Start day ${picked + 1}`}
             onPress={() => setMenu('go')}
             style={{ bottom: insets.bottom + floating.recordPill.lift }}
           />
@@ -325,9 +342,6 @@ export default function PlanScreen() {
         visible={menu === 'options'}
         actions={[
           { icon: 'edit', label: 'Edit name, date and route', onPress: () => setMenu('edit') },
-          ...(plan.drives.length > 1 && !locked && !all
-            ? [{ icon: 'delete', label: 'Delete this drive', style: 'destructive', onPress: confirmDeleteDrive }]
-            : []),
           { icon: 'delete', label: 'Delete plan', style: 'destructive', onPress: confirmDeletePlan },
         ]}
         onClose={() => setMenu(null)}
@@ -376,42 +390,42 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
       <ActionSheet
-        visible={menu === 'start'}
-        message={`Where Drive ${picked + 1} starts`}
+        visible={!!menu?.start}
+        message={`Where Day ${at + 1} starts`}
         actions={[
-          picked === 0
+          at === 0
             ? {
                 icon: 'my_location',
                 label: 'Wherever you are',
                 detail: 'Where the phone is when you start',
-                selected: !drive.start,
-                onPress: act(() => setPlanDriveStart(drive.id, null)),
+                selected: !atDrive.start,
+                onPress: act(() => setPlanDriveStart(atDrive.id, null)),
               }
             : {
-                icon: 'link',
-                label: `Where Drive ${picked} ends`,
-                detail: `${followOn?.name ?? 'Its last stop'} · moves if Drive ${picked} changes`,
-                selected: !drive.start,
-                onPress: act(() => setPlanDriveStart(drive.id, null)),
+                icon: 'bedtime',
+                label: 'Where you stayed',
+                detail: `${followOn?.name ?? 'Your overnight stop'} · moves if the stay changes`,
+                selected: !atDrive.start,
+                onPress: act(() => setPlanDriveStart(atDrive.id, null)),
               },
           {
             icon: 'edit_location_alt',
             label: 'Start somewhere else',
-            detail: picked === 0 ? 'Pick a place, or drop a pin' : 'After a ferry, train or hire car',
-            selected: !!drive.start,
-            onPress: () => pickPlace('start'),
+            detail: at === 0 ? 'Pick a place, or drop a pin' : 'After a ferry, train or hire car',
+            selected: !!atDrive.start,
+            onPress: () => pickPlace('start', at),
           },
         ]}
         onClose={() => setMenu(null)}
       />
       <ActionSheet
         visible={menu === 'back'}
-        message="A round trip ends back where Drive 1 starts"
+        message="A round trip ends back where Day 1 starts"
         actions={[
           {
             icon: 'arrow_forward',
             label: 'Make it one way',
-            detail: `Drive ${plan.drives.length} ends at its last stop`,
+            detail: `Day ${plan.drives.length} ends at its last stop`,
             onPress: act(() => setPlanRoundTrip(plan.id, false)),
           },
         ]}
@@ -421,10 +435,11 @@ export default function PlanScreen() {
         visible={!!stop}
         message={stop ? (stop.roadId ? getRoad(stop.roadId)?.name : (stop.name ?? 'Dropped pin')) : null}
         actions={[
+          ...(stay ? [stay] : []),
           ...(stopIndex > 0
             ? [{ icon: 'expand_less', label: 'Move up', onPress: act(() => movePlanStop(stop.id, stopIndex - 1)) }]
             : []),
-          ...(stop && stopIndex < drive.stops.length - 1
+          ...(stop && stopIndex < atDrive.stops.length - 1
             ? [{ icon: 'expand_more', label: 'Move down', onPress: act(() => movePlanStop(stop.id, stopIndex + 1)) }]
             : []),
           ...(stop
@@ -443,7 +458,8 @@ export default function PlanScreen() {
 
       <TitleBlock kicker={planKicker(plan)} title={plan.name} />
 
-      <View style={styles.tabsRow}>
+      {/* All, where the route is planned, then a tab per day, once there's more than one. */}
+      {plan.drives.length > 1 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -451,30 +467,18 @@ export default function PlanScreen() {
           contentContainerStyle={styles.tabs}
           role="radiogroup"
         >
-          {/* All, as on a trip, once there's more than one drive. */}
-          {plan.drives.length > 1 ? <FilterChip label="All" selected={all} onPress={() => setTab(null)} /> : null}
+          <FilterChip label="All" selected={all} onPress={() => setTab(null)} />
           {plan.drives.map((d, i) => (
             <FilterChip
               key={d.id}
-              label={`Drive ${i + 1}`}
+              label={`Day ${i + 1}`}
               dot={colorOf(i)}
               selected={i === tab}
               onPress={() => setTab(i)}
             />
           ))}
         </ScrollView>
-        {/* Pinned at the end of the tabs, so it's there however many drives there are. */}
-        {locked ? null : (
-          <Pressable
-            onPress={addDrive}
-            accessibilityRole="button"
-            accessibilityLabel="Add a drive"
-            style={({ pressed }) => [styles.addDrive, pressed && styles.pressed]}
-          >
-            <Icon name="add" size={22} color={c.accent} />
-          </Pressable>
-        )}
-      </View>
+      ) : null}
 
       <View style={styles.heading}>
         <Text style={[type.section, styles.text]} numberOfLines={2}>
@@ -495,44 +499,18 @@ export default function PlanScreen() {
         </Text>
       </View>
 
-      {all ? (
-        // One timeline for the whole trip, as a trip's All: each drive in its
-        // colour from its "Drive 2 · Start". Tap a drive to change it on its own tab.
-        plan.drives.map((d, i) => (
-          <Pressable
-            key={d.id}
-            onPress={() => setTab(i)}
-            accessibilityRole="button"
-            accessibilityHint={`Opens Drive ${i + 1} to change it`}
-            style={({ pressed }) => pressed && styles.pressed}
-          >
-            <PlanTimeline
-              {...legsOf(i)}
-              drive={{ ...d, stops: mapPlan.drives[i].stops }}
-              index={i}
-              start={driveStart(plan, i)}
-              color={colorOf(i)}
-              numbered
-              locked
-            />
-          </Pressable>
-        ))
-      ) : (
-        <PlanTimeline
-          {...legsOf(picked)}
-          drive={{ ...drive, stops: wayStops }}
-          index={picked}
-          start={start}
-          onBackPress={locked ? undefined : () => setMenu('back')}
-          color={colorOf(picked)}
-          onStopPress={(s) => setMenu({ stop: s })}
-          onStartPress={locked ? undefined : () => setMenu('start')}
-          onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
-          locked={locked}
-        />
-      )}
+      {all
+        ? // The whole route as one timeline, as a trip's All: each day ends where
+          // you stay, then the overnight break, then the next day's start.
+          plan.drives.map((d, i) => (
+            <View key={d.id}>
+              {i > 0 ? <OvernightRow place={driveReach(plan, i - 1)?.name ?? 'Dropped pin'} /> : null}
+              {dayTimeline(i)}
+            </View>
+          ))
+        : dayTimeline(picked)}
 
-      {all ? null : locked ? (
+      {locked ? (
         <View style={styles.lockedNote}>
           <Icon name="info" size={20} color={c.textMuted} />
           <Text style={[type.label, styles.muted, styles.regular, styles.flex]}>
@@ -567,19 +545,8 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   center: { alignItems: 'center', justifyContent: 'center' },
   noMap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: c.mapLand },
-  tabsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, marginRight: -spacing.md },
-  tabsScroll: { flexGrow: 1, flexShrink: 1, marginLeft: -spacing.md },
-  tabs: { gap: 8, paddingLeft: spacing.md },
-  addDrive: {
-    width: 48,
-    height: 32,
-    marginRight: spacing.md,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: c.outline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  tabsScroll: { flexGrow: 0, marginTop: spacing.md, marginHorizontal: -spacing.md },
+  tabs: { gap: 8, paddingHorizontal: spacing.md },
   heading: { marginTop: 20, marginBottom: 10, marginHorizontal: 4, gap: 2 },
   buttons: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   button: { flex: 1 },
@@ -589,5 +556,4 @@ const makeStyles = (c) => ({
   flex: { flex: 1, minWidth: 0 },
   lockedNote: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginHorizontal: 4 },
   link: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
-  pressed: { opacity: pressedOpacity },
 });

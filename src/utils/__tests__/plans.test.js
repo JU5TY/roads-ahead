@@ -122,9 +122,9 @@ describe('groupPlans', () => {
 describe('planKicker', () => {
   it('counts the drives, after the start date when there is one', () => {
     const drives = [{ stops: [] }, { stops: [] }];
-    expect(planKicker({ startDate: null, drives })).toBe('2 DRIVES');
-    expect(planKicker({ startDate: null, drives: [{ stops: [] }] })).toBe('1 DRIVE');
-    expect(planKicker({ startDate: '2027-05-14', drives })).toMatch(/2027 · 2 DRIVES$/);
+    expect(planKicker({ startDate: null, drives })).toBe('2 DAYS');
+    expect(planKicker({ startDate: null, drives: [{ stops: [] }] })).toBe('1 DAY');
+    expect(planKicker({ startDate: '2027-05-14', drives })).toMatch(/2027 · 2 DAYS$/);
   });
 });
 

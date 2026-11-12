@@ -186,6 +186,77 @@ export async function deletePlanDrive(planDriveId) {
   });
 }
 
+/**
+ * Stay overnight at a stop ("Stay overnight here"): its drive ends there and
+ * the stops after it become a new drive, next in the plan, starting where you
+ * stayed (no start of its own). Recorded drives stay with the first part.
+ * Returns the new drive's id.
+ */
+export async function splitPlanDriveAt(stopId) {
+  const db = await getDb();
+  let newId = null;
+  await db.withTransactionAsync(async () => {
+    const stop = await db.getFirstAsync('SELECT * FROM plan_stops WHERE id = ?', stopId);
+    if (!stop) return;
+    const drive = await db.getFirstAsync('SELECT * FROM plan_drives WHERE id = ?', stop.plan_drive_id);
+    await db.runAsync(
+      'UPDATE plan_drives SET position = position + 1 WHERE plan_id = ? AND position > ?',
+      drive.plan_id,
+      drive.position
+    );
+    const { lastInsertRowId } = await db.runAsync(
+      'INSERT INTO plan_drives (plan_id, position, start) VALUES (?, ?, NULL)',
+      drive.plan_id,
+      drive.position + 1
+    );
+    newId = lastInsertRowId;
+    await db.runAsync(
+      'UPDATE plan_stops SET plan_drive_id = ?, position = position - ? WHERE plan_drive_id = ? AND position > ?',
+      newId,
+      stop.position + 1,
+      drive.id,
+      stop.position
+    );
+  });
+  return newId;
+}
+
+/**
+ * Don't stay overnight at the end of a drive ("Don't stay here"): the drive
+ * after it joins on, its stops after this one's. A start of its own (after a
+ * ferry) is dropped with it, and its recorded drives are linked to this one.
+ */
+export async function joinPlanDriveWithNext(planDriveId) {
+  const db = await getDb();
+  await db.withTransactionAsync(async () => {
+    const drive = await db.getFirstAsync('SELECT * FROM plan_drives WHERE id = ?', planDriveId);
+    if (!drive) return;
+    const next = await db.getFirstAsync(
+      'SELECT * FROM plan_drives WHERE plan_id = ? AND position = ?',
+      drive.plan_id,
+      drive.position + 1
+    );
+    if (!next) return;
+    const { count } = await db.getFirstAsync(
+      'SELECT COUNT(*) AS count FROM plan_stops WHERE plan_drive_id = ?',
+      drive.id
+    );
+    await db.runAsync(
+      'UPDATE plan_stops SET plan_drive_id = ?, position = position + ? WHERE plan_drive_id = ?',
+      drive.id,
+      count,
+      next.id
+    );
+    await db.runAsync('UPDATE drives SET plan_drive_id = ? WHERE plan_drive_id = ?', drive.id, next.id);
+    await db.runAsync('DELETE FROM plan_drives WHERE id = ?', next.id);
+    await db.runAsync(
+      'UPDATE plan_drives SET position = position - 1 WHERE plan_id = ? AND position > ?',
+      drive.plan_id,
+      next.position
+    );
+  });
+}
+
 /** Where a drive starts: { name, latitude, longitude }, or null to follow the drive before. */
 export async function setPlanDriveStart(planDriveId, start) {
   const db = await getDb();
