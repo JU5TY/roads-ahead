@@ -67,15 +67,16 @@ const light = {
     elevation: 2,
   },
   // A week of route colours: no greens or blues (parks, water, the accent),
-  // and no red (the finish pin). Neighbouring days are never close in hue.
-  dayColors: ['#F29900', '#E52592', '#9334E6', '#12B5CB', '#E8710A', '#3F51B5', '#795548'],
+  // and no red (the finish pin). Neighbouring days are never close in hue, and
+  // amber, which sinks into the map's yellow roads, waits until day 5.
+  dayColors: ['#E52592', '#E8710A', '#9334E6', '#12B5CB', '#F29900', '#3F51B5', '#795548'],
   // Number badges in the Drives list: [background, text] per day colour.
   dayBadges: [
-    ['#FEEFC3', '#5F3B00'],
     ['#FDE7F3', '#7A0D4A'],
+    ['#FEEFE3', '#7A2E0E'],
     ['#F3E8FD', '#3B0A6B'],
     ['#E4F7FB', '#004A56'],
-    ['#FEEFE3', '#7A2E0E'],
+    ['#FEEFC3', '#5F3B00'],
     ['#E8EAF6', '#1A237E'],
     ['#EFEBE9', '#3E2723'],
   ],
@@ -134,13 +135,13 @@ const dark = {
   photoScrim: 'rgba(0,0,0,0.45)', // over photos: "+3" tiles, the viewer's top bar
   onPhoto: '#FFFFFF',
   cardShadow: null,
-  dayColors: ['#FDD663', '#FF8BCB', '#C58AF9', '#78D9EC', '#FCAD70', '#9FA8DA', '#D7A985'],
+  dayColors: ['#FF8BCB', '#FCAD70', '#C58AF9', '#78D9EC', '#FDD663', '#9FA8DA', '#D7A985'],
   dayBadges: [
-    ['#3D3214', '#FDD663'],
     ['#4A1F35', '#FFB3DC'],
+    ['#4A2A10', '#FCAD70'],
     ['#33204A', '#D7AEFB'],
     ['#0F3A42', '#78D9EC'],
-    ['#4A2A10', '#FCAD70'],
+    ['#3D3214', '#FDD663'],
     ['#262B4A', '#C5CAE9'],
     ['#3B2C22', '#D7A985'],
   ],
