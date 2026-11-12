@@ -1,6 +1,6 @@
-// Importing locationService defines the background location task at module
-// load. Must stay the first import so the task exists when the OS launches the
-// app headless.
+// The background location task is defined in index.js, before Expo Router, so
+// it exists when Android starts the app headless to deliver a recording's fixes
+// (this layout isn't loaded then). Importing it here too keeps the order safe.
 import { endDriveIfLeftRunning, resumeActiveDrive } from '../services/locationService';
 
 import { useFonts } from 'expo-font';
