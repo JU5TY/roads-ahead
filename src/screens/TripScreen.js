@@ -205,17 +205,20 @@ export default function TripScreen() {
   }, [trip, pointsByDrive, days, dayColorOf, dayNo]);
   // Frame the picked day (the whole trip for All). From its points, not the
   // segments, so place names arriving don't move the map again.
+  // The drives framed: the picked day's, or a trip's only drive (it's selected
+  // without a tab, and its pins come from these points too).
+  const fitIds = dayDrives ? dayDrives.map((d) => d.id).join(',') : selectedId ? String(selectedId) : '';
   const fitTo = useMemo(
     () =>
-      dayDrives && pointsByDrive
-        ? dayDrives.flatMap((d) =>
-            downsample(pointsByDrive.get(d.id) ?? [], 200).map(({ latitude, longitude }) => ({
+      fitIds && pointsByDrive
+        ? fitIds.split(',').flatMap((id) =>
+            downsample(pointsByDrive.get(Number(id)) ?? [], 200).map(({ latitude, longitude }) => ({
               latitude,
               longitude,
             }))
           )
         : undefined,
-    [pointsByDrive, dayDrives]
+    [pointsByDrive, fitIds]
   );
 
   const driveColors = useMemo(
@@ -397,8 +400,8 @@ export default function TripScreen() {
         ...routeMarkers(
           selected
             ? {
-                firstPoint: fitTo[0],
-                lastPoint: fitTo.at(-1),
+                firstPoint: fitTo?.[0],
+                lastPoint: fitTo?.at(-1),
                 startName: selected.places.start,
                 endName: selected.places.end,
                 drives: [selected],
