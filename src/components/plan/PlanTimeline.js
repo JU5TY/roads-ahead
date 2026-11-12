@@ -4,6 +4,7 @@ import { Animated, Pressable, Text, View } from 'react-native';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, type } from '../../theme';
 import { getRoad } from '../../utils/iconicRoads';
+import { regroupDays } from '../../utils/plans';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 
@@ -133,46 +134,59 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
 }
 
 /**
- * One planned drive as a timeline, like the Trip page's: its start (a green
- * dot; linked when it's where the drive before ends) with Change, a ring per
- * stop, an Iconic Road as a chip on the leg it's driven on, and the
- * last place as the red finish. Stops are dragged by their handle to reorder
- * them; tapping one opens its options.
- * `start` is driveStart(); `legTexts` ("33 mi · 45m") and `ferryLegs` (a Set,
- * the legs taking a ferry) are by the id of the
- * stop each leg arrives at; onStopPress(stop), onStartPress(),
- * onMove(stop, position). `locked` (a copied ready-made route) leaves out the
- * handles and taps: nothing can be changed. A round trip's way back (the last
- * drive's final stop, `home`, from withWayBack) is its finish: onBackPress(). `numbered`
- * (a plan of more than one day) starts it on "Day 2 · Start", as a trip's days.
+ * A plan as a timeline, like the Trip page's: one day (its tab), or the whole
+ * route (All: `days` of them). A day starts on a green dot ("Day 2 · Start",
+ * with Change); its stops are rings and an Iconic Road a chip on the leg it's
+ * driven on. Every day but the last ends where you stay (a red Finish), then
+ * the overnight break and the next day's start; the last day ends at its last
+ * place, or at the way back (`home`, from withWayBack: onBackPress()).
+ * `days`: [{ index, start (driveStart), stops (as on the map), last }].
+ * Stops are dragged by their handle. On All a stay drags too, taking its night
+ * with it, and a stop dragged past a stay moves into the other day; on a day's
+ * tab its stay is pinned as the day's end. onArrange(each shown day's stop ids,
+ * from regroupDays) after a drop. `legTexts` ("33 mi · 45m") and `ferryLegs` (a
+ * Set) are by the id of the stop each leg arrives at; onStopPress(stop, day),
+ * onStartPress(day), colorOf(day), by day index. `numbered` (a plan of more
+ * than one day) labels starts "Day 2 · Start". `locked` (a copied ready-made
+ * route) leaves out the handles and taps: nothing can be changed.
  */
 export default function PlanTimeline({
-  drive,
-  index,
-  start,
-  color,
+  days,
+  colorOf,
   legTexts = {},
   ferryLegs,
   onStopPress,
   onStartPress,
-  onMove,
+  onArrange,
   onBackPress,
   numbered = false,
   locked = false,
 }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const [layouts, setLayouts] = useState({}); // each stop's rows: { y, height }, by index
+  const [layouts, setLayouts] = useState({}); // each unit's rows: { y, height }, by index
   const [dy] = useState(() => new Animated.Value(0));
   const [drag, setDrag] = useState(null); // { from, to, y0 } while a stop is dragged
   // A dropped stop stays where it was dropped until the saved order comes back.
-  const [dropped, setDropped] = useState(null); // { before, order }
+  const [dropped, setDropped] = useState(null); // { key, units }
+  const route = days.length > 1;
+  const lastDay = days.at(-1);
   // The way back stays at the end: it isn't dragged, and nothing is dragged past it.
-  const home = drive.stops.at(-1)?.home ? drive.stops.at(-1) : null;
-  const placed = home ? drive.stops.slice(0, -1) : drive.stops;
-  const stops = dropped?.before === drive.stops ? dropped.order : placed;
-  // Distances are left off while a stop moves, and until the moved drive is routed again.
-  const texts = drag || dropped?.before === drive.stops ? {} : legTexts;
+  const home = lastDay.stops.at(-1)?.home ? lastDay.stops.at(-1) : null;
+  const ownStops = (d) => d.stops.filter((s) => !s.home);
+  // Every stop in route order, with its day and whether it's where that day ends (its stay).
+  const unitsOf = (groups) =>
+    groups.flatMap((stops, k) =>
+      stops.map((stop, i) => ({ stop, day: days[k].index, stay: !days[k].last && i === stops.length - 1 }))
+    );
+  const fresh = unitsOf(days.map(ownStops));
+  const key = fresh.map((u) => u.stop.id).join(',');
+  const units = dropped?.key === key ? dropped.units : fresh;
+  // On a day's tab, its stay is its end: not dragged, and nothing dragged below it.
+  const pinned = !route && units.at(-1)?.stay;
+  const maxTo = pinned ? units.length - 2 : units.length - 1;
+  // Distances are left off while a stop moves, and until the moved route is routed again.
+  const texts = drag || dropped?.key === key ? {} : legTexts;
 
   const move = (pageY) => {
     if (!drag) return;
@@ -183,19 +197,24 @@ export default function PlanTimeline({
     // Lands after every other stop whose middle it has passed.
     const middle = own.y + own.height / 2 + moved;
     let to = 0;
-    for (let j = 0; j < stops.length; j += 1) {
+    for (let j = 0; j < units.length; j += 1) {
       const l = layouts[j];
       if (j !== drag.from && l && l.y + l.height / 2 < middle) to += 1;
     }
+    to = Math.min(to, maxTo);
     if (to !== drag.to) setDrag({ ...drag, to });
   };
   const end = () => {
     if (drag && drag.to !== drag.from) {
-      const order = [...stops];
+      const order = units.map((u) => u.stop);
       const [moved] = order.splice(drag.from, 1);
       order.splice(drag.to, 0, moved);
-      setDropped({ before: drive.stops, order });
-      onMove(moved, drag.to);
+      // The days re-form around their stays (a lone day just takes the new order).
+      const ids = order.map((s) => s.id);
+      const groups = route ? regroupDays(days.map((d) => ownStops(d).map((s) => s.id)), ids) : [ids];
+      const byId = new Map(order.map((s) => [s.id, s]));
+      setDropped({ key, units: unitsOf(groups.map((g) => g.map((id) => byId.get(id)))) });
+      onArrange(groups);
     }
     setDrag(null);
   };
@@ -213,7 +232,7 @@ export default function PlanTimeline({
     onResponderRelease: end,
     onResponderTerminate: end,
   });
-  // How far stop j slides to make room while another is dragged.
+  // How far unit j slides to make room while another is dragged.
   const shiftOf = (j) => {
     if (!drag || j === drag.from) return 0;
     const h = layouts[drag.from]?.height ?? 0;
@@ -222,54 +241,65 @@ export default function PlanTimeline({
     return 0;
   };
 
-  const startName = start?.name ?? 'Your location';
-  const startSubtitle = numbered ? `Day ${index + 1} · Start` : 'Start';
-  const startRow = (
+  const startRow = (d) => (
     <EventRow
+      key={`start-${d.index}`}
       kind="start"
-      name={startName}
-      subtitle={startSubtitle}
-      onChange={onStartPress}
+      name={d.start?.name ?? 'Your location'}
+      subtitle={numbered ? `Day ${d.index + 1} · Start` : 'Start'}
+      onChange={locked || !onStartPress ? undefined : () => onStartPress(d.index)}
     />
   );
+  const noStops = (k) => <LegRow key={`none-${k}`} color={c.outline} text="No stops yet. Add where this day goes" />;
+  // After a stay (or an empty day): the night, then the next day's start; on
+  // through any days with no stops, to the next one that goes somewhere.
+  const nightsAfter = (p, place) => {
+    const rows = [];
+    for (let q = p; q + 1 < days.length; q += 1) {
+      const next = days[q + 1];
+      rows.push(<OvernightRow key={`night-${next.index}`} place={place} />, startRow(next));
+      if (ownStops(next).length) break;
+      rows.push(noStops(next.index));
+      place = next.start?.name ?? 'Dropped pin';
+    }
+    return rows;
+  };
+  const posOf = (day) => days.findIndex((d) => d.index === day);
 
-  if (stops.length === 0 && !home) {
-    return (
-      <View>
-        {startRow}
-        <LegRow color={c.outline} text="No stops yet. Add where this day goes" />
-      </View>
-    );
-  }
-
-  // The last place is the finish, unless an Iconic Road comes after it.
-  const lastPlace = stops.map((s) => !s.roadId).lastIndexOf(true);
-  const unitRows = (stop, i, dragHandlers) => {
-    const handlers = locked ? undefined : dragHandlers;
-    const onPress = locked ? undefined : () => onStopPress(stop);
+  const unitRows = (u, i, dragHandlers) => {
+    const { stop, day, stay } = u;
+    const color = colorOf(day);
+    const handlers = locked || (pinned && i === units.length - 1) ? undefined : dragHandlers;
+    const onPress = locked ? undefined : () => onStopPress(stop, day);
+    const prev = units[i - 1];
+    const next = units[i + 1];
+    const night = route && stay ? nightsAfter(posOf(day), stop.roadId ? getRoad(stop.roadId)?.name : stop.name) : null;
     const road = stop.roadId ? getRoad(stop.roadId) : null;
     if (road) {
-      // A road shows the leg to the place after it (or to its own end, last).
-      const next = stops[i + 1] ?? home;
-      const legId = next && !next.roadId ? next.id : stop.id;
-      const text = texts[legId];
+      // A road shows the leg to the place after it in its day (or to its own end, last).
+      const after = next && next.day === day ? next.stop : !stay && i === units.length - 1 ? home : null;
+      const legId = after && !after.roadId ? after.id : stop.id;
       return (
-        <LegRow
-          color={color}
-          road={road.name}
-          text={text}
-          ferry={ferryLegs?.has(legId)}
-          onPress={onPress}
-          handlers={handlers}
-          held={drag?.from === i}
-        />
+        <>
+          <LegRow
+            color={color}
+            road={road.name}
+            text={texts[legId]}
+            ferry={ferryLegs?.has(legId)}
+            onPress={onPress}
+            handlers={handlers}
+            held={drag?.from === i}
+          />
+          {stay ? <EventRow kind="finish" name={`End of ${road.name}`} subtitle="Finish" /> : null}
+          {night}
+        </>
       );
     }
-    const finish = !home && i === stops.length - 1 && i === lastPlace;
+    const finish = stay || (!home && i === units.length - 1);
     return (
       <>
-        {/* A leg leads into each place, unless an Iconic Road's leg already did. */}
-        {stops[i - 1]?.roadId ? null : (
+        {/* A leg leads into each place, unless an Iconic Road's leg in its day already did. */}
+        {prev?.stop.roadId && prev.day === day && !prev.stay ? null : (
           <LegRow color={color} text={texts[stop.id]} ferry={ferryLegs?.has(stop.id)} />
         )}
         <EventRow
@@ -281,21 +311,24 @@ export default function PlanTimeline({
           handlers={handlers}
           held={drag?.from === i}
         />
+        {night}
       </>
     );
   };
 
-  // A drive that ends on an Iconic Road finishes at its far end.
-  const last = stops.at(-1);
-  const lastRoad = last?.roadId ? getRoad(last.roadId) : null;
+  const first = days[0];
+  const last = units.at(-1);
+  const lastColor = colorOf(lastDay.index);
+  const lastRoad = last && last.stop.roadId && !last.stay ? getRoad(last.stop.roadId) : null;
 
   return (
     <View>
-      {startRow}
+      {startRow(first)}
+      {ownStops(first).length ? null : [noStops(first.index), ...(route ? nightsAfter(0, first.start?.name ?? 'Dropped pin') : [])]}
       <View style={styles.units}>
-        {stops.map((stop, i) => (
+        {units.map((u, i) => (
           <Draggable
-            key={stop.id}
+            key={u.stop.id}
             index={i}
             shift={shiftOf(i)}
             dragging={drag?.from === i}
@@ -303,14 +336,14 @@ export default function PlanTimeline({
             handlers={handlersFor(i)}
             onLayout={(j, layout) => setLayouts((l) => ({ ...l, [j]: layout }))}
           >
-            {(handlers) => unitRows(stop, i, handlers)}
+            {(handlers) => unitRows(u, i, handlers)}
           </Draggable>
         ))}
       </View>
       {home ? (
         <>
           {/* An Iconic Road's leg already leads into it. */}
-          {last?.roadId ? null : <LegRow color={color} text={texts[home.id]} ferry={ferryLegs?.has(home.id)} />}
+          {lastRoad ? null : <LegRow color={lastColor} text={texts[home.id]} ferry={ferryLegs?.has(home.id)} />}
           <EventRow
             kind="finish"
             name={home.name}
@@ -319,8 +352,8 @@ export default function PlanTimeline({
             onPress={locked ? undefined : onBackPress}
           />
         </>
-      ) : last.roadId ? (
-        <EventRow kind="finish" name={lastRoad ? `End of ${lastRoad.name}` : 'Finish'} subtitle="Finish" />
+      ) : lastRoad ? (
+        <EventRow kind="finish" name={`End of ${lastRoad.name}`} subtitle="Finish" />
       ) : null}
     </View>
   );

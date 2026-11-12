@@ -308,6 +308,21 @@ export async function movePlanStop(stopId, position) {
   });
 }
 
+/**
+ * Put stops into days, in order, after a drag on All re-formed the days
+ * (utils/plans.js regroupDays): `days` is [{ planDriveId, stopIds }].
+ */
+export async function arrangePlanStops(days) {
+  const db = await getDb();
+  await db.withTransactionAsync(async () => {
+    for (const { planDriveId, stopIds } of days) {
+      for (const [i, id] of stopIds.entries()) {
+        await db.runAsync('UPDATE plan_stops SET plan_drive_id = ?, position = ? WHERE id = ?', planDriveId, i, id);
+      }
+    }
+  });
+}
+
 /** Remove a stop; the stops after it move up one. */
 export async function deletePlanStop(stopId) {
   const db = await getDb();

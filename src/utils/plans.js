@@ -301,6 +301,38 @@ export function driveRoute(plan, index) {
   return { points, legStops };
 }
 
+/**
+ * The days re-formed around their stays after a stop is dragged on All. `days`
+ * is each day's stop ids in order, `order` every stop id as dropped. Each day
+ * but the last ends at a stay, its last stop: a stay ends its day wherever it's
+ * dragged, so the stops between two stays make a day. A day with no stops
+ * keeps its place after the stay before it. Returns each day's stop ids, as
+ * many days as before.
+ */
+export function regroupDays(days, order) {
+  const last = days.length - 1;
+  // Each stay, and how many empty days follow it (not the last day).
+  const emptiesAfter = new Map();
+  days.forEach((ids, k) => {
+    if (k === last || ids.length === 0) return;
+    let empties = 0;
+    while (k + 1 + empties < last && days[k + 1 + empties].length === 0) empties += 1;
+    emptiesAfter.set(ids.at(-1), empties);
+  });
+  let leading = 0;
+  while (leading < last && days[leading].length === 0) leading += 1;
+  const groups = Array.from({ length: leading }, () => []);
+  let current = [];
+  for (const id of order) {
+    current.push(id);
+    if (!emptiesAfter.has(id)) continue;
+    groups.push(current, ...Array.from({ length: emptiesAfter.get(id) }, () => []));
+    current = [];
+  }
+  groups.push(current);
+  return groups;
+}
+
 /** How far from a drive's start counts as away from it: the sat nav takes you there first. */
 export const AWAY_M = 1000;
 

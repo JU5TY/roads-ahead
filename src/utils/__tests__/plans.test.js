@@ -13,6 +13,7 @@ import {
   planHandover,
   planProgress,
   planOutline,
+  regroupDays,
   roadReversedFrom,
   roadsNear,
   stopName,
@@ -403,5 +404,40 @@ describe('withWayBack', () => {
     expect(stopsPassed(p, 0, [near(home), near(fortAugustus), near(eileanDonan)])).toBe(2);
     expect(stopsPassed(p, 0, [near(home), near(fortAugustus), near(eileanDonan), near(home)])).toBe(3);
     expect(planProgress(p, 0, [near(home), near(fortAugustus), near(eileanDonan)]).next.home).toBe(true);
+  });
+});
+
+describe('regroupDays', () => {
+  const days = [['loch', 'fortWilliam'], ['augustus', 'applecross'], ['inverness']];
+
+  it('keeps the days as they are when nothing crosses a stay', () => {
+    const three = [['loch', 'glencoe', 'fortWilliam'], ['applecross'], ['inverness']];
+    expect(regroupDays(three, ['glencoe', 'loch', 'fortWilliam', 'applecross', 'inverness'])).toEqual([
+      ['glencoe', 'loch', 'fortWilliam'],
+      ['applecross'],
+      ['inverness'],
+    ]);
+  });
+
+  it('moves the stay with its place: dragged earlier, the stops after it start the next day', () => {
+    expect(regroupDays(days, ['fortWilliam', 'loch', 'augustus', 'applecross', 'inverness'])).toEqual([
+      ['fortWilliam'],
+      ['loch', 'augustus', 'applecross'],
+      ['inverness'],
+    ]);
+  });
+
+  it('moves a stop past a stay into the other day', () => {
+    expect(regroupDays(days, ['loch', 'augustus', 'fortWilliam', 'applecross', 'inverness'])).toEqual([
+      ['loch', 'augustus', 'fortWilliam'],
+      ['applecross'],
+      ['inverness'],
+    ]);
+  });
+
+  it('keeps an empty last day, and a day with no stops after its stay', () => {
+    expect(regroupDays([['a', 'b'], ['c'], []], ['b', 'a', 'c'])).toEqual([['b'], ['a', 'c'], []]);
+    expect(regroupDays([['a'], [], ['b']], ['b', 'a'])).toEqual([['b', 'a'], [], []]);
+    expect(regroupDays([[], ['a', 'b'], ['c']], ['a', 'c', 'b'])).toEqual([[], ['a', 'c', 'b'], []]);
   });
 });

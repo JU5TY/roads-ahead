@@ -8,7 +8,7 @@ import DetailLayout from '../components/detail/DetailLayout';
 import PriceSheet from '../components/PriceSheet';
 import { TitleBlock } from '../components/detail/TripStats';
 import PlanSheet from '../components/plan/PlanSheet';
-import PlanTimeline, { OvernightRow } from '../components/plan/PlanTimeline';
+import PlanTimeline from '../components/plan/PlanTimeline';
 import StartDriveSheet from '../components/plan/StartDriveSheet';
 import NavAppSheet from '../components/NavAppSheet';
 import RouteMap from '../components/RouteMap';
@@ -28,6 +28,7 @@ import {
   deletePlan,
   deletePlanStop,
   getPlan,
+  arrangePlanStops,
   getPlanDrives,
   joinPlanDriveWithNext,
   movePlanStop,
@@ -268,6 +269,8 @@ export default function PlanScreen() {
   const stopIndex = stop ? atDrive.stops.findIndex((s) => s.id === stop.id) : -1;
   // A place you stay at ends its day; the last place of a day (not the trip's) is where you stay.
   const staying = stop && stopIndex === atDrive.stops.length - 1 && at < plan.drives.length - 1;
+  // The last place a stop can move down to: above the day's stay, if it has one.
+  const lastMovable = atDrive.stops.length - (at < plan.drives.length - 1 ? 2 : 1);
   const stay = stop && !stop.roadId && !locked
     ? staying
       ? {
@@ -283,20 +286,30 @@ export default function PlanScreen() {
           onPress: act(() => splitPlanDriveAt(stop.id)),
         }
     : null;
-  // A day's timeline, to change: its stops dragged, tapped for their sheet, its start changed.
-  const dayTimeline = (i) => (
+  // The timeline: the whole route on All (one list, days formed around the
+  // stays), or one day's. Its leg texts are every shown day's together.
+  const shownDays = (all ? plan.drives.map((_, i) => i) : [picked]).map((i) => ({
+    index: i,
+    start: driveStart(plan, i),
+    stops: mapPlan.drives[i].stops,
+    last: i === plan.drives.length - 1,
+  }));
+  const shownLegs = shownDays.map((d) => legsOf(d.index));
+  const timeline = (
     <PlanTimeline
-      key={plan.drives[i].id}
-      {...legsOf(i)}
-      drive={{ ...plan.drives[i], stops: mapPlan.drives[i].stops }}
-      index={i}
-      start={driveStart(plan, i)}
+      days={shownDays}
+      legTexts={Object.assign({}, ...shownLegs.map((l) => l.legTexts))}
+      ferryLegs={new Set(shownLegs.flatMap((l) => [...l.ferryLegs]))}
+      colorOf={colorOf}
       numbered={plan.drives.length > 1}
-      color={colorOf(i)}
       onBackPress={locked ? undefined : () => setMenu('back')}
-      onStopPress={(s) => setMenu({ stop: s, at: i })}
-      onStartPress={locked ? undefined : () => setMenu({ start: true, at: i })}
-      onMove={(s, position) => movePlanStop(s.id, position).then(reload).catch((err) => console.warn('[plan] move failed', err))}
+      onStopPress={(s, day) => setMenu({ stop: s, at: day })}
+      onStartPress={(day) => setMenu({ start: true, at: day })}
+      onArrange={(groups) =>
+        arrangePlanStops(groups.map((stopIds, k) => ({ planDriveId: plan.drives[shownDays[k].index].id, stopIds })))
+          .then(reload)
+          .catch((err) => console.warn('[plan] move failed', err))
+      }
       locked={locked}
     />
   );
@@ -436,10 +449,11 @@ export default function PlanScreen() {
         message={stop ? (stop.roadId ? getRoad(stop.roadId)?.name : (stop.name ?? 'Dropped pin')) : null}
         actions={[
           ...(stay ? [stay] : []),
-          ...(stopIndex > 0
+          // A stay keeps its place (drag it on All to move it), and nothing moves below it.
+          ...(stopIndex > 0 && !staying
             ? [{ icon: 'expand_less', label: 'Move up', onPress: act(() => movePlanStop(stop.id, stopIndex - 1)) }]
             : []),
-          ...(stop && stopIndex < atDrive.stops.length - 1
+          ...(stop && stopIndex < lastMovable
             ? [{ icon: 'expand_more', label: 'Move down', onPress: act(() => movePlanStop(stop.id, stopIndex + 1)) }]
             : []),
           ...(stop
@@ -448,7 +462,11 @@ export default function PlanScreen() {
                   icon: 'delete',
                   label: stop.roadId ? 'Remove Iconic Road' : 'Remove stop',
                   style: 'destructive',
-                  onPress: act(() => deletePlanStop(stop.id)),
+                  // Removing where you stay removes the stay too: the day joins the next.
+                  onPress: act(async () => {
+                    await deletePlanStop(stop.id);
+                    if (staying) await joinPlanDriveWithNext(atDrive.id);
+                  }),
                 },
               ]
             : []),
@@ -499,16 +517,7 @@ export default function PlanScreen() {
         </Text>
       </View>
 
-      {all
-        ? // The whole route as one timeline, as a trip's All: each day ends where
-          // you stay, then the overnight break, then the next day's start.
-          plan.drives.map((d, i) => (
-            <View key={d.id}>
-              {i > 0 ? <OvernightRow place={driveReach(plan, i - 1)?.name ?? 'Dropped pin'} /> : null}
-              {dayTimeline(i)}
-            </View>
-          ))
-        : dayTimeline(picked)}
+      {timeline}
 
       {locked ? (
         <View style={styles.lockedNote}>
