@@ -7,7 +7,7 @@ import { getTrip } from '../storage/tripStorage';
 import { getReadyRoute, routeCompleted } from '../utils/readyRoutes';
 
 /**
- * Where each ready-made route stands: a Map of route id → { plan, completed },
+ * Where each Iconic Trip stands: a Map of route id → { plan, completed },
  * for the routes in your plans (the newest copy). `completed` is { from, to }
  * (when its trip was driven) once the trip the plan was driven as covers about
  * 90% of the route's line, in any order across its drives; else null. Null

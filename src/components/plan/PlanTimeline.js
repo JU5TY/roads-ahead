@@ -152,8 +152,8 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * from regroupDays) after a drop. `legTexts` ("33 mi · 45m") and `ferryLegs` (a
  * Set) are by the id of the stop each leg arrives at; onStopPress(stop, day),
  * onStartPress(day), colorOf(day), by day index. `numbered` (a plan of more
- * than one day) labels starts "Day 2 · Start". `locked` (a copied ready-made
- * route) leaves out the handles and taps: nothing can be changed.
+ * than one day) labels starts "Day 2 · Start". `locked` (a copied Iconic
+ * Trip) leaves out the handles and taps: nothing can be changed.
  */
 export default function PlanTimeline({
   days,

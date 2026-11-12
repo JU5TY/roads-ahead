@@ -1,5 +1,5 @@
-// Builds src/data/routes.json, the bundled ready-made routes (the planner's
-// Ready-made routes list). Run by hand when a route changes:
+// Builds src/data/routes.json, the bundled Iconic Trips (the planner's
+// Iconic Trips list). Run by hand when a route changes:
 // `node scripts/build-routes.mjs`
 //
 // Stops are looked up by name with Photon (OpenStreetMap data), near a rough
@@ -217,6 +217,6 @@ for (const route of ROUTES) {
   routes.push({ id: route.id, name: route.name, country: route.country, blurb: route.blurb, metres, drives });
 }
 
-const attribution = 'Ready-made routes: © OpenStreetMap contributors (ODbL), routed with OSRM';
+const attribution = 'Iconic Trips: © OpenStreetMap contributors (ODbL), routed with OSRM';
 await writeFile(OUT, `${JSON.stringify({ attribution, routes })}\n`);
 console.log(`Wrote ${OUT.pathname}`);

@@ -18,7 +18,7 @@ function PlanForm({ plan, onSave }) {
   const [date, setDate] = useState(plan?.startDate ? dateOf(plan.startDate) : null);
   const [picking, setPicking] = useState(false);
   const [roundTrip, setRoundTrip] = useState(plan?.roundTrip ?? false);
-  // A copied ready-made route stays as it came.
+  // A copied Iconic Trip stays as it came.
   const locked = !!plan?.routeId;
   const trimmed = name.trim();
 

@@ -1,4 +1,4 @@
-// Ready-made routes (the planner's Ready-made routes list), bundled from
+// Iconic Trips (the planner's Iconic Trips list), bundled from
 // scripts/build-routes.mjs: OpenStreetMap lines and miles, so they're ours to
 // keep and draw anywhere. A route's drives are copied into a plan as they are
 // (plans.route_id says which route); a copied plan can't be changed for now.

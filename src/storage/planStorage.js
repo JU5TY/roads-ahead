@@ -91,7 +91,7 @@ async function insertStop(db, planDriveId, position, stop) {
 
 /**
  * Save a new plan: { name, startDate?, routeId?, roundTrip?, drives?: [{ start?, stops? }] }
- * (a ready-made route's copy has its drives; a new plan starts with one empty
+ * (a copied Iconic Trip has its drives; a new plan starts with one empty
  * drive). Returns its id.
  */
 export async function createPlan({ name, startDate = null, routeId = null, roundTrip = false, drives = [{}] }) {

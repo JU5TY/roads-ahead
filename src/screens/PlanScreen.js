@@ -160,7 +160,7 @@ export default function PlanScreen() {
     });
   };
 
-  // A copied ready-made route can't be changed for now: its drives and stops are as they came.
+  // A copied Iconic Trip can't be changed for now: its days and stops are as they came.
   const locked = !!plan.routeId;
   // "Fort William → Applecross"; Drive 1 with no start runs from wherever you are.
   const startName = start?.name ?? 'Your location';
@@ -539,7 +539,7 @@ export default function PlanScreen() {
         <View style={styles.lockedNote}>
           <Icon name="info" size={20} color={c.textMuted} />
           <Text style={[type.label, styles.muted, styles.regular, styles.flex]}>
-            Copied from Ready-made routes, so its drives and stops stay as they are for now
+            Copied from Iconic Trips, so its days and stops stay as they are for now
           </Text>
         </View>
       ) : (

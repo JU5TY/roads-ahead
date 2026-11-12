@@ -10,7 +10,7 @@ import {
 
 const nc500 = getReadyRoute('nc500');
 
-describe('ready-made routes', () => {
+describe('Iconic Trips', () => {
   it('has the North Coast 500, a loop from Inverness in five drives', () => {
     expect(READY_ROUTES.map((r) => r.id)).toEqual(['nc500']);
     expect(nc500.drives).toHaveLength(5);

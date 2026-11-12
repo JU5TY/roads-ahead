@@ -27,7 +27,7 @@ function routeLine(route, state, units) {
 }
 
 /**
- * Ready-made routes: those completed (about 90% driven), those in your plans
+ * Iconic Trips: those completed (about 90% driven), those in your plans
  * (copied), then the rest. A route opens its page, where it's copied. Country
  * chips come once there are routes in more than one country.
  */
@@ -69,7 +69,7 @@ export default function ReadyRoutesScreen() {
         style={styles.back}
       />
       <Text style={[type.headline, styles.h1]} role="heading">
-        Ready-made routes
+        Iconic Trips
       </Text>
       <Text style={[type.body, styles.intro]}>Copy one to your plans, then drive it a day at a time</Text>
 

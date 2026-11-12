@@ -18,7 +18,7 @@ export const MAP_HEIGHT = 400;
  * actions: [{ icon, label, onPress }], left to right; label is for screen readers.
  * `mapHeight` below the status bar: 400 on Trip, 380 on Day, 360 on a road.
  * `scrollEnabled` false holds the page still (while a plan's stop is dragged).
- * `footer` is pinned under the content, outside the scroll (a ready-made route's Copy).
+ * `footer` is pinned under the content, outside the scroll (an Iconic Trip's Copy).
  */
 export default function DetailLayout({
   map,

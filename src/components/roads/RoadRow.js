@@ -9,8 +9,8 @@ import Icon from '../ui/Icon';
 const THUMB = 48;
 
 /**
- * One Iconic Road (or ready-made route), a card like a Trips card: green once
- * completed, blue when it's `planned` (a ready-made route in your plans),
+ * One Iconic Road (or Iconic Trip), a card like a Trips card: green once
+ * completed, blue when it's `planned` (an Iconic Trip in your plans),
  * white otherwise, with its
  * shape on the right like a Trips card (a tick on it once completed, a
  * bookmark once planned). `line` is its [latitude, longitude] points.

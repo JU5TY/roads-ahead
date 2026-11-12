@@ -190,14 +190,14 @@ export default function PastTripsScreen() {
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={empty}
-        // Under the plans: copy a ready-made route instead of planning from scratch.
+        // Under the plans: copy an Iconic Trip instead of planning from scratch.
         ListFooterComponent={
           planned && plans ? (
             <BannerCard
-              icon="explore"
+              icon="signpost"
               filled
-              title="Ready-made routes"
-              subtitle="Start with the North Coast 500"
+              title="Iconic Trips"
+              subtitle="Planned day by day for you"
               onPress={() => router.push('/routes')}
               style={styles.routes}
             />

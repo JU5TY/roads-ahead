@@ -24,7 +24,7 @@ import {
 } from '../utils/readyRoutes';
 
 /**
- * A ready-made route: its map (a colour per drive), what it is, Completed once
+ * An Iconic Trip: its map (a colour per day), what it is, Completed once
  * about 90% of it is driven, its miles and drives, and Copy to my plans
  * (Premium, though free for now), or Open your plan once it's copied. Params: `id`.
  */
@@ -84,7 +84,7 @@ export default function ReadyRouteScreen() {
         )
       }
     >
-      <Text style={[type.kicker, styles.kicker]}>{`${route.country} · Ready-made route`.toUpperCase()}</Text>
+      <Text style={[type.kicker, styles.kicker]}>{`${route.country} · Iconic Trip`.toUpperCase()}</Text>
       <Text style={[type.title, styles.text]}>{route.name}</Text>
       <Text style={[type.lead, styles.muted, styles.blurb]}>{route.blurb}</Text>
 
