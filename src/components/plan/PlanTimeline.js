@@ -17,19 +17,19 @@ function Marker({ kind, color }) {
   return <View style={[styles.dot, { backgroundColor: kind === 'start' ? c.start : c.finish }]} />;
 }
 
-/** The drag handle: drag it up or down to move its stop (the gesture is the parent's). */
-function Handle({ name, handlers }) {
+/** The drag handle: drag it up or down to move its stop (the gesture is the parent's). Blue while held. */
+function Handle({ name, handlers, held }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   return (
     // Not flattened away on Android, so it gets its own touches.
     <View {...handlers} collapsable={false} style={styles.handle} accessibilityLabel={`Move ${name}`}>
-      <Icon name="drag_indicator" size={22} color={c.textMuted} />
+      <Icon name="drag_indicator" size={22} color={held ? c.accent : c.textMuted} />
     </View>
   );
 }
 
-function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, handlers }) {
+function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, handlers, held }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const body = (
@@ -49,7 +49,7 @@ function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, hand
         </View>
       </View>
       {onChange ? <Button label="Change" variant="text" size="small" onPress={onChange} /> : null}
-      {handlers ? <Handle name={name} handlers={handlers} /> : null}
+      {handlers ? <Handle name={name} handlers={handlers} held={held} /> : null}
     </View>
   );
   if (!onPress) return body;
@@ -61,7 +61,7 @@ function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, hand
 }
 
 /** Between two rows: the drive's bar, with an Iconic Road's chip when the leg drives one. */
-function LegRow({ color, road, text, onPress, handlers }) {
+function LegRow({ color, road, text, onPress, handlers, held }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const body = (
@@ -80,7 +80,7 @@ function LegRow({ color, road, text, onPress, handlers }) {
           </View>
         ) : null}
       </View>
-      {handlers ? <Handle name={road} handlers={handlers} /> : null}
+      {handlers ? <Handle name={road} handlers={handlers} held={held} /> : null}
     </View>
   );
   if (!onPress) return body;
@@ -95,6 +95,7 @@ function LegRow({ color, road, text, onPress, handlers }) {
  * One stop's rows, draggable by their handle (`handlers` go on it). While a
  * stop is dragged it follows the finger and the others slide out of its way
  * (`shift`); the timeline works out where it lands from the rows' heights.
+ * It's lifted flat on the page's colour, so its leg reads as the line itself.
  */
 function Draggable({ index, shift, dragging, dy, handlers, onLayout, children }) {
   const styles = useStyles(makeStyles);
@@ -140,6 +141,8 @@ export default function PlanTimeline({
   // A dropped stop stays where it was dropped until the saved order comes back.
   const [dropped, setDropped] = useState(null); // { before, order }
   const stops = dropped?.before === drive.stops ? dropped.order : drive.stops;
+  // Distances are left off while a stop moves, and until the moved drive is routed again.
+  const texts = drag || dropped?.before === drive.stops ? {} : legTexts;
 
   const move = (pageY) => {
     if (!drag) return;
@@ -223,16 +226,23 @@ export default function PlanTimeline({
     if (road) {
       // A road shows the leg to the place after it (or to its own end, last).
       const next = stops[i + 1];
-      const text = next && !next.roadId ? legTexts[next.id] : legTexts[stop.id];
+      const text = next && !next.roadId ? texts[next.id] : texts[stop.id];
       return (
-        <LegRow color={color} road={road.name} text={text} onPress={onPress} handlers={handlers} />
+        <LegRow
+          color={color}
+          road={road.name}
+          text={text}
+          onPress={onPress}
+          handlers={handlers}
+          held={drag?.from === i}
+        />
       );
     }
     const finish = i === stops.length - 1 && i === lastPlace;
     return (
       <>
         {/* A leg leads into each place, unless an Iconic Road's leg already did. */}
-        {stops[i - 1]?.roadId ? null : <LegRow color={color} text={legTexts[stop.id]} />}
+        {stops[i - 1]?.roadId ? null : <LegRow color={color} text={texts[stop.id]} />}
         <EventRow
           kind={finish ? 'finish' : 'stop'}
           color={color}
@@ -240,6 +250,7 @@ export default function PlanTimeline({
           subtitle={finish ? 'Finish' : 'Stop'}
           onPress={onPress}
           handlers={handlers}
+          held={drag?.from === i}
         />
       </>
     );
@@ -301,7 +312,7 @@ const makeStyles = (c) => ({
   roadChipText: { color: c.onRoadContainer, letterSpacing: 0 },
   handle: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   units: { position: 'relative' },
-  // Lifted over the others while it's dragged.
-  dragging: { zIndex: 1, elevation: 4, backgroundColor: c.background, ...c.cardShadow },
+  // Over the others while it's dragged, with no shadow: only the stop looks like it moves.
+  dragging: { zIndex: 1, backgroundColor: c.background },
   pressed: { opacity: pressedOpacity },
 });
