@@ -128,8 +128,7 @@ export default function PlanScreen() {
   const start = driveStart(plan, picked);
   const fitCoords = all ? outline.flatMap((d) => d.coordinates) : (outline[picked]?.coordinates ?? []);
   const finish = wayStops.length ? driveReach(wayPlan, picked) : null;
-  const { stops } = stopCounts([drive]);
-  const shownStops = all ? stopCounts(plan.drives).stops : stops;
+  const shownStops = stopCounts(plan, all ? null : picked).stops;
   const act = (fn) => () => {
     setMenu(null);
     fn().then(reload).catch((err) => console.warn('[plan] change failed', err));
@@ -513,8 +512,12 @@ export default function PlanScreen() {
         </Text>
         <Text style={[type.bodySmall, styles.muted]}>
           {[
-            // A day going straight somewhere (home, on a round trip) has its miles, not "No stops yet".
-            shownStops === 0 ? (wayStops.length ? null : 'No stops yet') : `${shownStops} ${shownStops === 1 ? 'stop' : 'stops'}`,
+            // A day (or trip) going straight somewhere has its miles, not "No stops yet".
+            shownStops === 0
+              ? (all ? mapPlan.drives.some((d) => d.stops.length) : wayStops.length)
+                ? null
+                : 'No stops yet'
+              : `${shownStops} ${shownStops === 1 ? 'stop' : 'stops'}`,
             routeSummary,
           ]
             .filter(Boolean)

@@ -5,20 +5,21 @@ import { Pressable, Text, View } from 'react-native';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
 import { formatDateRange } from '../../utils/format';
-import { planKicker, planOutline, stopCounts, withWayBack } from '../../utils/plans';
+import { planKicker, planOutline, stopCounts, stopName, withWayBack } from '../../utils/plans';
 import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
 
 /**
  * A plan on the Planned tab, like a Trips card: blue date line (grey with no
- * date), name, "23 stops", an Iconic Roads chip, and the planned outline dotted
+ * date), name, "23 stops" (or "Straight to Inverness"), an Iconic Roads chip, and the planned outline dotted
  * in the round thumbnail. `done` adds a "Driven 11–12 Oct 2026" chip, its
  * dates from `drivenDates` ({ from, to }). Tapping opens the plan.
  */
 export default function PlanCard({ plan, done = false, drivenDates = null }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const { stops, roads } = stopCounts(plan.drives);
+  const { stops, roads } = stopCounts(plan);
+  const end = plan.drives.flatMap((d) => d.stops).at(-1);
   const segments = useMemo(
     () =>
       planOutline(withWayBack(plan, null)).map(({ index, coordinates }) => ({
@@ -44,7 +45,11 @@ export default function PlanCard({ plan, done = false, drivenDates = null }) {
           {plan.name}
         </Text>
         <Text style={[type.body, styles.muted]} numberOfLines={1}>
-          {stops === 0 ? 'No stops yet' : `${stops} ${stops === 1 ? 'stop' : 'stops'}`}
+          {stops > 0
+            ? `${stops} ${stops === 1 ? 'stop' : 'stops'}`
+            : !end
+              ? 'No stops yet'
+              : `${end.roadId ? 'Along' : 'Straight to'} ${stopName(end)}`}
         </Text>
         {roads > 0 || done ? (
           <View style={styles.chips}>

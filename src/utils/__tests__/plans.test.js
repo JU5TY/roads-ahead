@@ -17,6 +17,7 @@ import {
   roadReversedFrom,
   roadsNear,
   stopName,
+  stopCounts,
   stopsPassed,
   withWayBack,
 } from '../plans';
@@ -439,5 +440,30 @@ describe('regroupDays', () => {
     expect(regroupDays([['a', 'b'], ['c'], []], ['b', 'a', 'c'])).toEqual([['b'], ['a', 'c'], []]);
     expect(regroupDays([['a'], [], ['b']], ['b', 'a'])).toEqual([['b', 'a'], [], []]);
     expect(regroupDays([[], ['a', 'b'], ['c']], ['a', 'c', 'b'])).toEqual([[], ['a', 'c', 'b'], []]);
+  });
+});
+
+describe('stopCounts', () => {
+  const trip = plan({ stops: [fortAugustus, eileanDonan] }, { stops: [road(), applecross, fortWilliam] });
+
+  it("leaves out each day's finish", () => {
+    expect(stopCounts(trip, 0)).toEqual({ stops: 1, roads: 0 });
+    expect(stopCounts(trip, 1)).toEqual({ stops: 1, roads: 1 });
+  });
+
+  it("counts a trip's stays but not its end", () => {
+    expect(stopCounts(trip)).toEqual({ stops: 3, roads: 1 });
+  });
+
+  it('counts the last place of a round trip, which ends back at the start', () => {
+    const loop = { ...trip, roundTrip: true };
+    expect(stopCounts(loop, 0).stops).toBe(1);
+    expect(stopCounts(loop, 1).stops).toBe(2);
+    expect(stopCounts(loop).stops).toBe(4);
+  });
+
+  it('counts a place before the Iconic Road a day ends on', () => {
+    expect(stopCounts(plan({ stops: [fortAugustus, road()] }), 0)).toEqual({ stops: 1, roads: 1 });
+    expect(stopCounts(plan({ stops: [] }))).toEqual({ stops: 0, roads: 0 });
   });
 });

@@ -114,10 +114,24 @@ export function planKicker(plan) {
   return `${date} · ${drives}`;
 }
 
-/** { stops, roads }: a plan's (or one drive's) places and Iconic Roads. */
-export function stopCounts(drives) {
-  const all = drives.flatMap((d) => d.stops);
-  return { stops: all.filter((s) => !s.roadId).length, roads: all.filter((s) => s.roadId).length };
+/**
+ * { stops, roads }: the places and Iconic Roads on a plan, or on its day `index`.
+ * Where it ends isn't a stop: a day's finish (its stay, or the trip's end), or
+ * on the whole trip just the trip's end, its stays being places on the way. A
+ * round trip ends back at the start, so its last place is a stop; so is a
+ * place before an Iconic Road a day ends on.
+ */
+export function stopCounts(plan, index = null) {
+  const drives = index === null ? plan.drives : [plan.drives[index]];
+  const lastDay = index === null || index === plan.drives.length - 1;
+  let stops = 0;
+  drives.forEach((d) => {
+    const ends = d === drives.at(-1);
+    const places = d.stops.filter((s) => !s.roadId).length;
+    const finish = ends && d.stops.at(-1) && !d.stops.at(-1).roadId && !(lastDay && plan.roundTrip);
+    stops += finish ? places - 1 : places;
+  });
+  return { stops, roads: drives.flatMap((d) => d.stops).filter((s) => s.roadId).length };
 }
 
 /**
