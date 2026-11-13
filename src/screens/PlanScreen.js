@@ -576,8 +576,8 @@ const makeStyles = (c) => ({
   tabsScroll: { flexGrow: 0, marginTop: spacing.md, marginHorizontal: -spacing.md },
   tabs: { gap: 8, paddingHorizontal: spacing.md },
   heading: { marginTop: 20, marginBottom: 10, marginHorizontal: 4, gap: 2 },
-  // Under a divider, so they don't read as stops; the icon sits in the timeline's rail.
-  addRows: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: c.divider },
+  // A gap, not a line, keeps them apart from the last stop; the icon sits in the timeline's rail.
+  addRows: { marginTop: spacing.md },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52 },
   addRail: { width: 22, alignItems: 'center' },
   addLabel: { color: c.accent },
