@@ -34,8 +34,8 @@ const DRIVER = { useNativeDriver: true };
  * (edge-to-edge Android windows don't resize for it).
  * The panel keeps the same space under every sheet's content, above the
  * navigation bar or, while it's up, the keyboard (which covers the bar).
- * Tapping or dragging the handle down, tapping the scrim (unless `scrimCloses`
- * is false) or Back calls onClose, so no sheet has a Cancel button (and forms
+ * Tapping the handle, pulling the sheet down from anywhere, tapping the scrim
+ * (unless `scrimCloses` is false) or Back calls onClose, so no sheet has a Cancel button (and forms
  * have no title either). No motion with reduced motion on.
  */
 export default function BottomSheet({ visible, onClose, scrimCloses = true, children }) {
@@ -106,17 +106,28 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
     }, SHOW_WAIT_MS);
   };
 
-  // The handle drags the panel down; let go far enough (or flick) and it closes.
-  // A tap on it closes too (it's the Close button for screen readers).
-  const pan = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+  // Dragged down, the panel follows; let go far enough (or flick) and it closes.
+  const drag = {
     onPanResponderMove: (_, g) => offset.setValue(Math.max(0, g.dy)),
     onPanResponderRelease: (_, g) => {
       const tap = Math.abs(g.dx) < 4 && Math.abs(g.dy) < 4;
       if (tap || g.dy > DRAG_CLOSE || g.vy > 0.8) onClose();
       else Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }).start();
     },
+    onPanResponderTerminate: () => Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }).start(),
+  };
+  // The handle: drags, and a tap closes (it's the Close button for screen readers).
+  const pan = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
+    ...drag,
+  });
+  // Anywhere else on the panel: a clear pull downwards takes over from a row
+  // or field (taps still reach them), as in other apps. A list that can scroll
+  // keeps its own drags.
+  const panelPan = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && g.dy > Math.abs(g.dx) * 1.5,
+    ...drag,
   });
 
   return (
@@ -141,6 +152,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
         pointerEvents="box-none"
       >
         <Animated.View
+          {...panelPan.panHandlers}
           onLayout={onLayout}
           style={[
             styles.panel,
