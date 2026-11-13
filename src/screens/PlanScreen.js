@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
@@ -13,7 +13,6 @@ import StartDriveSheet from '../components/plan/StartDriveSheet';
 import NavAppSheet from '../components/NavAppSheet';
 import RouteMap from '../components/RouteMap';
 import VehicleSheet from '../components/VehicleSheet';
-import Button from '../components/ui/Button';
 import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
 import FloatingButton from '../components/ui/FloatingButton';
@@ -39,7 +38,7 @@ import {
   splitPlanDriveAt,
 } from '../storage/planStorage';
 import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
-import { dayColorFor, floating, spacing, type } from '../theme';
+import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
@@ -55,6 +54,24 @@ import {
   stopCounts,
   withWayBack,
 } from '../utils/plans';
+
+/** Under the timeline: adds to the shown day (Add stop, Add Iconic Road), a row rather than a button. */
+function AddRow({ icon, iconColor, filled = false, label, onPress }) {
+  const { c } = useTheme();
+  const styles = useStyles(makeStyles);
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
+    >
+      <View style={styles.addRail}>
+        <Icon name={icon} size={22} color={iconColor ?? c.accent} filled={filled} />
+      </View>
+      <Text style={[type.bodyStrong, styles.addLabel]}>{label}</Text>
+    </Pressable>
+  );
+}
 
 /**
  * A plan: its map, then the whole route as one timeline (All) to plan it in,
@@ -543,23 +560,9 @@ export default function PlanScreen() {
           </Text>
         </View>
       ) : (
-        <View style={styles.buttons}>
-          <Button
-            label="Add stop"
-            icon="add_location_alt"
-            variant="tonal"
-            size="small"
-            onPress={() => pickPlace('stop')}
-            style={styles.button}
-          />
-          <Button
-            label="Iconic Road"
-            icon="verified"
-            variant="tonal"
-            size="small"
-            onPress={() => setMenu('road')}
-            style={styles.button}
-          />
+        <View style={styles.addRows}>
+          <AddRow icon="add_location_alt" label="Add stop" onPress={() => pickPlace('stop')} />
+          <AddRow icon="verified" iconColor={c.ringNumber} filled label="Add Iconic Road" onPress={() => setMenu('road')} />
         </View>
       )}
     </DetailLayout>
@@ -573,8 +576,12 @@ const makeStyles = (c) => ({
   tabsScroll: { flexGrow: 0, marginTop: spacing.md, marginHorizontal: -spacing.md },
   tabs: { gap: 8, paddingHorizontal: spacing.md },
   heading: { marginTop: 20, marginBottom: 10, marginHorizontal: 4, gap: 2 },
-  buttons: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-  button: { flex: 1 },
+  // Under a divider, so they don't read as stops; the icon sits in the timeline's rail.
+  addRows: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: c.divider },
+  addRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52 },
+  addRail: { width: 22, alignItems: 'center' },
+  addLabel: { color: c.accent },
+  pressed: { opacity: pressedOpacity },
   text: { color: c.text },
   muted: { color: c.textMuted },
   regular: { fontFamily: type.body.fontFamily },
