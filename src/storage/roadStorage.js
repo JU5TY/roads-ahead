@@ -102,6 +102,17 @@ export async function getRoadCompletions(roadId) {
   }));
 }
 
+/** Map tripId → the ids of the Iconic Roads completed on that trip (for Trips search). */
+export async function getRoadIdsByTrip() {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT DISTINCT d.trip_id, c.road_id FROM road_completions c JOIN drives d ON d.id = c.drive_id`
+  );
+  const byTrip = new Map();
+  for (const r of rows) byTrip.set(r.trip_id, [...(byTrip.get(r.trip_id) ?? []), r.road_id]);
+  return byTrip;
+}
+
 /** Map tripId → number of different Iconic Roads completed on that trip. */
 export async function getRoadCountsByTrip() {
   const db = await getDb();

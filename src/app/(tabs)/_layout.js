@@ -63,12 +63,12 @@ function RecordPill() {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const { view } = useGlobalSearchParams();
+  const { view, search } = useGlobalSearchParams();
   const { drive } = useActiveDrive();
 
   if (pathname !== '/' && pathname !== '/trips') return null;
-  // Trips' Planned view has Plan in this spot.
-  if (pathname === '/trips' && view === 'planned') return null;
+  // Trips' Planned view has Plan in this spot; and it steps aside while Trips is searched.
+  if (pathname === '/trips' && (view === 'planned' || search)) return null;
   const label = drive ? null : 'Record';
 
   return (

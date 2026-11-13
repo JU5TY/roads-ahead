@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { BackHandler, FlatList, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import NoTrips from '../components/NoTrips';
@@ -10,6 +10,8 @@ import RecordingBar from '../components/RecordingBar';
 import TripCard from '../components/TripCard';
 import BannerCard from '../components/ui/BannerCard';
 import FloatingButton from '../components/ui/FloatingButton';
+import Icon from '../components/ui/Icon';
+import IconButton from '../components/ui/IconButton';
 import SectionHeader from '../components/ui/SectionHeader';
 import SegmentedSwitch from '../components/ui/SegmentedSwitch';
 import { useSettings } from '../context/SettingsContext';
@@ -18,9 +20,12 @@ import { useRoadCounts } from '../hooks/useRoadCounts';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
 import { createPlan, drivenPlanDates, drivenPlanDriveIds, listPlans } from '../storage/planStorage';
+import { getRoadIdsByTrip } from '../storage/roadStorage';
 import { listTrips } from '../storage/tripStorage';
-import { bottomSpace, floating, spacing, type } from '../theme';
+import { listVehicles } from '../storage/vehicleStorage';
+import { bottomSpace, floating, radius, spacing, type } from '../theme';
 import { groupPlans } from '../utils/plans';
+import { planSearchText, searchMatches, tripSearchText } from '../utils/tripSearch';
 
 const VIEWS = [
   ['driven', 'Driven'],
@@ -89,8 +94,44 @@ export default function PastTripsScreen() {
   const [plans, setPlans] = useState(null); // { list, driven, dates }
   const [planning, setPlanning] = useState(false);
   // Driven or Planned, kept in the route so the Record pill can step aside for Plan.
-  const planned = useLocalSearchParams().view === 'planned';
+  const params = useLocalSearchParams();
+  const planned = params.view === 'planned';
   const showView = (view) => router.setParams({ view: view === 'planned' ? 'planned' : undefined });
+  // Searching: the title becomes a search box (the Record pill steps aside, the
+  // keyboard is up). Kept in the route too, so the pill knows. `query` is what's typed.
+  const searching = params.search === '1';
+  const [query, setQuery] = useState('');
+  // What trips are found by beyond the list itself: { roads: tripId → road ids, vehicles: id → vehicle }.
+  const [extras, setExtras] = useState(null);
+  const openSearch = () => router.setParams({ search: '1' });
+  const closeSearch = useCallback(() => {
+    setQuery('');
+    router.setParams({ search: undefined });
+  }, []);
+  useEffect(() => {
+    if (!searching) return;
+    let cancelled = false;
+    Promise.all([getRoadIdsByTrip(), listVehicles()])
+      .then(([roads, list]) => {
+        if (!cancelled) setExtras({ roads, vehicles: new Map(list.map((v) => [v.id, v])) });
+      })
+      .catch((err) => console.warn('[trips] search data failed', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [searching]);
+  // Back closes the search rather than leaving Trips; only while Trips is showing
+  // (it stays mounted under a trip's page).
+  useFocusEffect(
+    useCallback(() => {
+      if (!searching) return undefined;
+      const back = BackHandler.addEventListener('hardwareBackPress', () => {
+        closeSearch();
+        return true;
+      });
+      return () => back.remove();
+    }, [searching, closeSearch])
+  );
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -126,15 +167,36 @@ export default function PastTripsScreen() {
 
   useFocusEffect(load);
 
-  const rows = useMemo(
+  // Each trip's and plan's search text, worked out once per list rather than per letter typed.
+  const tripTexts = useMemo(
     () =>
-      planned
-        ? plans
-          ? planRows(plans.list, plans.driven, plans.dates)
-          : []
-        : withMonthHeaders(trips ?? []),
-    [planned, plans, trips]
+      searching && trips
+        ? new Map(
+            trips.map((t) => [
+              t.id,
+              tripSearchText(t, { roadIds: extras?.roads.get(t.id), vehicles: extras?.vehicles }),
+            ])
+          )
+        : null,
+    [searching, trips, extras]
   );
+  const planTexts = useMemo(
+    () => (searching && plans ? new Map(plans.list.map((p) => [p.id, planSearchText(p)])) : null),
+    [searching, plans]
+  );
+
+  const rows = useMemo(() => {
+    const found = (texts, id) => !texts || searchMatches(texts.get(id), query);
+    return planned
+      ? plans
+        ? planRows(
+            plans.list.filter((p) => found(planTexts, p.id)),
+            plans.driven,
+            plans.dates
+          )
+        : []
+      : withMonthHeaders((trips ?? []).filter((t) => found(tripTexts, t.id)));
+  }, [planned, plans, trips, query, tripTexts, planTexts]);
 
   const plan = async ({ name, startDate, roundTrip }) => {
     setPlanning(false);
@@ -144,9 +206,37 @@ export default function PastTripsScreen() {
 
   const header = (
     <View>
-      <Text style={[type.headline, styles.h1]} role="heading">
-        Trips
-      </Text>
+      {searching ? (
+        <View style={styles.search}>
+          <Icon name="search" size={22} color={c.textMuted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search trips"
+            placeholderTextColor={c.textMuted}
+            style={styles.input}
+            autoFocus
+            autoCorrect={false}
+            returnKeyType="search"
+            accessibilityLabel="Search trips"
+          />
+          <IconButton
+            icon="close"
+            variant="plain"
+            size={44}
+            iconSize={22}
+            accessibilityLabel="Clear and close search"
+            onPress={closeSearch}
+          />
+        </View>
+      ) : (
+        <View style={styles.titleRow}>
+          <Text style={[type.headline, styles.h1]} role="heading">
+            Trips
+          </Text>
+          <IconButton icon="search" variant="plain" accessibilityLabel="Search trips" onPress={openSearch} />
+        </View>
+      )}
       <SegmentedSwitch
         options={VIEWS}
         value={planned ? 'planned' : 'driven'}
@@ -154,11 +244,16 @@ export default function PastTripsScreen() {
         stretch
         style={styles.switch}
       />
-      {planned ? null : <RecordingBar style={styles.recording} />}
+      {planned || searching ? null : <RecordingBar style={styles.recording} />}
     </View>
   );
 
-  const empty = planned ? (
+  const empty = searching && query.trim() ? (
+    <View style={styles.noMatch}>
+      <Icon name="search" size={40} color={c.textMuted} />
+      <Text style={[type.body, styles.muted, styles.center]}>No trips match “{query.trim()}”</Text>
+    </View>
+  ) : planned ? (
     plans ? (
       <View style={styles.noPlans}>
         <Text style={[type.section, styles.text]}>No plans yet</Text>
@@ -194,8 +289,9 @@ export default function PastTripsScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={empty}
         // Under the plans: copy an Iconic Trip instead of planning from scratch.
+        keyboardShouldPersistTaps="handled"
         ListFooterComponent={
-          planned && plans ? (
+          planned && plans && !searching ? (
             <BannerCard
               icon="signpost"
               filled
@@ -207,7 +303,7 @@ export default function PastTripsScreen() {
           ) : null
         }
       />
-      {planned ? (
+      {planned && !searching ? (
         <FloatingButton
           icon="add"
           iconColor={c.accent}
@@ -225,7 +321,23 @@ export default function PastTripsScreen() {
 const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -8 },
   h1: { color: c.text, marginHorizontal: 4, marginTop: 8, height: 56, textAlignVertical: 'center' },
+  // As Add stop's search box; in the title's place, the same height overall.
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 52,
+    marginTop: 12,
+    paddingLeft: spacing.md,
+    paddingRight: 4,
+    borderRadius: radius.card,
+    backgroundColor: c.card,
+    ...c.cardShadow,
+  },
+  input: { ...type.bodyLarge, flex: 1, minWidth: 0, color: c.text, paddingVertical: 12 },
+  noMatch: { alignItems: 'center', gap: spacing.md, paddingTop: 64, paddingHorizontal: spacing.lg },
   switch: { marginTop: 16 },
   recording: { marginTop: 20 },
   month: { marginTop: 20, marginBottom: 4 },
