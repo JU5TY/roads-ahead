@@ -1,14 +1,17 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import RouteThumb from '../components/RouteThumb';
 import Button from '../components/ui/Button';
 import Icon from '../components/ui/Icon';
 import IconButton from '../components/ui/IconButton';
 import { PREMIUM_PRICE, PREMIUM_TAGLINE } from '../hooks/usePremium';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { radius, spacing, type } from '../theme';
+import { dayColorFor, radius, spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
+import { READY_ROUTES } from '../utils/readyRoutes';
 
 // In pairs, as the grid shows them: photos first, the trip's data last.
 const FEATURES = [
@@ -19,6 +22,35 @@ const FEATURES = [
   ['save', 'Backup file', 'Keep a copy, or move to any phone'],
   ['download', 'GPX export', 'Your routes in other map apps'],
 ];
+
+/** The headline, above the pairs: Iconic Trips, with the first trip drawn in its day colours. */
+function TripsTile() {
+  const { c } = useTheme();
+  const styles = useStyles(makeStyles);
+  const segments = useMemo(
+    () =>
+      READY_ROUTES[0].drives.map((d, i) => ({
+        key: `drive-${i}`,
+        coordinates: d.line.map(([latitude, longitude]) => ({ latitude, longitude })),
+        color: dayColorFor(c, i + 1),
+      })),
+    [c]
+  );
+  return (
+    <View style={styles.headline}>
+      <View style={styles.flex}>
+        <View style={styles.tileIcon}>
+          <Icon name="signpost" size={24} color={c.onAccentContainer} />
+        </View>
+        <Text style={[type.section, styles.text, styles.tileTitle]}>Iconic Trips</Text>
+        <Text style={[type.label, styles.muted, styles.headlineText]}>
+          Ready-made road trips, copied into your plans, day by day
+        </Text>
+      </View>
+      <RouteThumb segments={segments} size={88} />
+    </View>
+  );
+}
 
 function FeatureTile({ icon, title, description }) {
   const { c } = useTheme();
@@ -62,6 +94,7 @@ export default function PremiumScreen() {
           <Text style={[type.lead, styles.muted, styles.tagline]}>{PREMIUM_TAGLINE}</Text>
         </View>
 
+        <TripsTile />
         <View style={styles.grid}>
           {FEATURES.map(([icon, title, description]) => (
             <FeatureTile key={title} icon={icon} title={title} description={description} />
@@ -70,7 +103,7 @@ export default function PremiumScreen() {
         <View style={styles.free}>
           <Icon name="check_circle" size={18} color={c.textMuted} />
           <Text style={[type.label, styles.muted, styles.freeText]}>
-            Everything else stays free: recording, trips, charts, Iconic Roads and sharing.
+            Everything else stays free: recording, trips, planning, charts, Iconic Roads and sharing.
           </Text>
         </View>
       </ScrollView>
@@ -123,7 +156,22 @@ const makeStyles = (c) => ({
   },
   title: { marginTop: 14 },
   tagline: { marginTop: 8, textAlign: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 20 },
+  flex: { flex: 1, minWidth: 0 },
+  // The headline: wider and taller than the pairs, with a picture.
+  headline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: 20,
+    paddingVertical: 20,
+    paddingLeft: 18,
+    paddingRight: spacing.md,
+    borderRadius: radius.card,
+    backgroundColor: c.card,
+    ...c.cardShadow,
+  },
+  headlineText: { marginTop: 2, fontFamily: type.body.fontFamily },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 },
   // Two columns: each starts just under half and grows to fill its share of the row.
   tile: {
     flexBasis: '48%',

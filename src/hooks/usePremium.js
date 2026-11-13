@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 
 export const PREMIUM_PRICE = '£19.99';
-export const PREMIUM_TAGLINE = 'Show off your trips, and take them anywhere';
+export const PREMIUM_TAGLINE = 'Drive great trips, show them off, and take them anywhere';
 
 /**
  * Whether Roads Ahead Premium is active. Payments aren't connected yet (they need
