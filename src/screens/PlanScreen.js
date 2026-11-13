@@ -56,6 +56,9 @@ import {
   withWayBack,
 } from '../utils/plans';
 
+// The vehicle sheet's closing slide (BottomSheet's CLOSE_MS), and a little more.
+const SHEET_SWAP_MS = 320;
+
 /** Under the timeline: adds to the shown day (Add stop, Add Iconic Road), a row rather than a button. */
 function AddRow({ icon, iconColor, filled = false, label, onPress }) {
   const { c } = useTheme();
@@ -250,7 +253,13 @@ export default function PlanScreen() {
     }
     // Reloaded first, so the price sheet opens for the car's fuel as saved.
     await reloadVehicles();
-    setMenu(hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'] ? 'price' : null);
+    setMenu(null);
+    // Then the price, if that's still missing: once the vehicle sheet has slid
+    // away and the keyboard dropped, as Android can lose a sheet opened while
+    // another is still closing.
+    if (hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel']) {
+      setTimeout(() => setMenu('price'), SHEET_SWAP_MS);
+    }
   };
   // Drive i's leg texts and which legs take a ferry, by the id of the stop each leg arrives at.
   const legsOf = (i) => {
