@@ -98,8 +98,18 @@ const waypoint = (p) => ({
 /** Today's date as 'YYYY-MM-DD', for the phone's daily count. */
 const today = () => new Date().toISOString().slice(0, 10);
 
+// Requests are counted one at a time: drives asked for together (the All tab)
+// would otherwise all read the same count and record one request for many.
+let counting = Promise.resolve();
+
 /** Counts one request against the phone's daily limit; false once it's used up. */
-async function takeRequest() {
+function takeRequest() {
+  const turn = counting.then(countRequest);
+  counting = turn.catch(() => {});
+  return turn;
+}
+
+async function countRequest() {
   let count = { day: today(), used: 0 };
   try {
     const saved = JSON.parse((await Storage.getItemAsync(COUNT_KEY)) ?? 'null');
@@ -157,12 +167,16 @@ export async function routeDrive(points, { signal } = {}) {
   const controller = new AbortController();
   const cancel = () => controller.abort();
   signal?.addEventListener('abort', cancel);
-  const timer = setTimeout(cancel, TIMEOUT_MS);
+  // Each part gets its own time: one timer for all could cut off a later part
+  // after the earlier ones were paid for.
+  let timer = null;
   try {
     const legs = [];
     const line = [];
     for (const [i, part] of parts.entries()) {
       if (!(await takeRequest())) return { limited: true };
+      clearTimeout(timer);
+      timer = setTimeout(cancel, TIMEOUT_MS);
       const route = await askGoogle(part, controller.signal);
       const partLegs = (route.legs ?? []).map(legOf);
       // A part that starts at a point driven through carries on the leg before.

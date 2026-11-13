@@ -44,6 +44,7 @@ import { formatDistance, formatDurationShort } from '../utils/format';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
+  addPosition,
   driveMarkers,
   driveReach,
   driveStart,
@@ -98,7 +99,7 @@ export default function PlanScreen() {
   // (`at`: the day the stop or start is in)
   const [menu, setMenu] = useState(null);
   const [dragging, setDragging] = useState(false); // a stop is being dragged: the page holds still
-  const { here } = useHere();
+  const { here, ready: hereReady } = useHere();
   const insets = useSafeAreaInsets();
 
   const reload = useCallback(
@@ -124,7 +125,7 @@ export default function PlanScreen() {
   // phone is, and a round trip comes back there.
   const mapPlan = useMemo(() => (plan ? mapPlanOf(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
-  const routes = usePlanRoutes(mapPlan, tab);
+  const routes = usePlanRoutes(mapPlan, tab, hereReady);
   const { units, prices, setPrice, navApp } = useSettings();
   const [vehicles, reloadVehicles] = useVehicles();
   // Plans aren't tied to a car: the fuel is worked out for the default one.
@@ -169,7 +170,8 @@ export default function PlanScreen() {
   };
   // Where the day would start if it followed on (Day 1: wherever the phone is).
   const followOn = driveStart({ ...plan, drives: plan.drives.map((d) => (d === atDrive ? { ...d, start: null } : d)) }, at);
-  const addRoad = (road) => act(() => addPlanStop(plan.drives[addAt].id, roadStop(plan, addAt, road)))();
+  const addRoad = (road) =>
+    act(() => addPlanStop(plan.drives[addAt].id, roadStop(plan, addAt, road), addPosition(plan, addAt)))();
   const confirmDeletePlan = () => {
     setMenu(null);
     showDialog({

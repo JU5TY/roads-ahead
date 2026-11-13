@@ -19,6 +19,7 @@ import { dayColorFor, pressedOpacity, radius, spacing, type } from '../theme';
 import { formatDistance } from '../utils/format';
 import { roadPlace } from '../utils/iconicRoads';
 import {
+  addPosition,
   driveMarkers,
   driveReach,
   driveStart,
@@ -165,7 +166,7 @@ export default function AddStopScreen() {
     save(() =>
       forStart
         ? setPlanDriveStart(drive.id, { name: name ?? 'Dropped pin', latitude, longitude })
-        : addPlanStop(drive.id, { name, latitude, longitude, source })
+        : addPlanStop(drive.id, { name, latitude, longitude, source }, addPosition(plan, index))
     );
   const addLabel = (name) => (forStart ? `Start ${driveName} at ${name}` : `Add ${name} to ${driveName}`);
 
@@ -288,7 +289,11 @@ export default function AddStopScreen() {
                   detail={`${roadPlace(road)} · ${formatDistance(metres, units, 0)} away`}
                   note={inPlan ? 'In plan' : null}
                   addLabel={addLabel(road.name)}
-                  onAdd={inPlan ? undefined : () => save(() => addPlanStop(drive.id, roadStop(plan, index, road)))}
+                  onAdd={
+                    inPlan
+                      ? undefined
+                      : () => save(() => addPlanStop(drive.id, roadStop(plan, index, road), addPosition(plan, index)))
+                  }
                 />
               ))}
             </View>

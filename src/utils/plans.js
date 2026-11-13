@@ -168,10 +168,24 @@ export function roadReversedFrom(road, from) {
   return dist(road.line.at(-1)) < dist(road.line[0]);
 }
 
-/** Where drive `index` has got to after its stops so far: the end of its last stop, or its start. */
-export function driveReach(plan, index) {
-  const last = plan.drives[index].stops.at(-1);
+/**
+ * Where drive `index` has got to after its stops so far (or, with `before`, its
+ * stops before that position): the end of the last of them, or its start.
+ */
+export function driveReach(plan, index, before = null) {
+  const stops = plan.drives[index].stops;
+  const last = (before === null ? stops : stops.slice(0, before)).at(-1);
   return last ? endOfStop(last) : driveStart(plan, index);
+}
+
+/**
+ * Where a new stop goes in drive `index`: just before where it stays the night
+ * (every drive but the last ends there, so a new place never takes the stay's
+ * place), else at the end (null).
+ */
+export function addPosition(plan, index) {
+  const count = plan.drives[index].stops.length;
+  return index < plan.drives.length - 1 && count > 0 ? count - 1 : null;
 }
 
 /**
@@ -197,8 +211,8 @@ export function roadsNear(plan, index, { withinM = 80000, limit = 4 } = {}) {
 }
 
 /**
- * The stop for an Iconic Road added at the end of drive `index`: driven from
- * whichever end is nearer where the drive has got to.
+ * The stop for an Iconic Road added to drive `index` (at addPosition): driven
+ * from whichever end is nearer where the drive has got to by then.
  */
 export function roadStop(plan, index, road) {
   const [latitude, longitude] = road.line[0];
@@ -208,7 +222,7 @@ export function roadStop(plan, index, road) {
     longitude,
     source: 'pin',
     roadId: road.id,
-    reversed: roadReversedFrom(road, driveReach(plan, index)),
+    reversed: roadReversedFrom(road, driveReach(plan, index, addPosition(plan, index))),
   };
 }
 

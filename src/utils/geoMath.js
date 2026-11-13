@@ -258,7 +258,10 @@ export function resumeStats(stats, now) {
   if (!stats.paused) return stats;
   const pauses = [...stats.pauses];
   pauses[pauses.length - 1] = { ...pauses.at(-1), resumedAt: now };
-  return { ...stats, paused: false, pauses };
+  // Where it sat before the pause ends at the pause (a rest stop if it was
+  // long): the pause isn't time parked, and that old start would otherwise end
+  // the drive as left running straight after Resume.
+  return { ...closeDwell(stats, pauses.at(-1).pausedAt), paused: false, pauses };
 }
 
 /** The first fix after Resume: close the pause there and carry on, as after a ferry. */

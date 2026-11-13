@@ -1,6 +1,7 @@
 import { getRoad } from '../iconicRoads';
 import { roadGuidePoints } from '../navLinks';
 import {
+  addPosition,
   dateKey,
   dateOf,
   drivePoints,
@@ -15,6 +16,7 @@ import {
   planOutline,
   regroupDays,
   roadReversedFrom,
+  roadStop,
   roadsNear,
   stopName,
   stopCounts,
@@ -40,6 +42,29 @@ const fortAugustus = place('Fort Augustus', 57.1447, -4.6814, 'search');
 const eileanDonan = place('Eilean Donan Castle', 57.274, -5.5161, 'search');
 const applecross = place('Applecross', 57.4335, -5.815);
 const plan = (...drives) => ({ drives: drives.map((d, i) => ({ id: i + 1, position: i, start: null, ...d })) });
+
+describe('addPosition', () => {
+  const twoDays = plan(
+    { start: fortWilliam, stops: [fortAugustus, eileanDonan] },
+    { stops: [applecross] }
+  );
+
+  it('puts a new place before where a day stays the night', () => {
+    // Day 1 stays at Eilean Donan (its last stop): a new place goes just before it.
+    expect(addPosition(twoDays, 0)).toBe(1);
+  });
+
+  it('adds at the end of the last day, and of an empty day', () => {
+    expect(addPosition(twoDays, 1)).toBeNull();
+    expect(addPosition(plan({ stops: [] }, { stops: [] }), 0)).toBeNull();
+  });
+
+  it('turns an Iconic Road from where the day has got to before its stay', () => {
+    // Before Eilean Donan, Day 1 has reached Fort Augustus, not Eilean Donan.
+    const stop = roadStop(twoDays, 0, bealach);
+    expect(stop.reversed).toBe(roadReversedFrom(bealach, fortAugustus));
+  });
+});
 
 describe('driveStart', () => {
   it('leaves Drive 1 to start wherever the phone is', () => {

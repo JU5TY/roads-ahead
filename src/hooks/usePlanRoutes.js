@@ -40,9 +40,11 @@ export function useSavedLines(plan) {
  * the last 30 days. Returns { drives, lines }: drives[i] = { status: 'none' |
  * 'loading' | 'done' | 'failed' | 'limited', route?: { metres, seconds, legs,
  * line }, legStops }, 'none' for a drive with nowhere to go or not asked for;
- * lines[i] is drive i's road line or null (draw it straight).
+ * lines[i] is drive i's road line or null (draw it straight). Nothing is asked
+ * until `ready` (useHere's): Drive 1 with no start runs from the phone, so
+ * asking sooner would pay for a route from the first stop, then again from here.
  */
-export function usePlanRoutes(plan, picked) {
+export function usePlanRoutes(plan, picked, ready = true) {
   const asks = useMemo(() => (plan ? plan.drives.map((_, i) => driveRoute(plan, i)) : []), [plan]);
   const keys = asks.map((a) => (a ? routeKey(a.points) : null));
   const wanted = (picked == null ? keys : [keys[picked]]).filter(Boolean);
@@ -57,6 +59,7 @@ export function usePlanRoutes(plan, picked) {
   }, []);
 
   useEffect(() => {
+    if (!ready) return undefined;
     const controller = new AbortController();
     for (const key of new Set(wanted)) {
       if (memory.has(key)) continue;
@@ -73,7 +76,7 @@ export function usePlanRoutes(plan, picked) {
     return () => controller.abort();
     // `asks` changes with the keys; the keys alone say when to ask again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantedId]);
+  }, [wantedId, ready]);
 
   const drives = keys.map((key, i) => {
     const route = key ? memory.get(key) : undefined;

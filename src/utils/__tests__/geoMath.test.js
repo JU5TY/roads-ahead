@@ -4,6 +4,7 @@ import {
   finalizeStats,
   isLeftRunning,
   pauseStats,
+  resumeStats,
   stoppedSince,
 } from '../geoMath';
 
@@ -104,5 +105,18 @@ describe('a drive left running', () => {
     });
     const paused = pauseStats(stats, end);
     expect(isLeftRunning(paused, end + 10 * 60 * 60000)).toBe(false);
+  });
+
+  it("doesn't end a drive just resumed after a long pause", () => {
+    const { stats, end } = track(({ drive, stay }) => {
+      drive(0, 13000, 960);
+      stay(13000, 420);
+    });
+    const resumedAt = end + 4 * 60 * 60000;
+    const resumed = resumeStats(pauseStats(stats, end), resumedAt);
+    expect(stoppedSince(resumed)).toBeNull();
+    expect(isLeftRunning(resumed, resumedAt + 60000)).toBe(false);
+    // The stop before the pause is kept as a rest stop.
+    expect(finalizeStats(resumed).stops).toHaveLength(1);
   });
 });
