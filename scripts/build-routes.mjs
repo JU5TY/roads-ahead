@@ -109,7 +109,7 @@ const ROUTES = [
       },
     ],
   },
-  // Visit Wales's Cambrian Way itinerary: south to north, its seven overnight towns.
+  // Cadw's five-day Cambrian Way (linked from Visit Wales): south to north, its overnight towns.
   {
     id: 'cambrian-way',
     name: 'Cambrian Way',
@@ -119,57 +119,49 @@ const ROUTES = [
       {
         from: { name: 'Cardiff Bay', at: [51.4637, -3.165] },
         stops: [
-          { name: 'Castell Coch', at: [51.5356, -3.2549] },
           { name: 'Royal Mint Experience', at: [51.5437, -3.3955] },
           { name: 'Rhondda Heritage Park', at: [51.606, -3.357] },
+          { name: 'Cyfarthfa Castle', at: [51.755, -3.391] },
           { name: 'Merthyr Tydfil', at: [51.7487, -3.3816] },
         ],
       },
       {
         stops: [
           { name: 'Brecon Mountain Railway', at: [51.788, -3.364] },
-          { name: 'Storey Arms', at: [51.8697, -3.487], byPosition: true },
+          { name: 'Brecon Beacons National Park Visitor Centre', search: 'The Mountain Centre', at: [51.918, -3.484] },
           { name: 'Brecon', at: [51.946, -3.391] },
+          { name: 'Llandrindod Wells', at: [52.241, -3.379] },
         ],
       },
       {
         stops: [
-          { name: 'Erwood', at: [52.073, -3.341] },
-          { name: 'Builth Wells', at: [52.1497, -3.404] },
-        ],
-      },
-      {
-        stops: [
-          { name: 'Gigrin Farm', at: [52.294, -3.5] },
+          { name: 'Rhayader', at: [52.3016, -3.51] },
           { name: 'Elan Valley Visitor Centre', at: [52.27, -3.57] },
-          { name: 'Llanidloes', at: [52.449, -3.539] },
+          { name: 'Cwmystwyth', at: [52.357, -3.79] },
+          { name: 'Devil’s Bridge', search: "Devil's Bridge", at: [52.377, -3.85] },
+          { name: 'Machynlleth', at: [52.591, -3.851] },
         ],
       },
       {
         stops: [
-          { name: 'Llyn Clywedog', at: [52.468, -3.614] },
-          { name: 'Coed y Brenin', at: [52.818, -3.889] },
+          { name: 'Corris Craft Centre', at: [52.64, -3.825] },
+          { name: 'Dolgellau', at: [52.743, -3.885] },
           { name: 'Yr Ysgwrn', at: [52.903, -3.91] },
-          { name: 'Blaenau Ffestiniog', at: [52.9946, -3.94] },
-        ],
-      },
-      {
-        stops: [
-          { name: 'Llechwedd Slate Caverns', at: [53.0048, -3.9398] },
+          { name: 'Plas Brondanw', at: [52.964, -4.058] },
           { name: 'Betws-y-Coed', at: [53.0927, -3.8014] },
         ],
       },
       {
         stops: [
-          { name: 'Swallow Falls', at: [53.105, -3.835] },
           { name: 'Gwydir Castle', at: [53.134, -3.81] },
-          { name: 'Bodnant Garden', at: [53.22, -3.803] },
+          { name: 'Trefriw Woollen Mills', at: [53.152, -3.825] },
           { name: 'Llandudno', at: [53.324, -3.827] },
         ],
       },
     ],
   },
-  // Visit Wales's Coastal Way itinerary: south to north, its seven overnight towns.
+  // Visit Wales's Coastal Way, south to north, as its "long weekend": the 7-day
+  // itinerary's stops, staying at two of its overnight towns (Aberystwyth, Portmeirion).
   {
     id: 'coastal-way',
     name: 'Coastal Way',
@@ -183,17 +175,9 @@ const ROUTES = [
           { name: 'Melin Tregwynt', search: 'Tregwynt Woollen Mill', at: [51.995, -5.075] },
           { name: 'Pentre Ifan', at: [51.999, -4.77] },
           { name: 'Cardigan', at: [52.083, -4.66] },
-        ],
-      },
-      {
-        stops: [
           { name: 'Mwnt', at: [52.136, -4.64] },
           { name: 'New Quay', at: [52.214, -4.359] },
           { name: 'Aberaeron', at: [52.243, -4.26] },
-        ],
-      },
-      {
-        stops: [
           { name: 'Llanerchaeron', at: [52.224, -4.23] },
           { name: 'Aberystwyth', at: [52.4153, -4.0829] },
         ],
@@ -204,10 +188,6 @@ const ROUTES = [
           { name: 'Ynyslas', at: [52.525, -4.045] },
           { name: 'Machynlleth', at: [52.591, -3.851] },
           { name: 'Aberdyfi', at: [52.544, -4.045] },
-        ],
-      },
-      {
-        stops: [
           { name: 'Penmaenpool', at: [52.748, -3.935] },
           { name: 'Barmouth', at: [52.723, -4.056] },
           { name: 'Harlech Castle', at: [52.86, -4.109] },
@@ -220,10 +200,6 @@ const ROUTES = [
           { name: 'Criccieth Castle', at: [52.918, -4.233] },
           { name: 'Llanbedrog', at: [52.855, -4.48] },
           { name: 'Abersoch', at: [52.825, -4.505] },
-        ],
-      },
-      {
-        stops: [
           { name: 'Plas yn Rhiw', at: [52.829, -4.629] },
           { name: 'Aberdaron', at: [52.805, -4.711] },
         ],
@@ -477,8 +453,13 @@ async function lookUp({ name, search = name, at }) {
     (f) => haversine([f.geometry.coordinates[1], f.geometry.coordinates[0]], at) <= MAX_LOOKUP_M
   );
   // A town's council boundary has its point in the middle of the parish, often
-  // up a hillside, so the town itself comes first when there's one.
-  const best = near.find((f) => f.properties.osm_key !== 'boundary') ?? near[0];
+  // up a hillside, so the place itself comes first: the one with exactly that
+  // name, else anything that isn't a boundary.
+  const notBoundary = near.filter((f) => f.properties.osm_key !== 'boundary');
+  const best =
+    notBoundary.find((f) => f.properties.name?.toLowerCase() === search.toLowerCase()) ??
+    notBoundary[0] ??
+    near[0];
   const found = best && [best.geometry.coordinates[1], best.geometry.coordinates[0]];
   if (!found) throw new Error(`${name}: nothing found within ${MAX_LOOKUP_M / 1000} km of ${at}`);
   console.log(`  ${name}: ${Math.round(haversine(found, at))} m from its rough position`);
