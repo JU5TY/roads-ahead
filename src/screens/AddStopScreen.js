@@ -214,8 +214,12 @@ export default function AddStopScreen() {
           onPress={() => router.back()}
           style={[styles.back, { top: insets.top + 12 }]}
         />
-        <View style={[styles.hint, { top: insets.top + 20 }]} pointerEvents="none">
-          <Text style={[type.label, styles.text]}>Long-press the map to drop a pin</Text>
+        <View style={[styles.hintRow, { top: insets.top + 20 }]} pointerEvents="none">
+          <View style={styles.hint}>
+            <Text style={[type.label, styles.text]} numberOfLines={1}>
+              Hold to drop a pin
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -299,9 +303,9 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   map: { backgroundColor: c.mapLand },
   back: { position: 'absolute', left: 12 },
+  // Centred, and never under the Back button (12 + 48 + 12 from each edge).
+  hintRow: { position: 'absolute', left: 72, right: 72, alignItems: 'center' },
   hint: {
-    position: 'absolute',
-    alignSelf: 'center',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: radius.pill,
