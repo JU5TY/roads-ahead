@@ -63,8 +63,18 @@ export default function ReadyRouteScreen() {
   };
 
   const start = route.drives[0].start;
+  // Where it ends: the last stop, or the end of the line when an Iconic Road is last.
+  // Drawn after the start, so a round trip shows red, as on a driven trip.
+  const last = route.drives.at(-1);
+  const lastStop = last.stops.at(-1);
+  const [endLat, endLng] = last.line.at(-1);
+  const finish = lastStop.roadId ? { latitude: endLat, longitude: endLng } : lastStop;
+  const markers = [
+    { key: 'start', coordinate: start, title: start.name, color: c.start },
+    { key: 'finish', coordinate: finish, title: lastStop.name, color: c.finish },
+  ];
   const distance = distanceParts(route.metres, units);
-  const map = <RouteMap flat segments={segments} markers={[{ key: 'start', coordinate: start, title: start.name, color: c.start }]} />;
+  const map = <RouteMap flat segments={segments} markers={markers} />;
 
   return (
     <DetailLayout
