@@ -137,7 +137,7 @@ export default function SavedScreen() {
               drive.stats.timesHidden
                 ? { icon: 'trending_up', ...climb, label: 'Climb' }
                 : {
-                    icon: 'directions_car',
+                    icon: 'timer',
                     value: formatDurationShort(drive.stats.movingTimeMs),
                     label: 'Driving time',
                   },

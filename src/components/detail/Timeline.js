@@ -85,7 +85,7 @@ function EventRow({ item, color, onPress, onDriveOptions, hideTimes }) {
   );
 }
 
-const GAP_ICONS = { leg: 'directions_car', break: 'schedule', overnight: 'bedtime' };
+const GAP_ICONS = { leg: 'directions_car', break: 'local_cafe', overnight: 'bedtime' };
 // Ferries, tunnels and pauses (seaCrossing items): [icon, name].
 const SEA = {
   ferry: ['directions_boat', 'Ferry'],

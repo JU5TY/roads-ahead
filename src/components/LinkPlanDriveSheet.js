@@ -54,7 +54,7 @@ export default function LinkPlanDriveSheet({ visible, drive, onLinked, onClose }
       message={rows && rows.length === 0 ? 'There are no plans yet. Tap Plan on the Planned tab.' : undefined}
       actions={(rows ?? []).map((r) => ({
         key: `plan-drive-${r.id}`,
-        icon: 'route',
+        icon: 'bookmark',
         label: r.label,
         detail: r.detail,
         onPress: () => link(r.id),

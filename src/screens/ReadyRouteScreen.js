@@ -101,7 +101,7 @@ export default function ReadyRouteScreen() {
 
       <StatusCard
         done={!!state?.completed}
-        icon="route"
+        icon="signpost"
         title={state?.completed ? 'Completed' : 'Not completed yet'}
         detail={
           state?.completed
@@ -114,7 +114,7 @@ export default function ReadyRouteScreen() {
         style={styles.stats}
         stats={[
           { icon: 'straighten', ...distance, label: 'Distance' },
-          { icon: 'route', value: String(route.drives.length), label: 'Days' },
+          { icon: 'calendar_month', value: String(route.drives.length), label: 'Days' },
         ]}
       />
 

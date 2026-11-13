@@ -105,7 +105,7 @@ function TimesHiddenCard() {
 
 /**
  * "Details" rows, in three groups: time (Elapsed, Longest stretch, Rest stops),
- * height (Highest point, Elevation gain) and speed (Avg, then Max, low-key last).
+ * height (Highest point, Climb) and speed (Avg, then Max, low-key last).
  * With `timesHidden` only rest stops and height are left. Rest stops is left
  * out when there are none, Longest stretch when it's just the moving time
  * again (or unknown), and the section when no rows are left.
@@ -126,7 +126,7 @@ export function DetailsRows({
   const showLongest = longest != null && longest !== formatDurationShort(stats.movingTimeMs);
   const height = [
     ['landscape', 'Highest point', formatElevation(stats.maxAltitudeM, units)],
-    ['trending_up', 'Elevation gain', formatElevation(stats.elevationGainM, units)],
+    ['trending_up', 'Climb', formatElevation(stats.elevationGainM, units)],
   ];
   const rows = timesHidden
     ? [...(hasStops ? [['local_cafe', 'Rest stops', String(stats.stopCount)]] : []), ...height]

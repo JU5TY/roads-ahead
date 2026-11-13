@@ -442,7 +442,7 @@ export default function TripScreen() {
           ...(tripPlan
             ? [
                 {
-                  icon: 'route',
+                  icon: 'bookmark',
                   label: 'Open the plan for this trip',
                   onPress: () => {
                     setMenu(null);
