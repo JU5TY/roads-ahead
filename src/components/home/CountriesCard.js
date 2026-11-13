@@ -4,10 +4,15 @@ import { Text, View } from 'react-native';
 import { useStyles } from '../../hooks/useTheme';
 import { radius, type } from '../../theme';
 import { summarizeCountries } from '../../utils/countries';
+import { formatMonthYear } from '../../utils/format';
 import Flag from '../countries/Flag';
 import SectionHeader from '../ui/SectionHeader';
 
-/** Home's Countries card: how many countries you've driven in, with their flags. */
+/**
+ * Home's Countries card: the flags of every country you've driven in, like
+ * stamps in a passport, three to a row in the order you first drove them, each
+ * with its name and that month ("Jan 2026"). The count is in the title.
+ */
 export default function CountriesCard({ trips }) {
   const styles = useStyles(makeStyles);
   const countries = useMemo(
@@ -16,7 +21,7 @@ export default function CountriesCard({ trips }) {
         trips
           .flatMap((t) => t.drives)
           .sort((a, b) => a.startedAt - b.startedAt)
-          .flatMap((d) => d.countries ?? [])
+          .flatMap((d) => (d.countries ?? []).map((v) => ({ ...v, startedAt: d.startedAt })))
       ),
     [trips]
   );
@@ -24,34 +29,35 @@ export default function CountriesCard({ trips }) {
   if (countries.length === 0) return null;
   return (
     <>
-      <SectionHeader title="Countries" />
+      <SectionHeader title="Countries" count={countries.length} />
       <View style={styles.card}>
-        <View style={styles.count}>
-          <Text style={[type.stat, styles.number]}>{countries.length}</Text>
-          <Text style={[type.bodyLarge, styles.muted]}>
-            {countries.length === 1 ? 'country driven' : 'countries driven'}
-          </Text>
-        </View>
-        <View style={styles.flags}>
-          {countries.map((country) => (
-            <View key={country.code} style={styles.flag}>
-              <Flag flag={country.flag} width={44} />
-              <Text style={[type.small, styles.muted]} numberOfLines={1}>
-                {country.name}
-              </Text>
-            </View>
-          ))}
-        </View>
+        {countries.map((country) => (
+          <View key={country.code} style={styles.stamp}>
+            <Flag flag={country.flag} width={52} />
+            <Text style={[type.label, styles.name]} numberOfLines={1}>
+              {country.name}
+            </Text>
+            <Text style={[type.small, styles.muted]}>{formatMonthYear(country.visits[0].startedAt)}</Text>
+          </View>
+        ))}
       </View>
     </>
   );
 }
 
 const makeStyles = (c) => ({
-  card: { padding: 20, borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
-  count: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  number: { color: c.text },
-  muted: { color: c.textMuted },
-  flags: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20, rowGap: 14, marginTop: 16 },
-  flag: { alignItems: 'center', gap: 6, maxWidth: 96 },
+  card: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 18,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    borderRadius: radius.card,
+    backgroundColor: c.card,
+    ...c.cardShadow,
+  },
+  // Three to a row.
+  stamp: { width: '33.33%', alignItems: 'center', paddingHorizontal: 4 },
+  name: { color: c.text, marginTop: 8 },
+  muted: { color: c.textMuted, marginTop: 1 },
 });

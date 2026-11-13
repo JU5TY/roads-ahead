@@ -122,6 +122,10 @@ export function formatBreakReminder(minutes) {
   return `Every ${formatDurationShort(minutes * 60000).replace(/ 0m$/, '')}`;
 }
 
+/** "Jan 2026" */
+export const formatMonthYear = (ts) =>
+  new Date(ts).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+
 /** "5 Nov 2026" */
 export const formatShortDate = (ts) =>
   new Date(ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
