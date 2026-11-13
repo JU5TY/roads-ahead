@@ -85,7 +85,7 @@ export default function PastTripsScreen() {
   const [trips, setTrips] = useState(null);
   const [plans, setPlans] = useState(null); // { list, driven, dates }
   const [planning, setPlanning] = useState(false);
-  // Driven or Planned, kept in the route so the Record pill can step aside for Plan trip.
+  // Driven or Planned, kept in the route so the Record pill can step aside for Plan.
   const planned = useLocalSearchParams().view === 'planned';
   const showView = (view) => router.setParams({ view: view === 'planned' ? 'planned' : undefined });
 
@@ -208,7 +208,8 @@ export default function PastTripsScreen() {
         <FloatingButton
           icon="add"
           iconColor={c.accent}
-          label="Plan trip"
+          label="Plan"
+          accessibilityLabel="Plan a trip"
           onPress={() => setPlanning(true)}
           style={styles.planButton}
         />

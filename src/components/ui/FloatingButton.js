@@ -5,7 +5,7 @@ import { floating, pressedOpacity, type } from '../../theme';
 import Icon from './Icon';
 
 /**
- * The floating pill bottom right: Record (red dot), Plan trip (blue +), a
+ * The floating pill bottom right: Record (red dot), Plan (blue +), a
  * plan's Drive 1 (green play). One look for all of them, a white pill on a
  * shadow; the icon carries the colour. With no `label` it's a round button
  * (Record while a drive is recording). `trailing` follows the label (an

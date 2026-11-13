@@ -67,7 +67,7 @@ function RecordPill() {
   const { drive } = useActiveDrive();
 
   if (pathname !== '/' && pathname !== '/trips') return null;
-  // Trips' Planned view has Plan trip in this spot.
+  // Trips' Planned view has Plan in this spot.
   if (pathname === '/trips' && view === 'planned') return null;
   const label = drive ? null : 'Record';
 
