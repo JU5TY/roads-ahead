@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import RouteDays from '../components/plan/RouteDays';
 import DetailLayout from '../components/detail/DetailLayout';
+import StatusCard from '../components/roads/StatusCard';
 import RouteMap from '../components/RouteMap';
-import Button from '../components/ui/Button';
-import Icon from '../components/ui/Icon';
+import FloatingButton from '../components/ui/FloatingButton';
 import PremiumTag from '../components/ui/PremiumTag';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
@@ -13,20 +15,16 @@ import { useSettings } from '../context/SettingsContext';
 import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { createPlan } from '../storage/planStorage';
-import { dayColorFor, spacing, type } from '../theme';
+import { dayColorFor, floating, type } from '../theme';
 import { distanceParts, formatDateRange } from '../utils/format';
-import {
-  READY_ROUTES_ATTRIBUTION,
-  getReadyRoute,
-  routeDriveLine,
-  routeDriveTitle,
-  routePlanDrives,
-} from '../utils/readyRoutes';
+import { getReadyRoute, routeDriveFrom, routeLabel, routePlanDrives } from '../utils/readyRoutes';
 
 /**
- * An Iconic Trip: its map (a colour per day), what it is, Completed once
- * about 90% of it is driven, its miles and drives, and Copy to my plans
- * (Premium, though free for now), or Open your plan once it's copied. Params: `id`.
+ * An Iconic Trip, laid out like an Iconic Road: its map (a colour per day),
+ * where it starts and the way it goes, Completed once about 90% of it is
+ * driven, its miles and days, About, and the route day by day. The floating
+ * Copy puts it in your plans (Premium, though free for now); once copied it's
+ * Open. Params: `id`.
  */
 export default function ReadyRouteScreen() {
   const { id } = useLocalSearchParams();
@@ -34,6 +32,7 @@ export default function ReadyRouteScreen() {
   const { units } = useSettings();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const state = useRouteStatus()?.get(id) ?? null;
   const plan = state?.plan ?? null; // its copy in your plans, if any
   const [copying, setCopying] = useState(false);
@@ -71,36 +70,45 @@ export default function ReadyRouteScreen() {
     <DetailLayout
       map={map}
       mapHeight={360}
-      footer={
+      floating={
         plan ? (
-          <Button label="Open your plan" icon="bookmark" onPress={() => router.push(`/plans/${plan.id}`)} />
+          <FloatingButton
+            icon="bookmark"
+            iconColor={c.accent}
+            label="Open"
+            accessibilityLabel="Open your plan"
+            onPress={() => router.push(`/plans/${plan.id}`)}
+            style={{ bottom: insets.bottom + floating.recordPill.lift }}
+          />
         ) : (
-          <View>
-            <Button label="Copy to my plans" icon="content_copy" onPress={copy} disabled={copying} />
-            <View style={styles.premium} pointerEvents="none">
-              <PremiumTag />
-            </View>
-          </View>
+          <FloatingButton
+            icon="content_copy"
+            iconColor={c.accent}
+            label="Copy"
+            trailing={<PremiumTag />}
+            accessibilityLabel="Copy to my plans"
+            onPress={copy}
+            style={{ bottom: insets.bottom + floating.recordPill.lift }}
+          />
         )
       }
     >
-      <Text style={[type.kicker, styles.kicker]}>{`${route.country} · Iconic Trip`.toUpperCase()}</Text>
-      <Text style={[type.title, styles.text]}>{route.name}</Text>
-      <Text style={[type.lead, styles.muted, styles.blurb]}>{route.blurb}</Text>
+      <Text style={[type.kicker, styles.kicker]}>
+        {`${routeDriveFrom(route, 0)} · ${route.country}`.toUpperCase()}
+      </Text>
+      <Text style={[type.title, styles.title]}>{route.name}</Text>
+      <Text style={[type.body, styles.muted, styles.subtitle]}>{routeLabel(route)}</Text>
 
-      {state?.completed ? (
-        <View style={styles.done}>
-          <View style={styles.doneWell}>
-            <Icon name="verified" filled size={26} color={c.onRoadBadge} />
-          </View>
-          <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.onDone]}>Completed</Text>
-            <Text style={[type.small, styles.doneMuted]}>
-              {formatDateRange(state.completed.from, state.completed.to)}
-            </Text>
-          </View>
-        </View>
-      ) : null}
+      <StatusCard
+        done={!!state?.completed}
+        icon="route"
+        title={state?.completed ? 'Completed' : 'Not completed yet'}
+        detail={
+          state?.completed
+            ? formatDateRange(state.completed.from, state.completed.to)
+            : 'Drive the whole route to complete it'
+        }
+      />
 
       <StatRow
         style={styles.stats}
@@ -110,58 +118,22 @@ export default function ReadyRouteScreen() {
         ]}
       />
 
-      <SectionHeader title="Days" />
-      <View style={styles.group}>
-        {route.drives.map((d, i) => (
-          <View key={i} style={[styles.drive, i > 0 && styles.divider]}>
-            <View style={[styles.dot, { backgroundColor: dayColorFor(c, i + 1) }]} />
-            <View style={styles.flex}>
-              <Text style={[type.bodyStrong, styles.text]}>{routeDriveTitle(route, i)}</Text>
-              <Text style={[type.bodySmall, styles.muted]}>{routeDriveLine(route, i, units)}</Text>
-            </View>
-            {d.stops.some((s) => s.roadId) ? (
-              <Icon name="verified" filled size={20} color={c.roadBadge} />
-            ) : null}
-          </View>
-        ))}
-      </View>
+      <SectionHeader title="About" style={styles.aboutHeader} />
+      <Text style={[type.lead, styles.muted, styles.blurb]}>{route.blurb}</Text>
 
-      <Text style={[type.small, styles.muted, styles.credit]}>{READY_ROUTES_ATTRIBUTION}</Text>
+      <SectionHeader title="Route" />
+      <RouteDays route={route} />
     </DetailLayout>
   );
 }
 
 const makeStyles = (c) => ({
+  // As an Iconic Road's page.
   kicker: { color: c.accent, marginHorizontal: 4 },
-  text: { color: c.text },
+  title: { color: c.text, marginTop: 4, marginHorizontal: 4 },
+  subtitle: { marginTop: 2, marginHorizontal: 4 },
   muted: { color: c.textMuted },
-  blurb: { marginTop: spacing.sm, marginHorizontal: 4 },
   stats: { marginTop: 20 },
-  group: { backgroundColor: c.card, borderRadius: 12, paddingHorizontal: 12, ...c.cardShadow },
-  drive: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 64, paddingVertical: 10, paddingHorizontal: 4 },
-  divider: { borderTopWidth: 1, borderTopColor: c.divider },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  flex: { flex: 1, minWidth: 0 },
-  // As an Iconic Road's Completed box.
-  done: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.md,
-    padding: spacing.md,
-    borderRadius: 12,
-    backgroundColor: c.roadContainer,
-  },
-  doneWell: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.roadBadge,
-  },
-  onDone: { color: c.onRoadContainer },
-  doneMuted: { color: c.roadContainerMuted },
-  premium: { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' },
-  credit: { marginTop: spacing.lg, marginHorizontal: 4 },
+  aboutHeader: { marginBottom: 8 },
+  blurb: { marginHorizontal: 4 },
 });

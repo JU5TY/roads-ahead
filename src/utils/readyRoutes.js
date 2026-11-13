@@ -36,28 +36,41 @@ export const routeShape = (route) =>
   route.drives.flatMap((d) => d.line.map(([latitude, longitude]) => ({ latitude, longitude })));
 
 /** Where drive `index` starts: Drive 1's own start, or where the drive before ends. */
-function driveFrom(route, index) {
+export function routeDriveFrom(route, index) {
   if (index === 0) return route.drives[0].start?.name ?? 'Start';
   return route.drives[index - 1].stops.at(-1).name;
 }
 
-/** "Day 1 · Inverness → Applecross". */
-export const routeDriveTitle = (route, index) =>
-  `Day ${index + 1} · ${driveFrom(route, index)} → ${route.drives[index].stops.at(-1).name}`;
+/** Whether the route ends where it starts (within a kilometre), as the NC500 does. */
+export function routeLoops(route) {
+  const start = route.drives[0].start;
+  const end = route.drives.at(-1).stops.at(-1);
+  return !!start && haversineDistance(start, end) < 1000;
+}
+
+/** "Round trip from Inverness", or "Inverness → Thurso": the line under its name. */
+export function routeLabel(route) {
+  const from = routeDriveFrom(route, 0);
+  return routeLoops(route) ? `Round trip from ${from}` : `${from} → ${route.drives.at(-1).stops.at(-1).name}`;
+}
+
+/** The names of the Iconic Roads drive `index` takes in, in order. */
+export const routeDriveRoads = (route, index) =>
+  route.drives[index].stops
+    .filter((s) => s.roadId)
+    .map((s) => getRoad(s.roadId)?.name)
+    .filter(Boolean);
 
 /**
- * "81 mi · Bealach na Bà · 2 stops": the drive's miles, its Iconic Roads, and
- * the places on the way (the finish aside).
+ * "81 mi · 2 stops": the drive's miles and the places on the way (the finish
+ * aside); its Iconic Roads are shown on their own (routeDriveRoads).
  */
 export function routeDriveLine(route, index, units) {
   const { stops, metres } = route.drives[index];
-  const roads = stops.filter((s) => s.roadId).map((s) => getRoad(s.roadId)?.name).filter(Boolean);
   const places = stops.filter((s) => !s.roadId).length - (stops.at(-1).roadId ? 0 : 1);
-  return [
-    formatDistance(metres, units, 0),
-    ...roads,
-    ...(places > 0 ? [`${places} ${places === 1 ? 'stop' : 'stops'}`] : []),
-  ].join(' · ');
+  return [formatDistance(metres, units, 0), ...(places > 0 ? [`${places} ${places === 1 ? 'stop' : 'stops'}`] : [])].join(
+    ' · '
+  );
 }
 
 /** How close a recording must pass to a point on a route's line to cover it. */

@@ -8,10 +8,20 @@ import Icon from './Icon';
  * The floating pill bottom right: Record (red dot), Plan trip (blue +), a
  * plan's Drive 1 (green play). One look for all of them, a white pill on a
  * shadow; the icon carries the colour. With no `label` it's a round button
- * (Record while a drive is recording). Place it with `style` (position,
+ * (Record while a drive is recording). `trailing` follows the label (an
+ * Iconic Trip's Premium tag). Place it with `style` (position,
  * bottom); `accessibilityLabel` says what it does when the label alone doesn't.
  */
-export default function FloatingButton({ icon, iconColor, filled = false, label, onPress, accessibilityLabel, style }) {
+export default function FloatingButton({
+  icon,
+  iconColor,
+  filled = false,
+  label,
+  trailing,
+  onPress,
+  accessibilityLabel,
+  style,
+}) {
   const styles = useStyles(makeStyles);
   return (
     <Pressable
@@ -22,6 +32,7 @@ export default function FloatingButton({ icon, iconColor, filled = false, label,
     >
       <Icon name={icon} filled={filled} size={26} color={iconColor} />
       {label ? <Text style={[type.button, styles.text]}>{label}</Text> : null}
+      {trailing}
     </Pressable>
   );
 }

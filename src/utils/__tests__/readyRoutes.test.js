@@ -3,8 +3,10 @@ import {
   getReadyRoute,
   lineCoverage,
   routeCompleted,
+  routeDriveFrom,
   routeDriveLine,
-  routeDriveTitle,
+  routeDriveRoads,
+  routeLabel,
   routePlanDrives,
   tripsIntro,
 } from '../readyRoutes';
@@ -37,11 +39,13 @@ describe('Iconic Trips', () => {
     expect(drives[0].stops.find((s) => s.roadId)).toMatchObject({ roadId: 'bealach-na-ba', reversed: false });
   });
 
-  it('names its drives and says what is in them', () => {
-    expect(routeDriveTitle(nc500, 0)).toBe('Day 1 · Inverness → Applecross');
-    expect(routeDriveTitle(nc500, 1)).toBe('Day 2 · Applecross → Ullapool');
-    expect(routeDriveLine(nc500, 0, 'imperial')).toMatch(/^\d+ mi · Bealach na Bà · 2 stops$/);
-    expect(routeDriveLine(nc500, 2, 'imperial')).toMatch(/^\d+ mi · 2 stops$/);
+  it('is a round trip, and says where each drive starts and what is in it', () => {
+    expect(routeLabel(nc500)).toBe('Round trip from Inverness');
+    expect(routeDriveFrom(nc500, 0)).toBe('Inverness');
+    expect(routeDriveFrom(nc500, 1)).toBe('Applecross');
+    expect(routeDriveLine(nc500, 0, 'imperial')).toMatch(/^\d+ mi · 2 stops$/);
+    expect(routeDriveRoads(nc500, 0)).toEqual(['Bealach na Bà']);
+    expect(routeDriveRoads(nc500, 2)).toEqual([]);
   });
 });
 

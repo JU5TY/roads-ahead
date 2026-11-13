@@ -10,6 +10,7 @@ import InfoNote from '../components/ui/InfoNote';
 import ListRow from '../components/ui/ListRow';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
+import StatusCard from '../components/roads/StatusCard';
 import { useSettings } from '../context/SettingsContext';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { getRoadCompletions } from '../storage/roadStorage';
@@ -163,35 +164,20 @@ export default function RoadScreen() {
         {road.routeLabel ?? (loop ? `Loop from ${road.from}` : `${road.from} → ${road.to}`)}
       </Text>
 
-      {summary.count > 0 ? (
-        <View style={[styles.status, styles.statusDone]}>
-          <View style={[styles.statusWell, { backgroundColor: c.roadBadge }]}>
-            <Icon name="verified" filled size={26} color={c.onRoadBadge} />
-          </View>
-          <View style={styles.flex}>
-            <Text style={[type.bodyStrong, { color: c.onRoadContainer }]}>
-              {completedLabel(summary.count)}
-            </Text>
-            <Text style={[type.small, { color: c.roadContainerMuted }]}>
-              {summary.count > 1
-                ? `First ${formatShortDate(summary.first)} · last ${formatShortDate(summary.last)}`
-                : formatShortDate(summary.last)}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <View style={[styles.status, styles.statusTodo]}>
-          <View style={[styles.statusWell, { backgroundColor: c.track }]}>
-            <Icon name="road" size={24} color={c.outlineStrong} />
-          </View>
-          <View style={styles.flex}>
-            <Text style={[type.bodyStrong, styles.text]}>Not completed yet</Text>
-            <Text style={[type.small, styles.muted]}>
-              {loop ? 'Drive the full lap to complete it' : 'Drive the full road to complete it'}
-            </Text>
-          </View>
-        </View>
-      )}
+      <StatusCard
+        done={summary.count > 0}
+        icon="road"
+        title={summary.count > 0 ? completedLabel(summary.count) : 'Not completed yet'}
+        detail={
+          summary.count > 1
+            ? `First ${formatShortDate(summary.first)} · last ${formatShortDate(summary.last)}`
+            : summary.count
+              ? formatShortDate(summary.last)
+              : loop
+                ? 'Drive the full lap to complete it'
+                : 'Drive the full road to complete it'
+        }
+      />
 
       <StatRow style={styles.stats} stats={stats} />
 
@@ -241,29 +227,6 @@ const makeStyles = (c) => ({
   subtitle: { marginTop: 2, marginHorizontal: 4 },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  status: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: radius.card,
-  },
-  statusDone: { backgroundColor: c.roadContainer },
-  statusTodo: {
-    borderWidth: 1,
-    borderColor: c.outline,
-    paddingVertical: 13,
-    paddingHorizontal: 15,
-  },
-  statusWell: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   stats: { marginTop: 20 },
   blurb: { marginHorizontal: 4 },
   group: {

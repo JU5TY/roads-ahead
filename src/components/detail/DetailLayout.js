@@ -18,7 +18,6 @@ export const MAP_HEIGHT = 400;
  * actions: [{ icon, label, onPress }], left to right; label is for screen readers.
  * `mapHeight` below the status bar: 400 on Trip, 380 on Day, 360 on a road.
  * `scrollEnabled` false holds the page still (while a plan's stop is dragged).
- * `footer` is pinned under the content, outside the scroll (an Iconic Trip's Copy).
  */
 export default function DetailLayout({
   map,
@@ -26,7 +25,6 @@ export default function DetailLayout({
   actions = [],
   scrollRef,
   scrollEnabled = true,
-  footer,
   floating,
   children,
 }) {
@@ -63,15 +61,12 @@ export default function DetailLayout({
         <View
           style={[
             styles.content,
-            { paddingBottom: (floating ? bottomSpace.recordPill : spacing.xl) + (footer ? 0 : insets.bottom) },
+            { paddingBottom: (floating ? bottomSpace.recordPill : spacing.xl) + insets.bottom },
           ]}
         >
           {children}
         </View>
       </Animated.ScrollView>
-      {footer ? (
-        <View style={[styles.footer, { paddingBottom: spacing.lg + insets.bottom }]}>{footer}</View>
-      ) : null}
       {floating}
       <IconButton
         icon="arrow_back"
@@ -112,13 +107,6 @@ const makeStyles = (c) => ({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: -2 },
     elevation: 4,
-  },
-  footer: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    backgroundColor: c.background,
-    borderTopWidth: 1,
-    borderTopColor: c.divider,
   },
   back: { position: 'absolute', left: 12 },
   actions: { position: 'absolute', right: 12, flexDirection: 'row', gap: 8 },
