@@ -13,6 +13,7 @@ import FloatingButton from '../components/ui/FloatingButton';
 import SectionHeader from '../components/ui/SectionHeader';
 import SegmentedSwitch from '../components/ui/SegmentedSwitch';
 import { useSettings } from '../context/SettingsContext';
+import { useHere } from '../hooks/useHere';
 import { useRoadCounts } from '../hooks/useRoadCounts';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { ensureDrivePlaces } from '../services/placeService';
@@ -79,6 +80,8 @@ function withMonthHeaders(trips) {
 export default function PastTripsScreen() {
   const { units } = useSettings();
   const roadCounts = useRoadCounts();
+  // Where the phone is: a plan's Day 1 from "Your location" starts its thumbnail there, as its map does.
+  const { here } = useHere();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -179,7 +182,7 @@ export default function PastTripsScreen() {
           item.month ? (
             <SectionHeader variant="label" title={item.month} style={styles.month} />
           ) : item.plan ? (
-            <PlanCard plan={item.plan} done={item.done} drivenDates={item.drivenDates} />
+            <PlanCard plan={item.plan} here={here} done={item.done} drivenDates={item.drivenDates} />
           ) : (
             <TripCard
               trip={item.trip}
