@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -57,9 +57,6 @@ import {
   withWayBack,
 } from '../utils/plans';
 
-// The vehicle sheet's closing slide (BottomSheet's CLOSE_MS), and a little more.
-const SHEET_SWAP_MS = 320;
-
 /** Under the timeline: adds to the shown day (Add stop, Add Iconic Road), a row rather than a button. */
 function AddRow({ icon, iconColor, filled = false, label, onPress }) {
   const { c } = useTheme();
@@ -98,6 +95,7 @@ export default function PlanScreen() {
   // 'options' | 'edit' | 'road' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop, at } | { start, at }
   // (`at`: the day the stop or start is in)
   const [menu, setMenu] = useState(null);
+  const priceNext = useRef(false); // the price sheet opens once the vehicle sheet has gone
   const [dragging, setDragging] = useState(false); // a stop is being dragged: the page holds still
   const { here, ready: hereReady } = useHere();
   const insets = useSafeAreaInsets();
@@ -255,13 +253,9 @@ export default function PlanScreen() {
     }
     // Reloaded first, so the price sheet opens for the car's fuel as saved.
     await reloadVehicles();
+    // Then the price, if that's still missing, once the vehicle sheet has gone.
+    priceNext.current = hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'];
     setMenu(null);
-    // Then the price, if that's still missing: once the vehicle sheet has slid
-    // away and the keyboard dropped, as Android can lose a sheet opened while
-    // another is still closing.
-    if (hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel']) {
-      setTimeout(() => setMenu('price'), SHEET_SWAP_MS);
-    }
   };
   // Drive i's leg texts and which legs take a ferry, by the id of the stop each leg arrives at.
   const legsOf = (i) => {
@@ -415,6 +409,11 @@ export default function PlanScreen() {
         focusEfficiency
         onSave={saveVehicle}
         onClose={() => setMenu(null)}
+        onClosed={() => {
+          if (!priceNext.current) return;
+          priceNext.current = false;
+          setMenu('price');
+        }}
       />
       <PriceSheet
         visible={menu === 'price'}

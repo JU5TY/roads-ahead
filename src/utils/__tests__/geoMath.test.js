@@ -2,7 +2,7 @@ import {
   applyFixes,
   createTripStats,
   finalizeStats,
-  isLeftRunning,
+  leftRunningSince,
   pauseStats,
   resumeStats,
   stoppedSince,
@@ -94,8 +94,15 @@ describe('a drive left running', () => {
   it('ends after 3 hours stopped, not before', () => {
     const { stats } = track(gym);
     const since = stoppedSince(stats);
-    expect(isLeftRunning(stats, since + 179 * 60000)).toBe(false);
-    expect(isLeftRunning(stats, since + 180 * 60000)).toBe(true);
+    const drive = { startedAt: T0, stats };
+    expect(leftRunningSince(drive, since + 179 * 60000)).toBeNull();
+    expect(leftRunningSince(drive, since + 180 * 60000)).toBe(since);
+  });
+
+  it('counts a drive that never got a fix from its start', () => {
+    const drive = { startedAt: T0, stats: createTripStats() };
+    expect(leftRunningSince(drive, T0 + 179 * 60000)).toBeNull();
+    expect(leftRunningSince(drive, T0 + 180 * 60000)).toBe(T0);
   });
 
   it('never ends a paused drive', () => {
@@ -104,7 +111,7 @@ describe('a drive left running', () => {
       stay(13000, 420);
     });
     const paused = pauseStats(stats, end);
-    expect(isLeftRunning(paused, end + 10 * 60 * 60000)).toBe(false);
+    expect(leftRunningSince({ startedAt: T0, stats: paused }, end + 10 * 60 * 60000)).toBeNull();
   });
 
   it("doesn't end a drive just resumed after a long pause", () => {
@@ -115,7 +122,7 @@ describe('a drive left running', () => {
     const resumedAt = end + 4 * 60 * 60000;
     const resumed = resumeStats(pauseStats(stats, end), resumedAt);
     expect(stoppedSince(resumed)).toBeNull();
-    expect(isLeftRunning(resumed, resumedAt + 60000)).toBe(false);
+    expect(leftRunningSince({ startedAt: T0, stats: resumed }, resumedAt + 60000)).toBeNull();
     // The stop before the pause is kept as a rest stop.
     expect(finalizeStats(resumed).stops).toHaveLength(1);
   });

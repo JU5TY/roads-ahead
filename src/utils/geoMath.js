@@ -367,10 +367,15 @@ export function stoppedSince(stats) {
   return joinsLastStop(stats, stats.dwell) ? stats.stops.at(-1).startedAt : stats.dwell.startedAt;
 }
 
-/** Whether the drive has sat stopped (not paused) for AUTO_STOP_AFTER_MS by `now`. */
-export function isLeftRunning(stats, now) {
-  const since = stoppedSince(stats);
-  return since !== null && now - since >= AUTO_STOP_AFTER_MS;
+/**
+ * When a drive ({ startedAt, stats }) that's been stopped (not paused) for
+ * AUTO_STOP_AFTER_MS by `now` came to a stop, or null. A drive that never got
+ * a GPS fix counts from its start.
+ */
+export function leftRunningSince(drive, now) {
+  const { stats } = drive;
+  const since = stats.lastFix ? stoppedSince(stats) : stats.paused ? null : drive.startedAt;
+  return since !== null && now - since >= AUTO_STOP_AFTER_MS ? since : null;
 }
 
 /** Fold a batch of fixes, oldest first. */

@@ -23,13 +23,12 @@ import { removeExampleTrip } from '../storage/tripStorage';
 import { palettes } from '../theme';
 import { statsWithoutCrossings } from '../utils/crossings';
 import {
-  AUTO_STOP_AFTER_MS,
   applyFixes,
   finalizeStats,
   isUsableFix,
+  leftRunningSince,
   pauseStats,
   resumeStats,
-  stoppedSince,
   toFix,
 } from '../utils/geoMath';
 import { ensureDrivePlaces } from './placeService';
@@ -92,20 +91,10 @@ async function handleLocations(locations) {
       );
     const stats = fixes.length ? applyFixes(drive.stats, fixes) : drive.stats;
     if (fixes.length) await appendFixes(drive.id, fixes, stats);
-    return idleSince({ ...drive, stats }) !== null;
+    return leftRunningSince({ ...drive, stats }, Date.now()) !== null;
   });
   // After the batch's own job, so ending the drive doesn't wait on itself.
   if (due) await endDriveIfLeftRunning();
-}
-
-/**
- * When a drive that's been stopped (not paused) for AUTO_STOP_AFTER_MS came to
- * a stop, or null. A drive that never got a GPS fix counts from its start.
- */
-function idleSince(drive, now = Date.now()) {
-  const { stats } = drive;
-  const since = stats.lastFix ? stoppedSince(stats) : stats.paused ? null : drive.startedAt;
-  return since !== null && now - since >= AUTO_STOP_AFTER_MS ? since : null;
 }
 
 TaskManager.defineTask(LOCATION_TRACKING_TASK, async ({ data, error }) => {
@@ -143,6 +132,20 @@ function toAccess(res) {
 /** Current location permission: { granted, canAskAgain, precise }. Never prompts. */
 export async function getLocationAccess() {
   return toAccess(await Location.getForegroundPermissionsAsync());
+}
+
+/**
+ * Where the phone last was, { latitude, longitude }, or null: without location
+ * access (it isn't asked for just for this) or with no fix yet. Never throws.
+ */
+export async function getLastPosition() {
+  try {
+    const { granted } = await getLocationAccess();
+    const pos = granted ? await Location.getLastKnownPositionAsync() : null;
+    return pos ? { latitude: pos.coords.latitude, longitude: pos.coords.longitude } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Show the system location prompt. Resolves to the same shape as getLocationAccess. */
@@ -254,7 +257,7 @@ export async function stopDrive() {
 export async function endDriveIfLeftRunning() {
   return enqueue(async () => {
     const drive = await getActiveDrive();
-    const since = drive && idleSince(drive);
+    const since = drive && leftRunningSince(drive, Date.now());
     if (!since) return false;
     await stopUpdates();
     if (drive.stats.distanceM === 0) {

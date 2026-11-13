@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { showDialog } from './ui/DialogHost';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { pressedOpacity, radius, spacing, type } from '../theme';
 import { parseMilesPerKwh, parseMpg } from '../utils/fuel';
 import { registrationProblem, vehicleLabel } from '../utils/vehicles';
-import BottomSheet from './ui/BottomSheet';
+import BottomSheet, { SheetScrollView } from './ui/BottomSheet';
 import Button from './ui/Button';
 import Icon from './ui/Icon';
 import SegmentedSwitch from './ui/SegmentedSwitch';
@@ -95,7 +95,7 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
 
   return (
     <View style={styles.sheet}>
-      <ScrollView
+      <SheetScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -169,7 +169,7 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
             </Pressable>
           ) : null}
         </View>
-      </ScrollView>
+      </SheetScrollView>
     </View>
   );
 }
@@ -190,9 +190,10 @@ export default function VehicleSheet({
   onSave,
   onDelete,
   onClose,
+  onClosed,
 }) {
   return (
-    <BottomSheet visible={visible} onClose={onClose}>
+    <BottomSheet visible={visible} onClose={onClose} onClosed={onClosed}>
       <VehicleForm
         vehicle={vehicle}
         others={others}

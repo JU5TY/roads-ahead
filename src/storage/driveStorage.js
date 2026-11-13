@@ -140,6 +140,16 @@ export async function getDrivePoints(driveId) {
   );
 }
 
+/** A drive's points after `timestamp`, positions only: a live drive read a bit at a time. */
+export async function getDrivePointsAfter(driveId, timestamp) {
+  const db = await getDb();
+  return db.getAllAsync(
+    'SELECT latitude, longitude, timestamp FROM points WHERE drive_id = ? AND timestamp > ? ORDER BY timestamp',
+    driveId,
+    timestamp
+  );
+}
+
 /** How many GPS points the saved drives hold, the example trip's aside: sizes an export. */
 export async function countSavedPoints() {
   const db = await getDb();

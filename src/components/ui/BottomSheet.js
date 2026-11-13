@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -7,6 +7,7 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -22,6 +23,27 @@ const DRAG_CLOSE = 80; // dragged this far down (or flicked), the sheet closes
 const SHOW_WAIT_MS = 250; // opens anyway if the Modal never says it's showing
 const DRIVER = { useNativeDriver: true };
 
+// Tells the open sheet whether its list is scrolled to the top.
+const ListAtTop = createContext(null);
+
+/**
+ * A ScrollView for a sheet's list: while it's scrolled down, a pull down
+ * scrolls it back up rather than closing the sheet (the handle still closes).
+ */
+export function SheetScrollView({ onScroll, ...props }) {
+  const setAtTop = useContext(ListAtTop);
+  return (
+    <ScrollView
+      {...props}
+      scrollEventThrottle={16}
+      onScroll={(e) => {
+        setAtTop?.(e.nativeEvent.contentOffset.y <= 0);
+        onScroll?.(e);
+      }}
+    />
+  );
+}
+
 /**
  * A modal sheet from the bottom of the screen, the same for every sheet: a
  * panel with rounded top corners and a handle bar. The scrim fades in while the
@@ -35,11 +57,20 @@ const DRIVER = { useNativeDriver: true };
  * The panel keeps the same space under every sheet's content, above the
  * navigation bar or, while it's up, the keyboard (which covers the bar).
  * Tapping the handle, pulling the sheet down from anywhere (unless `dragCloses`
- * is false: then only from the handle), tapping the scrim (unless `scrimCloses`
- * is false) or Back calls onClose, so no sheet has a Cancel button (and forms
- * have no title either). No motion with reduced motion on.
+ * is false: then only from the handle; on a SheetScrollView, only once it's at
+ * its top), tapping the scrim (unless `scrimCloses` is false) or Back calls
+ * onClose, so no sheet has a Cancel button (and forms have no title either).
+ * onClosed, if given, runs once it has slid away and gone, so another sheet
+ * can open after it. No motion with reduced motion on.
  */
-export default function BottomSheet({ visible, onClose, scrimCloses = true, dragCloses = true, children }) {
+export default function BottomSheet({
+  visible,
+  onClose,
+  onClosed,
+  scrimCloses = true,
+  dragCloses = true,
+  children,
+}) {
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   const keyboardUp = useKeyboardState((s) => s.isVisible);
@@ -52,6 +83,11 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, drag
   const opened = useRef(false);
   const isVisible = useRef(visible);
   const reduceMotion = useRef(false);
+  const listAtTop = useRef(true);
+  const closing = useRef(false); // slid away, waiting to unmount before onClosed
+  const [setListAtTop] = useState(() => (atTop) => {
+    listAtTop.current = atTop;
+  });
 
   const animate = (open, after) => {
     const duration = reduceMotion.current ? 0 : open ? OPEN_MS : CLOSE_MS;
@@ -88,8 +124,10 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, drag
       animate(false, ({ finished }) => {
         if (!finished) return;
         height.current = 0;
+        listAtTop.current = true;
         shown.current = false;
         opened.current = false;
+        closing.current = true;
         setMounted(false);
       });
     }
@@ -109,10 +147,18 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, drag
 
   // The gestures below are made once, so a re-render mid-drag (a location
   // update, say) can't restart them; they read onClose and dragCloses from here.
-  const latest = useRef({ onClose, dragCloses });
+  const latest = useRef({ onClose, onClosed, dragCloses });
   useEffect(() => {
-    latest.current = { onClose, dragCloses };
+    latest.current = { onClose, onClosed, dragCloses };
   });
+
+  // Once the Modal is gone, not as it goes: Android can lose a sheet opened
+  // while another is still closing.
+  useEffect(() => {
+    if (mounted || !closing.current) return;
+    closing.current = false;
+    latest.current.onClosed?.();
+  }, [mounted]);
   // Refs here are read only inside the gesture callbacks, never while drawing.
   // eslint-disable-next-line react-hooks/refs
   const [pans] = useState(() => {
@@ -157,7 +203,11 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, drag
       // (taps still reach them), as in other apps, unless the sheet opts out.
       panel: PanResponder.create({
         onMoveShouldSetPanResponder: (_, g) =>
-          open() && latest.current.dragCloses && g.dy > 8 && g.dy > Math.abs(g.dx) * 1.5,
+          open() &&
+          latest.current.dragCloses &&
+          listAtTop.current &&
+          g.dy > 8 &&
+          g.dy > Math.abs(g.dx) * 1.5,
         onPanResponderMove: follow,
         onPanResponderRelease: release,
         onPanResponderTerminate: settle,
@@ -206,7 +256,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, drag
           >
             <View style={styles.handle} />
           </View>
-          {children}
+          <ListAtTop.Provider value={setListAtTop}>{children}</ListAtTop.Provider>
           {/* If the keyboard ever runs ahead of the panel, the gap under it is
               the panel's colour, not the screen behind. */}
           <View style={styles.underfill} pointerEvents="none" />

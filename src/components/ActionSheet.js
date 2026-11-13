@@ -1,8 +1,8 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { pressedOpacity, spacing, type } from '../theme';
-import BottomSheet from './ui/BottomSheet';
+import BottomSheet, { SheetScrollView } from './ui/BottomSheet';
 import Icon from './ui/Icon';
 
 /**
@@ -79,7 +79,7 @@ export default function ActionSheet({ visible, message, actions, onClose }) {
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.sheet}>
         {message ? <Text style={styles.message}>{message}</Text> : null}
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+        <SheetScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {actions.map((a, i) => {
             const destructive = a.style === 'destructive';
             return (
@@ -97,7 +97,7 @@ export default function ActionSheet({ visible, message, actions, onClose }) {
               </View>
             );
           })}
-        </ScrollView>
+        </SheetScrollView>
       </View>
     </BottomSheet>
   );

@@ -1,4 +1,3 @@
-import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -9,7 +8,7 @@ import MapViewButton from '../components/MapViewButton';
 import IconButton from '../components/ui/IconButton';
 import { useMapView } from '../hooks/useMapView';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { getLocationAccess } from '../services/locationService';
+import { getLastPosition } from '../services/locationService';
 import { getDriveRoutePreview } from '../storage/driveStorage';
 import { listTrips } from '../storage/tripStorage';
 import { routeGaps, routeSegments } from '../utils/crossings';
@@ -85,14 +84,12 @@ export default function YourMapScreen() {
 
   // Without location (never prompted for here), it re-fits to every route instead.
   const centreOnMe = async () => {
-    const pos = (await getLocationAccess()).granted
-      ? await Location.getLastKnownPositionAsync()
-      : null;
+    const pos = await getLastPosition();
     if (!pos) return fit();
     mapRef.current?.animateToRegion(
       {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
         latitudeDelta: POSITION_DELTA,
         longitudeDelta: POSITION_DELTA,
       },

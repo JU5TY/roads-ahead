@@ -1,4 +1,3 @@
-import * as Location from 'expo-location';
 import { router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, View } from 'react-native';
@@ -13,6 +12,7 @@ import { useStyles } from '../hooks/useTheme';
 import {
   canTrackInBackground,
   discardDrive,
+  getLastPosition,
   getLocationAccess,
   pauseDrive,
   requestLocationAccess,
@@ -20,7 +20,12 @@ import {
   startDrive,
   stopDrive,
 } from '../services/locationService';
-import { getActiveDrive, getDrivePoints, getDriveRoutePreview } from '../storage/driveStorage';
+import {
+  getActiveDrive,
+  getDrivePoints,
+  getDrivePointsAfter,
+  getDriveRoutePreview,
+} from '../storage/driveStorage';
 import { getPlanOfDrive, getPlanTripId } from '../storage/planStorage';
 import { getContinuableTrip, getTrip } from '../storage/tripStorage';
 import { liveMetrics } from '../utils/geoMath';
@@ -35,13 +40,6 @@ const ROUTE_POINTS = 400;
 /** Open a sat nav link, saying so when the app isn't there. */
 const openNav = (url, appName) =>
   Linking.openURL(url).catch(() => showMessage(appName, `Couldn’t open ${appName}.`));
-
-/** Where the phone last was, { latitude, longitude }, or null (access isn't asked for just for this). */
-async function lastPosition() {
-  const access = await getLocationAccess();
-  const pos = access.granted ? await Location.getLastKnownPositionAsync() : null;
-  return pos ? { latitude: pos.coords.latitude, longitude: pos.coords.longitude } : null;
-}
 
 /**
  * Record tab: "Ready to go" (ReadyView) until a drive is live, then the
@@ -95,15 +93,7 @@ export default function RecordScreen() {
         .then((trip) => !cancelled && setRecent(trip))
         .catch(() => {});
       // Centre the Ready map on the phone, without asking for access just for that.
-      getLocationAccess()
-        .then((access) => (access.granted ? Location.getLastKnownPositionAsync() : null))
-        .then(
-          (pos) =>
-            !cancelled &&
-            pos &&
-            setHere({ latitude: pos.coords.latitude, longitude: pos.coords.longitude })
-        )
-        .catch(() => {});
+      getLastPosition().then((pos) => !cancelled && pos && setHere(pos));
       const id = setInterval(tick, REFRESH_MS);
       return () => {
         cancelled = true;
@@ -162,6 +152,39 @@ export default function RecordScreen() {
       clearInterval(id);
     };
   }, [activeId]);
+
+  // A planned drive's card, from every point (the thinned route can skip a
+  // stop): { driveId, plan, progress }. Points are read as they come in.
+  const [planCardFor, setPlanCardFor] = useState(null);
+  useEffect(() => {
+    if (!planOf || planOf.driveId !== activeId) return;
+    let cancelled = false;
+    const points = [];
+    let reading = false; // a slow read isn't overlapped by the next
+    const load = async () => {
+      if (reading) return;
+      reading = true;
+      let fresh;
+      try {
+        fresh = await getDrivePointsAfter(activeId, points.at(-1)?.timestamp ?? -1);
+      } finally {
+        reading = false;
+      }
+      if (cancelled || !fresh.length) return;
+      points.push(...fresh);
+      const { index } = planOf;
+      // Loaded as the drive began, so a round trip's first drive sets off from its first point.
+      const plan = withWayBack(planOf.plan, points[0]);
+      setPlanCardFor({ driveId: activeId, plan, progress: planProgress(plan, index, points) });
+    };
+    const loadSafely = () => load().catch((err) => console.warn('[record] plan card failed', err));
+    loadSafely();
+    const id = setInterval(loadSafely, ROUTE_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [activeId, planOf]);
 
   const run = async (action) => {
     setBusy(true);
@@ -256,7 +279,7 @@ export default function RecordScreen() {
         return;
       }
       const { index } = found;
-      const here = await lastPosition();
+      const here = await getLastPosition();
       // A round trip that hasn't set off yet comes back to here.
       const plan = withWayBack(found.plan, here);
       const tripId = await getPlanTripId(plan.id);
@@ -295,14 +318,12 @@ export default function RecordScreen() {
   // (one stop at a time), or a drive too long for one Google Maps link.
   let planCard = null;
   const routePoints = routeFor && routeFor.driveId === activeId ? routeFor.points : [];
-  if (planOf && planOf.driveId === activeId && routePoints.length) {
-    const { index } = planOf;
-    // Loaded as the drive began, so a round trip's first drive sets off from its first point.
-    const plan = withWayBack(planOf.plan, routePoints[0]);
-    const whole = planHandover(plan, index, { here: null, app: navApp });
+  if (planOf && planCardFor && planCardFor.driveId === activeId) {
+    const { plan, progress } = planCardFor;
+    const whole = planHandover(plan, planOf.index, { here: null, app: navApp });
     planCard = (
       <PlanCard
-        progress={planProgress(plan, index, routePoints)}
+        progress={progress}
         nextLeg={!takesWholeDrive(navApp) || whole.links.length > 1}
         onNavigate={navigate}
         onNextLeg={navigate}
