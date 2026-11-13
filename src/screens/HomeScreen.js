@@ -6,37 +6,65 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WeekDistance from '../components/home/WeekDistance';
 import YourMap from '../components/home/YourMap';
 import NoTrips from '../components/NoTrips';
-import RoadsProgress from '../components/roads/RoadsProgress';
+import RoadsRing from '../components/roads/RoadsRing';
 import TripCard from '../components/TripCard';
 import SectionHeader from '../components/ui/SectionHeader';
 import CountriesCard from '../components/home/CountriesCard';
 import { useSettings } from '../context/SettingsContext';
 import { useRoadCounts } from '../hooks/useRoadCounts';
 import { useRoadTotals } from '../hooks/useRoadTotals';
+import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { listTrips } from '../storage/tripStorage';
-import { bottomSpace, spacing, type } from '../theme';
-import { ICONIC_ROADS, ROADS_INTRO } from '../utils/iconicRoads';
+import { bottomSpace, pressedOpacity, radius, spacing, type } from '../theme';
+import { ICONIC_ROADS } from '../utils/iconicRoads';
+import { READY_ROUTES } from '../utils/readyRoutes';
 
-/** Iconic Roads progress, linking to the full list. */
-function RoadsCard() {
+/** One half of the Iconic card: a ring, its name and how far along you are; opens its list. */
+function IconicHalf({ completed, total, title, onPress }) {
+  const styles = useStyles(makeStyles);
+  const line = completed ? `${completed} of ${total} completed` : 'Not completed yet';
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="link"
+      accessibilityLabel={`${title}: ${line}`}
+      style={({ pressed }) => [styles.half, pressed && styles.pressed]}
+    >
+      <RoadsRing completed={completed} total={total} of={title} size="small" />
+      <View style={styles.halfText}>
+        <Text style={[type.bodyStrong, styles.text]}>{title}</Text>
+        <Text style={[type.small, styles.muted]}>{line}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/** Iconic Roads and Iconic Trips side by side, each half opening its list. */
+function IconicCard() {
   const styles = useStyles(makeStyles);
   const totals = useRoadTotals();
-  const done = totals ? ICONIC_ROADS.filter((r) => totals.has(r.id)).length : 0;
+  const routes = useRouteStatus();
+  const roadsDone = totals ? ICONIC_ROADS.filter((r) => totals.has(r.id)).length : 0;
+  const tripsDone = routes ? READY_ROUTES.filter((r) => routes.get(r.id)?.completed).length : 0;
   return (
     <>
-      <SectionHeader
-        title="Iconic Roads"
-        actionLabel="All roads"
-        onAction={() => router.push('/roads')}
-      />
-      <Pressable onPress={() => router.push('/roads')} accessibilityRole="link">
-        <RoadsProgress completed={done} total={ICONIC_ROADS.length}>
-          {done === 0 ? (
-            <Text style={[type.bodySmall, styles.roadsHint]}>{ROADS_INTRO}</Text>
-          ) : null}
-        </RoadsProgress>
-      </Pressable>
+      <SectionHeader title="Iconic" />
+      <View style={styles.iconic}>
+        <IconicHalf
+          completed={roadsDone}
+          total={ICONIC_ROADS.length}
+          title="Iconic Roads"
+          onPress={() => router.push('/roads')}
+        />
+        <View style={styles.iconicDivider} />
+        <IconicHalf
+          completed={tripsDone}
+          total={READY_ROUTES.length}
+          title="Iconic Trips"
+          onPress={() => router.push('/routes')}
+        />
+      </View>
     </>
   );
 }
@@ -98,11 +126,7 @@ export default function HomeScreen() {
     >
       <YourMap trips={trips} units={units} scrollY={scrollY} />
       <WeekDistance trips={trips} units={units} now={now} />
-      <SectionHeader
-        title="Latest trip"
-        actionLabel="All trips"
-        onAction={() => router.navigate('/trips')}
-      />
+      <SectionHeader title="Latest trip" />
       <TripCard
         trip={latest}
         units={units}
@@ -110,7 +134,7 @@ export default function HomeScreen() {
         showMap={focused}
         roadCount={roadCounts.get(latest.id) ?? 0}
       />
-      <RoadsCard />
+      <IconicCard />
       <CountriesCard trips={trips} />
     </Animated.ScrollView>
   );
@@ -121,6 +145,13 @@ const makeStyles = (c) => ({
   center: { alignItems: 'center', justifyContent: 'center' },
   // Bottom padding clears the floating Record pill above the nav bar.
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
-  roadsHint: { color: c.textMuted, marginTop: 14 },
+  text: { color: c.text },
+  muted: { color: c.textMuted },
+  // As Home's other cards; a hairline between the halves.
+  iconic: { flexDirection: 'row', borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
+  iconicDivider: { width: 1, marginVertical: spacing.md, backgroundColor: c.divider },
+  half: { flex: 1, alignItems: 'center', gap: 10, paddingVertical: 18, paddingHorizontal: spacing.sm },
+  halfText: { alignItems: 'center', gap: 2 },
+  pressed: { opacity: pressedOpacity },
   empty: { paddingTop: 188 }, // the same height as on Trips, under its title
 });
