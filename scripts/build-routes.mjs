@@ -9,9 +9,13 @@
 // ODbL, so the lines and miles can be kept and drawn anywhere (unlike
 // Google's). No times: OSRM drives single-track Highland roads far too fast,
 // so a copied plan gets its times from Google like any other.
+// Each trip follows its recognised itinerary (start, finish, overnight towns
+// and stops), from whoever runs or ranks it, as noted on it.
 // Responses are cached in node_modules/.cache/routes.
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+
+import { decodeLine, encodeLine } from '../src/utils/polyline.js';
 
 const UA = { 'User-Agent': 'road-trip-app-build/0.1 (justwoodford@gmail.com)' };
 const OUT = new URL('../src/data/routes.json', import.meta.url);
@@ -25,7 +29,8 @@ const MAX_LOOKUP_M = 8000; // a looked-up stop further than this from its rough 
  * ends) and `stops` in order, the finish last. A stop is a place, [lat, lng]
  * its rough position, or { road } for an Iconic Road driven through.
  * `byPosition` sends a place to the sat nav by its position rather than its
- * name, where the name alone is too vague.
+ * name, where the name alone is too vague. `search` looks a place up by
+ * another name, where OpenStreetMap knows it differently.
  */
 const ROUTES = [
   {
@@ -81,6 +86,353 @@ const ROUTES = [
       },
     ],
   },
+  // RAC's top 10 UK road trips: Barnstaple to Newquay, 1-2 days, with its stop-offs.
+  {
+    id: 'atlantic-highway',
+    name: 'Atlantic Highway',
+    country: 'England',
+    blurb: 'The A39 down the north coasts of Devon and Cornwall, from Barnstaple to Newquay. Cliffs, coves and Tintagel Castle',
+    drives: [
+      {
+        from: { name: 'Barnstaple', at: [51.0802, -4.058] },
+        stops: [
+          { name: 'Bideford', at: [51.0162, -4.2086] },
+          { name: 'Bude', at: [50.8296, -4.5439] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Tintagel Castle', at: [50.668, -4.759] },
+          { name: 'Bedruthan Steps', at: [50.479, -5.03] },
+          { name: 'Newquay', at: [50.4155, -5.0732] },
+        ],
+      },
+    ],
+  },
+  // Visit Wales's Cambrian Way itinerary: south to north, its seven overnight towns.
+  {
+    id: 'cambrian-way',
+    name: 'Cambrian Way',
+    country: 'Wales',
+    blurb: 'The A470, the Dragon’s Spine, from Cardiff Bay to Llandudno. The Brecon Beacons, the Elan Valley and Eryri',
+    drives: [
+      {
+        from: { name: 'Cardiff Bay', at: [51.4637, -3.165] },
+        stops: [
+          { name: 'Castell Coch', at: [51.5356, -3.2549] },
+          { name: 'Royal Mint Experience', at: [51.5437, -3.3955] },
+          { name: 'Rhondda Heritage Park', at: [51.606, -3.357] },
+          { name: 'Merthyr Tydfil', at: [51.7487, -3.3816] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Brecon Mountain Railway', at: [51.788, -3.364] },
+          { name: 'Storey Arms', at: [51.8697, -3.487], byPosition: true },
+          { name: 'Brecon', at: [51.946, -3.391] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Erwood', at: [52.073, -3.341] },
+          { name: 'Builth Wells', at: [52.1497, -3.404] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Gigrin Farm', at: [52.294, -3.5] },
+          { name: 'Elan Valley Visitor Centre', at: [52.27, -3.57] },
+          { name: 'Llanidloes', at: [52.449, -3.539] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Llyn Clywedog', at: [52.468, -3.614] },
+          { name: 'Coed y Brenin', at: [52.818, -3.889] },
+          { name: 'Yr Ysgwrn', at: [52.903, -3.91] },
+          { name: 'Blaenau Ffestiniog', at: [52.9946, -3.94] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Llechwedd Slate Caverns', at: [53.0048, -3.9398] },
+          { name: 'Betws-y-Coed', at: [53.0927, -3.8014] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Swallow Falls', at: [53.105, -3.835] },
+          { name: 'Gwydir Castle', at: [53.134, -3.81] },
+          { name: 'Bodnant Garden', at: [53.22, -3.803] },
+          { name: 'Llandudno', at: [53.324, -3.827] },
+        ],
+      },
+    ],
+  },
+  // Visit Wales's Coastal Way itinerary: south to north, its seven overnight towns.
+  {
+    id: 'coastal-way',
+    name: 'Coastal Way',
+    country: 'Wales',
+    blurb: 'The length of Cardigan Bay, from St Davids to Aberdaron. Beaches, harbour towns and castles',
+    drives: [
+      {
+        from: { name: 'St Davids', at: [51.8818, -5.266] },
+        stops: [
+          { name: 'Whitesands Bay', at: [51.897, -5.295] },
+          { name: 'Melin Tregwynt', search: 'Tregwynt Woollen Mill', at: [51.995, -5.075] },
+          { name: 'Pentre Ifan', at: [51.999, -4.77] },
+          { name: 'Cardigan', at: [52.083, -4.66] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Mwnt', at: [52.136, -4.64] },
+          { name: 'New Quay', at: [52.214, -4.359] },
+          { name: 'Aberaeron', at: [52.243, -4.26] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Llanerchaeron', at: [52.224, -4.23] },
+          { name: 'Aberystwyth', at: [52.4153, -4.0829] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Borth', at: [52.489, -4.05] },
+          { name: 'Ynyslas', at: [52.525, -4.045] },
+          { name: 'Machynlleth', at: [52.591, -3.851] },
+          { name: 'Aberdyfi', at: [52.544, -4.045] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Penmaenpool', at: [52.748, -3.935] },
+          { name: 'Barmouth', at: [52.723, -4.056] },
+          { name: 'Harlech Castle', at: [52.86, -4.109] },
+          { name: 'Portmeirion', at: [52.913, -4.099] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Porthmadog', at: [52.928, -4.133] },
+          { name: 'Criccieth Castle', at: [52.918, -4.233] },
+          { name: 'Llanbedrog', at: [52.855, -4.48] },
+          { name: 'Abersoch', at: [52.825, -4.505] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Plas yn Rhiw', at: [52.829, -4.629] },
+          { name: 'Aberdaron', at: [52.805, -4.711] },
+        ],
+      },
+    ],
+  },
+  // Belfast to Derry; overnights from Discover Northern Ireland's Causeway Coast itinerary.
+  {
+    id: 'causeway-coastal-route',
+    name: 'Causeway Coastal Route',
+    country: 'Northern Ireland',
+    blurb: 'The Antrim coast from Belfast to Derry. The Glens of Antrim, Carrick-a-Rede and the Giant’s Causeway',
+    drives: [
+      {
+        from: { name: 'Belfast', at: [54.5973, -5.9301] },
+        stops: [
+          { name: 'Carrickfergus Castle', at: [54.713, -5.806] },
+          { name: 'The Gobbins', at: [54.818, -5.702] },
+          { name: 'Glenarm', at: [54.968, -5.956] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Carnlough', at: [54.993, -5.99] },
+          { name: 'Glenariff Forest Park', at: [55.02, -6.115] },
+          { name: 'Cushendun', at: [55.124, -6.045] },
+          { name: 'Ballycastle', at: [55.204, -6.243] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'The Dark Hedges', at: [55.134, -6.381] },
+          { name: 'Carrick-a-Rede Rope Bridge', at: [55.239, -6.332] },
+          { name: 'Ballintoy Harbour', at: [55.244, -6.369] },
+          { name: 'Giant’s Causeway', at: [55.2408, -6.5116] },
+          { name: 'Dunluce Castle', at: [55.211, -6.579] },
+          { name: 'Bushmills', at: [55.205, -6.52] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Portstewart Strand', at: [55.17, -6.73] },
+          { name: 'Mussenden Temple', at: [55.168, -6.81] },
+          { name: 'Derry', at: [54.9966, -7.3086] },
+        ],
+      },
+    ],
+  },
+  // The official route's four main stages, Thonon-les-Bains to Menton.
+  {
+    id: 'route-des-grandes-alpes',
+    name: 'Route des Grandes Alpes',
+    country: 'France',
+    blurb: 'Lake Geneva to the Mediterranean over the high passes of the French Alps. The Iseran, the Galibier, the Izoard and the Col de Turini',
+    drives: [
+      {
+        from: { name: 'Thonon-les-Bains', at: [46.3705, 6.4793] },
+        stops: [
+          { name: 'Col des Gets', at: [46.158, 6.668] },
+          { name: 'Cluses', at: [46.06, 6.58] },
+          { name: 'Col de la Colombière', at: [45.993, 6.47] },
+          { name: 'Col des Aravis', at: [45.873, 6.465] },
+          { name: 'Col des Saisies', at: [45.758, 6.533] },
+          { name: 'Beaufort', at: [45.719, 6.573] },
+          { name: 'Cormet de Roselend', at: [45.689, 6.712] },
+          { name: 'Bourg-Saint-Maurice', at: [45.618, 6.769] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Val-d’Isère', at: [45.448, 6.98] },
+          { name: 'Col de l’Iseran', at: [45.417, 7.031] },
+          { name: 'Bonneval-sur-Arc', at: [45.372, 7.048] },
+          { name: 'Col du Télégraphe', at: [45.203, 6.445] },
+          { name: 'Valloire', at: [45.165, 6.429] },
+          { name: 'Col du Galibier', at: [45.064, 6.408] },
+          { name: 'Col du Lautaret', at: [45.035, 6.404] },
+          { name: 'Briançon', at: [44.899, 6.643] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Col d’Izoard', at: [44.82, 6.735] },
+          { name: 'Guillestre', at: [44.66, 6.649] },
+          { name: 'Col de Vars', at: [44.538, 6.703] },
+          { name: 'Barcelonnette', at: [44.387, 6.652] },
+          { name: 'Col de la Cayolle', at: [44.26, 6.744] },
+          { name: 'Valberg', at: [44.095, 6.931] },
+          { name: 'Col de la Couillole', at: [44.088, 7.013] },
+          { name: 'Saint-Sauveur-sur-Tinée', at: [44.085, 7.105] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Col Saint-Martin', at: [44.061, 7.235] },
+          { name: 'Saint-Martin-Vésubie', at: [44.069, 7.255] },
+          { road: 'col-de-turini' },
+          { name: 'Sospel', at: [43.878, 7.448] },
+          { name: 'Col de Castillon', at: [43.836, 7.461] },
+          { name: 'Menton', at: [43.776, 7.504] },
+        ],
+      },
+    ],
+  },
+  // Napoleon's road from the coast to Grenoble, the N85, over two days.
+  {
+    id: 'route-napoleon',
+    name: 'Route Napoléon',
+    country: 'France',
+    blurb: 'Napoleon’s road from the Riviera to Grenoble. Grasse, the climb to Castellane and the Alps of Provence',
+    drives: [
+      {
+        from: { name: 'Golfe-Juan', at: [43.566, 7.077] },
+        stops: [
+          { name: 'Grasse', at: [43.658, 6.923] },
+          { road: 'route-napoleon' },
+          { name: 'Castellane', at: [43.847, 6.513] },
+          { name: 'Digne-les-Bains', at: [44.092, 6.236] },
+          { name: 'Sisteron', at: [44.195, 5.944] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Gap', at: [44.559, 6.079] },
+          { name: 'Col Bayard', at: [44.633, 6.08] },
+          { name: 'Corps', at: [44.818, 5.945] },
+          { name: 'Laffrey', at: [45.008, 5.775] },
+          { name: 'Grenoble', at: [45.1885, 5.7245] },
+        ],
+      },
+    ],
+  },
+  // The Grande Strada delle Dolomiti, Bolzano to Cortina, in a day.
+  {
+    id: 'great-dolomite-road',
+    name: 'Great Dolomite Road',
+    country: 'Italy',
+    blurb: 'Bolzano to Cortina d’Ampezzo through the heart of the Dolomites. Lago di Carezza and the Pordoi and Falzarego passes',
+    drives: [
+      {
+        from: { name: 'Bolzano', at: [46.4983, 11.3548] },
+        stops: [
+          { name: 'Lago di Carezza', at: [46.41, 11.575] },
+          { name: 'Passo di Costalunga', at: [46.404, 11.611] },
+          { name: 'Canazei', at: [46.477, 11.77] },
+          { name: 'Passo Pordoi', at: [46.488, 11.812] },
+          { name: 'Arabba', at: [46.497, 11.875] },
+          { name: 'Passo di Falzarego', at: [46.519, 12.009] },
+          { name: 'Cortina d’Ampezzo', at: [46.5405, 12.1357] },
+        ],
+      },
+    ],
+  },
+  // Switzerland Tourism's Three Classic Passes: a day's loop from Meiringen.
+  {
+    id: 'three-classic-passes',
+    name: 'Three Classic Passes',
+    country: 'Switzerland',
+    blurb: 'A day’s loop from Meiringen over the Grimsel, Furka and Susten passes, past the Rhône Glacier',
+    drives: [
+      {
+        from: { name: 'Meiringen', at: [46.727, 8.187] },
+        stops: [
+          { road: 'grimsel-pass' },
+          { name: 'Gletsch', at: [46.563, 8.361] },
+          { road: 'furka-pass' },
+          { name: 'Andermatt', at: [46.636, 8.594] },
+          { road: 'susten-pass' },
+          { name: 'Meiringen', at: [46.727, 8.187] },
+        ],
+      },
+    ],
+  },
+  // Würzburg to Füssen; every stop is one of the route's official towns.
+  {
+    id: 'romantic-road',
+    name: 'Romantic Road',
+    country: 'Germany',
+    blurb: 'Würzburg to Füssen through medieval Bavaria. Rothenburg, Dinkelsbühl and Neuschwanstein Castle',
+    drives: [
+      {
+        from: { name: 'Würzburg', at: [49.7913, 9.9534] },
+        stops: [
+          { name: 'Tauberbischofsheim', at: [49.623, 9.662] },
+          { name: 'Bad Mergentheim', at: [49.492, 9.773] },
+          { name: 'Weikersheim', at: [49.479, 9.899] },
+          { name: 'Creglingen', at: [49.469, 10.031] },
+          { name: 'Rothenburg ob der Tauber', at: [49.377, 10.179] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Feuchtwangen', at: [49.167, 10.329] },
+          { name: 'Dinkelsbühl', at: [49.07, 10.319] },
+          { name: 'Nördlingen', at: [48.851, 10.488] },
+          { name: 'Harburg Castle', at: [48.787, 10.689] },
+          { name: 'Augsburg', at: [48.3705, 10.8978] },
+        ],
+      },
+      {
+        stops: [
+          { name: 'Landsberg am Lech', at: [48.048, 10.883] },
+          { name: 'Wieskirche', at: [47.681, 10.901] },
+          { name: 'Neuschwanstein Castle', at: [47.5576, 10.7498] },
+          { name: 'Füssen', at: [47.57, 10.7] },
+        ],
+      },
+    ],
+  },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -118,12 +470,16 @@ async function cachedJson(url, isGood) {
 }
 
 /** A place's position from Photon, near its rough one: [lat, lng]. */
-async function lookUp({ name, at }) {
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(name)}&lat=${at[0]}&lon=${at[1]}&limit=5`;
+async function lookUp({ name, search = name, at }) {
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(search)}&lat=${at[0]}&lon=${at[1]}&limit=5`;
   const data = await cachedJson(url, (d) => Array.isArray(d.features));
-  const found = data.features
-    .map((f) => [f.geometry.coordinates[1], f.geometry.coordinates[0]])
-    .find((p) => haversine(p, at) <= MAX_LOOKUP_M);
+  const near = data.features.filter(
+    (f) => haversine([f.geometry.coordinates[1], f.geometry.coordinates[0]], at) <= MAX_LOOKUP_M
+  );
+  // A town's council boundary has its point in the middle of the parish, often
+  // up a hillside, so the town itself comes first when there's one.
+  const best = near.find((f) => f.properties.osm_key !== 'boundary') ?? near[0];
+  const found = best && [best.geometry.coordinates[1], best.geometry.coordinates[0]];
   if (!found) throw new Error(`${name}: nothing found within ${MAX_LOOKUP_M / 1000} km of ${at}`);
   console.log(`  ${name}: ${Math.round(haversine(found, at))} m from its rough position`);
   return found.map(round);
@@ -162,7 +518,7 @@ async function routeThrough(points) {
   return { line: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]), legs };
 }
 
-const roads = JSON.parse(await readFile(ROADS, 'utf8')).roads;
+const roads = JSON.parse(await readFile(ROADS, 'utf8')).roads.map((r) => ({ ...r, line: decodeLine(r.line) }));
 
 const routes = [];
 for (const route of ROUTES) {
@@ -208,7 +564,8 @@ for (const route of ROUTES) {
     });
     const metres = stopLegs.reduce((a, b) => a + b, 0);
     console.log(`  Drive ${d + 1}: ${Math.round(metres / 1609.344)} mi`);
-    drives.push({ ...(d === 0 ? { start } : {}), stops, legs: stopLegs, metres, line: resample(line) });
+    // Stored packed (src/utils/polyline.js); the app unpacks it as it loads.
+    drives.push({ ...(d === 0 ? { start } : {}), stops, legs: stopLegs, metres, line: encodeLine(resample(line)) });
     const last = stops.at(-1);
     from = last.roadId ? waypoints.at(-1) : [last.latitude, last.longitude];
   }

@@ -1,4 +1,3 @@
-import data from '../../data/iconicRoads.json';
 import {
   MAX_GOOGLE_URL,
   appleMapsLink,
@@ -6,8 +5,9 @@ import {
   roadGuidePoints,
   wazeLinks,
 } from '../navLinks';
+import { getRoad } from '../iconicRoads';
 
-const bealach = data.roads.find((r) => r.id === 'bealach-na-ba');
+const bealach = getRoad('bealach-na-ba');
 const at = (latitude, longitude) => ({ latitude, longitude });
 const fortAugustus = at(57.1447, -4.6814);
 const eileanDonan = at(57.274, -5.5161);

@@ -11,6 +11,8 @@
 // Heights come from the Open-Meteo elevation API (Copernicus DEM).
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { encodeLine } from '../src/utils/polyline.js';
+
 const UA = { 'User-Agent': 'road-trip-app-build/0.1 (justwoodford@gmail.com)' };
 const SPACING_M = 40; // distance between stored line points
 const CLIMB_HYSTERESIS_M = 5; // a rise must be this big to count, as for recorded trips
@@ -530,7 +532,8 @@ async function finish(meta, rawLine) {
   console.log(
     `${road.id.padEnd(20)} ${(road.lengthM / 1000).toFixed(1).padStart(5)} km  highest ${road.highestM} m  climb ${road.climbM} m  ${road.line.length} pts`
   );
-  return road;
+  // Stored packed (src/utils/polyline.js); the app unpacks it as it loads.
+  return { ...road, line: encodeLine(road.line) };
 }
 
 const existing = new Map(

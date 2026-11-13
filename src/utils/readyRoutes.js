@@ -6,12 +6,17 @@ import data from '../data/routes.json';
 import { formatDistance } from './format';
 import { haversineDistance } from './geoMath';
 import { getRoad } from './iconicRoads';
+import { decodeLine } from './polyline';
 
 /**
  * [{ id, name, country, blurb, metres, drives: [{ start? (Drive 1), stops,
- * legs (metres to each stop), metres, line: [[latitude, longitude]] }] }]
+ * legs (metres to each stop), metres, line: [[latitude, longitude]] }] }],
+ * the lines stored packed and unpacked here.
  */
-export const READY_ROUTES = data.routes;
+export const READY_ROUTES = data.routes.map((r) => ({
+  ...r,
+  drives: r.drives.map((d) => ({ ...d, line: decodeLine(d.line) })),
+}));
 export const READY_ROUTES_ATTRIBUTION = data.attribution;
 
 /** "The UK's top 3 road trips and Europe's top 2, waiting to be driven.": the list's intro, like Iconic Roads'. */

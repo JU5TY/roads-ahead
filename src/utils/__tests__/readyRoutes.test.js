@@ -14,8 +14,35 @@ import {
 const nc500 = getReadyRoute('nc500');
 
 describe('Iconic Trips', () => {
+  it('has the UK’s top 5 road trips and Europe’s top 5', () => {
+    expect(READY_ROUTES.map((r) => r.id)).toEqual([
+      'nc500',
+      'atlantic-highway',
+      'cambrian-way',
+      'coastal-way',
+      'causeway-coastal-route',
+      'route-des-grandes-alpes',
+      'route-napoleon',
+      'great-dolomite-road',
+      'three-classic-passes',
+      'romantic-road',
+    ]);
+    expect(tripsIntro()).toBe("The UK's top 5 road trips and Europe's top 5, waiting to be driven.");
+  });
+
+  it('keeps every drive whole: a leg per stop, a line, and room in one Google Maps link', () => {
+    for (const route of READY_ROUTES) {
+      expect(route.drives[0].start).toBeTruthy();
+      for (const drive of route.drives) {
+        expect(drive.legs).toHaveLength(drive.stops.length);
+        expect(drive.line.length).toBeGreaterThan(50);
+        // Stops on the way plus one guide point per Iconic Road; the finish isn't a waypoint.
+        expect(drive.stops.length - 1).toBeLessThanOrEqual(9);
+      }
+    }
+  });
+
   it('has the North Coast 500, a loop from Inverness in five drives', () => {
-    expect(READY_ROUTES.map((r) => r.id)).toEqual(['nc500']);
     expect(nc500.drives).toHaveLength(5);
     expect(nc500.drives[0].start.name).toBe('Inverness');
     expect(nc500.drives.at(-1).stops.at(-1).name).toBe('Inverness');

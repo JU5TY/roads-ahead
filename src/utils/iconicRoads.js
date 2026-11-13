@@ -1,8 +1,9 @@
 // Iconic Roads: the bundled road list and the offline check of a drive against
 // it. Pure functions over drive points ({ latitude, longitude, timestamp },
 // oldest first) and the road lines in src/data/iconicRoads.json ([lat, lng],
-// about 40 m apart).
+// about 40 m apart, stored packed and unpacked here).
 import data from '../data/iconicRoads.json';
+import { decodeLine } from './polyline';
 
 /** Drive points within this distance of the road's line count as on the road. */
 const ON_ROAD_M = 50;
@@ -15,7 +16,7 @@ const MAX_OFF_ROAD_M = 1000;
 /** Gaps between matched points up to this many line points are filled in (GPS is sparser at speed). */
 const MAX_FILL = 12;
 
-export const ICONIC_ROADS = data.roads;
+export const ICONIC_ROADS = data.roads.map((r) => ({ ...r, line: decodeLine(r.line) }));
 export const ROADS_ATTRIBUTION = data.attribution;
 /** Changes whenever the list changes, so past drives are checked again. */
 export const ROADS_VERSION = ICONIC_ROADS.map((r) => `${r.id}:${r.line.length}`).join('|');
