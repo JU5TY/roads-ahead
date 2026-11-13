@@ -51,7 +51,7 @@ export default function PermissionSheet({ kind, onPrimary, onSecondary }) {
   if (kind && CONTENT[kind] !== content) setContent(CONTENT[kind]);
 
   return (
-    <BottomSheet visible={Boolean(kind)} onClose={onSecondary} scrimCloses={false}>
+    <BottomSheet visible={Boolean(kind)} onClose={onSecondary} scrimCloses={false} dragCloses={false}>
       {content ? (
         <ScrollView
           style={styles.sheet}

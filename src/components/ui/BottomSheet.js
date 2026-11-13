@@ -34,11 +34,12 @@ const DRIVER = { useNativeDriver: true };
  * (edge-to-edge Android windows don't resize for it).
  * The panel keeps the same space under every sheet's content, above the
  * navigation bar or, while it's up, the keyboard (which covers the bar).
- * Tapping the handle, pulling the sheet down from anywhere, tapping the scrim
- * (unless `scrimCloses` is false) or Back calls onClose, so no sheet has a Cancel button (and forms
+ * Tapping the handle, pulling the sheet down from anywhere (unless `dragCloses`
+ * is false: then only from the handle), tapping the scrim (unless `scrimCloses`
+ * is false) or Back calls onClose, so no sheet has a Cancel button (and forms
  * have no title either). No motion with reduced motion on.
  */
-export default function BottomSheet({ visible, onClose, scrimCloses = true, children }) {
+export default function BottomSheet({ visible, onClose, scrimCloses = true, dragCloses = true, children }) {
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   const keyboardUp = useKeyboardState((s) => s.isVisible);
@@ -106,28 +107,62 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
     }, SHOW_WAIT_MS);
   };
 
-  // Dragged down, the panel follows; let go far enough (or flick) and it closes.
-  const drag = {
-    onPanResponderMove: (_, g) => offset.setValue(Math.max(0, g.dy)),
-    onPanResponderRelease: (_, g) => {
-      const tap = Math.abs(g.dx) < 4 && Math.abs(g.dy) < 4;
-      if (tap || g.dy > DRAG_CLOSE || g.vy > 0.8) onClose();
-      else Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }).start();
-    },
-    onPanResponderTerminate: () => Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }).start(),
-  };
-  // The handle: drags, and a tap closes (it's the Close button for screen readers).
-  const pan = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
-    ...drag,
+  // The gestures below are made once, so a re-render mid-drag (a location
+  // update, say) can't restart them; they read onClose and dragCloses from here.
+  const latest = useRef({ onClose, dragCloses });
+  useEffect(() => {
+    latest.current = { onClose, dragCloses };
   });
-  // Anywhere else on the panel: a clear pull downwards takes over from a row
-  // or field (taps still reach them), as in other apps. A list that can scroll
-  // keeps its own drags.
-  const panelPan = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && g.dy > Math.abs(g.dx) * 1.5,
-    ...drag,
+  // Refs here are read only inside the gesture callbacks, never while drawing.
+  // eslint-disable-next-line react-hooks/refs
+  const [pans] = useState(() => {
+    // Only while open: a drag as it slides away would stop the slide part-way,
+    // leaving it mounted over the app.
+    const open = () => isVisible.current;
+    // Back up, and the scrim back to full (a drag as it opens stops its fade).
+    const settle = () => {
+      if (!open()) return;
+      Animated.parallel([
+        Animated.spring(offset, { toValue: 0, bounciness: 0, ...DRIVER }),
+        Animated.timing(scrim, { toValue: 1, duration: 150, ...DRIVER }),
+      ]).start();
+    };
+    const follow = (_, g) => {
+      if (open()) offset.setValue(Math.max(0, g.dy));
+    };
+    // Let go far enough (or flicked) and it closes, else it settles back.
+    const release = (_, g) => {
+      if (!open()) return;
+      if (g.dy > DRAG_CLOSE || g.vy > 0.8) latest.current.onClose();
+      else settle();
+    };
+    let moved = false; // the handle's touch went anywhere at all
+    return {
+      // The handle drags, keeps its own drag (the panel can't take it over),
+      // and a tap that never moved closes (it's the Close button for screen readers).
+      handle: PanResponder.create({
+        onStartShouldSetPanResponder: () => {
+          moved = false;
+          return true;
+        },
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderMove: (e, g) => {
+          if (Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4) moved = true;
+          follow(e, g);
+        },
+        onPanResponderRelease: (e, g) => (moved ? release(e, g) : latest.current.onClose()),
+        onPanResponderTerminate: settle,
+      }),
+      // Anywhere else: a clear pull downwards takes over from a row or field
+      // (taps still reach them), as in other apps, unless the sheet opts out.
+      panel: PanResponder.create({
+        onMoveShouldSetPanResponder: (_, g) =>
+          open() && latest.current.dragCloses && g.dy > 8 && g.dy > Math.abs(g.dx) * 1.5,
+        onPanResponderMove: follow,
+        onPanResponderRelease: release,
+        onPanResponderTerminate: settle,
+      }),
+    };
   });
 
   return (
@@ -152,7 +187,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
         pointerEvents="box-none"
       >
         <Animated.View
-          {...panelPan.panHandlers}
+          {...pans.panel.panHandlers}
           onLayout={onLayout}
           style={[
             styles.panel,
@@ -163,7 +198,7 @@ export default function BottomSheet({ visible, onClose, scrimCloses = true, chil
           ]}
         >
           <View
-            {...pan.panHandlers}
+            {...pans.handle.panHandlers}
             style={styles.grabber}
             accessible
             accessibilityRole="button"

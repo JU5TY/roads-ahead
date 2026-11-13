@@ -1,40 +1,12 @@
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { pressedOpacity, spacing, type } from '../../theme';
+import { spacing, type } from '../../theme';
 import { formatDistance } from '../../utils/format';
+import { MenuRow } from '../ActionSheet';
 import BottomSheet from '../ui/BottomSheet';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
-
-/** A row as in a menu (ActionSheet): a blue icon well, title and detail. What the sat nav gets, and Navigate with. */
-function Row({ icon, title, detail, onPress }) {
-  const { c } = useTheme();
-  const styles = useStyles(makeStyles);
-  const content = (
-    <>
-      <View style={styles.well}>
-        <Icon name={icon} size={22} color={c.accent} />
-      </View>
-      <View style={styles.flex}>
-        <Text style={[type.bodyStrong, styles.text]}>{title}</Text>
-        <Text style={[type.small, styles.muted, styles.detail]}>{detail}</Text>
-      </View>
-      {onPress ? <Icon name="chevron_right" size={24} color={c.textMuted} /> : null}
-    </>
-  );
-  return onPress ? (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-    >
-      {content}
-    </Pressable>
-  ) : (
-    <View style={styles.row}>{content}</View>
-  );
-}
 
 /**
  * Start a planned day: what it is ("Day 3 · Fort William → Applecross" and
@@ -88,12 +60,13 @@ export default function StartDriveSheet({
           </View>
         ) : null}
 
-        <Row
+        <MenuRow
           icon="near_me"
-          title={wholeDrive ? `${appName} gets the whole route` : `${appName} gets one stop at a time`}
+          label={wholeDrive ? `${appName} gets the whole route` : `${appName} gets one stop at a time`}
           detail={summary}
+          detailLines={2}
         />
-        <Row icon="map" title="Navigate with" detail={appName} onPress={onPickApp} />
+        <MenuRow icon="map" label="Navigate with" detail={appName} chevron onPress={onPickApp} />
 
         <View style={styles.footer}>
           <Button label="Record and navigate" icon="radio_button_checked" onPress={onStart} style={styles.start} />
@@ -132,23 +105,6 @@ const makeStyles = (c) => ({
     justifyContent: 'center',
     backgroundColor: c.halo,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    minHeight: 56,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  well: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.accentContainer,
-  },
   flex: { flex: 1, minWidth: 0 },
   detail: { marginTop: 2 },
   footer: { paddingHorizontal: 12 },
@@ -158,5 +114,4 @@ const makeStyles = (c) => ({
   muted: { color: c.textMuted },
   onAccent: { color: c.onAccentContainer },
   accentMuted: { color: c.accentContainerMuted },
-  pressed: { opacity: pressedOpacity },
 });
