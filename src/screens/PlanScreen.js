@@ -17,6 +17,7 @@ import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
 import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
+import InfoNote from '../components/ui/InfoNote';
 import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
 import { useSettings } from '../context/SettingsContext';
@@ -553,12 +554,7 @@ export default function PlanScreen() {
       {timeline}
 
       {locked ? (
-        <View style={styles.lockedNote}>
-          <Icon name="info" size={20} color={c.textMuted} />
-          <Text style={[type.label, styles.muted, styles.regular, styles.flex]}>
-            Copied from Iconic Trips, so its days and stops stay as they are for now
-          </Text>
-        </View>
+        <InfoNote text="Iconic Trips come planned for you. Their days and stops can't be changed." />
       ) : (
         <View style={styles.addRows}>
           <AddRow icon="add_location_alt" label="Add stop" onPress={() => pickPlace('stop')} />
@@ -584,8 +580,5 @@ const makeStyles = (c) => ({
   pressed: { opacity: pressedOpacity },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  regular: { fontFamily: type.body.fontFamily },
-  flex: { flex: 1, minWidth: 0 },
-  lockedNote: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginHorizontal: 4 },
   link: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
 });

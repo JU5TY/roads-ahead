@@ -6,6 +6,7 @@ import { showMessage } from '../components/ui/DialogHost';
 import DetailLayout from '../components/detail/DetailLayout';
 import RouteMap from '../components/RouteMap';
 import Icon from '../components/ui/Icon';
+import InfoNote from '../components/ui/InfoNote';
 import ListRow from '../components/ui/ListRow';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
@@ -223,10 +224,7 @@ export default function RoadScreen() {
         </>
       ) : null}
 
-      <View style={styles.note}>
-        <Icon name="info" size={20} color={c.textMuted} />
-        <Text style={[type.label, styles.muted, styles.regular, styles.flex]}>{NOTE}</Text>
-      </View>
+      <InfoNote text={NOTE} />
     </DetailLayout>
   );
 }
@@ -243,7 +241,6 @@ const makeStyles = (c) => ({
   subtitle: { marginTop: 2, marginHorizontal: 4 },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  regular: { fontFamily: type.body.fontFamily },
   status: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,13 +289,6 @@ const makeStyles = (c) => ({
     backgroundColor: c.roadContainer,
   },
   flex: { flex: 1, minWidth: 0 },
-  note: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 20,
-    marginHorizontal: 4,
-  },
   aboutHeader: { marginBottom: 8 },
   pressed: { opacity: pressedOpacity },
 });
