@@ -82,7 +82,7 @@ A drive's miles, time and the line along the real roads come from Google's [Rout
 
 ## How the metrics work
 
-All data is stored in metric (metres, m/s). The Settings page switches the display between km and miles.
+All data is stored in metric (metres, m/s) and shown in miles. Kilometres are built but hidden (`KM_UNITS` in `settingsStorage.js`) until fuel in L/100 km and euros come with them.
 
 - **Distance**: Haversine sum of consecutive fixes. Fixes with horizontal accuracy worse than 50 m, or jumps faster than 324 km/h, are dropped.
 - **Rest stops / auto-pause**: staying within 100 m of one spot for 5+ minutes. A crawling traffic jam keeps leaving that radius, so it counts as driving, not a stop. On iOS no fixes arrive while you're parked, so a long gap between fixes is judged by its average speed.

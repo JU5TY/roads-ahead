@@ -21,7 +21,7 @@ import { restoreBackup, saveBackup } from '../services/backupService';
 import { exportAllTrips, showExportFailed } from '../services/exportService';
 import { countSavedPoints } from '../storage/driveStorage';
 import { getExampleTripId } from '../storage/exampleTrip';
-import { BREAK_REMINDER_OPTIONS } from '../storage/settingsStorage';
+import { BREAK_REMINDER_OPTIONS, KM_UNITS } from '../storage/settingsStorage';
 import { listTrips } from '../storage/tripStorage';
 import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { spacing, type } from '../theme';
@@ -253,13 +253,15 @@ export default function SettingsScreen() {
       ) : null}
 
       <SectionHeader variant="label" title="Preferences" />
-      <ListRow
-        icon="straighten"
-        title="Units"
-        value={UNIT_LABELS[units]}
-        onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}
-        divider
-      />
+      {KM_UNITS ? (
+        <ListRow
+          icon="straighten"
+          title="Units"
+          value={UNIT_LABELS[units]}
+          onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}
+          divider
+        />
+      ) : null}
       {/* "£1.46 · set 14 Oct": when it was set, so an old price is noticed. */}
       {hasFuelCar ? (
         <ListRow

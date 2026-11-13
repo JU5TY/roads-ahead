@@ -5,8 +5,16 @@ import { Platform } from 'react-native';
 
 const UNITS_KEY = 'settings.units';
 
-/** 'metric' | 'imperial'; miles until km are chosen in Settings. */
+/**
+ * Whether You offers Kilometres. Off until fuel and money follow it (L/100 km
+ * and euros): km with mpg and £ would be half done. Until then it's miles for
+ * everyone, though a stored choice is kept for when it's back.
+ */
+export const KM_UNITS = false;
+
+/** 'metric' | 'imperial'; miles until km are chosen on You. */
 export function getUnits() {
+  if (!KM_UNITS) return 'imperial';
   return Storage.getItemSync(UNITS_KEY) === 'metric' ? 'metric' : 'imperial';
 }
 
