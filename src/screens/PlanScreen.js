@@ -202,13 +202,15 @@ export default function PlanScreen() {
   const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
 
   // The picked drive's start, stops and finish; on All, just where the trip starts and ends.
-  let markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: colorOf(picked) }));
+  // Green start and red finish, as on a driven trip's map; stops in the drive's colour.
+  const markerColor = { start: c.start, finish: c.finish, stop: colorOf(picked) };
+  let markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: markerColor[m.kind] }));
   if (all) {
     const first = driveMarkers(mapPlan, 0).filter((m) => m.kind === 'start');
     const end = driveMarkers(mapPlan, lastIndex).filter((m) => m.kind === 'finish');
     markers = [
-      ...first.map((m) => ({ ...m, key: 'trip-start', color: colorOf(0) })),
-      ...end.map((m) => ({ ...m, key: 'trip-finish', color: colorOf(lastIndex) })),
+      ...first.map((m) => ({ ...m, key: 'trip-start', color: c.start })),
+      ...end.map((m) => ({ ...m, key: 'trip-finish', color: c.finish })),
     ];
     // A round trip starts and ends in the same place: one dot.
     if (tripGoesHome) markers = markers.filter((m) => m.key !== 'trip-start');
