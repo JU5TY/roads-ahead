@@ -41,9 +41,11 @@ export default function RoadsRing({ completed, total, of = 'Iconic Roads', size 
         ) : null}
       </Svg>
       {small ? (
-        <View style={[styles.centre, styles.row]}>
-          <Text style={[type.bodyStrong, styles.smallNumber]}>{completed}</Text>
-          <Text style={[type.small, styles.muted, styles.smallOf]}>/{total}</Text>
+        <View style={styles.centre}>
+          <View style={styles.row}>
+            <Text style={[type.bodyStrong, styles.smallNumber]}>{completed}</Text>
+            <Text style={[type.small, styles.muted, styles.smallOf]}>/{total}</Text>
+          </View>
         </View>
       ) : (
         <View style={styles.centre}>
