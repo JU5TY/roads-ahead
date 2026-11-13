@@ -252,16 +252,16 @@ export default function SettingsScreen() {
         />
       ) : null}
 
-      <SectionHeader variant="label" title="Preferences" />
-      {KM_UNITS ? (
-        <ListRow
-          icon="straighten"
-          title="Units"
-          value={UNIT_LABELS[units]}
-          onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}
-          divider
-        />
-      ) : null}
+      {/* Driving: what a drive is handed to, what it costs and when to stop. */}
+      <SectionHeader variant="label" title="Driving" />
+      {/* The sat nav app planned drives are handed to. */}
+      <ListRow
+        icon="map"
+        title="Navigate with"
+        value={NAV_APPS[navApp]}
+        onPress={() => setPickingNav(true)}
+        divider
+      />
       {/* "£1.46 · set 14 Oct": when it was set, so an old price is noticed. */}
       {hasFuelCar ? (
         <ListRow
@@ -281,14 +281,23 @@ export default function SettingsScreen() {
           divider
         />
       ) : null}
-      {/* The sat nav app planned drives are handed to. */}
       <ListRow
-        icon="map"
-        title="Navigate with"
-        value={NAV_APPS[navApp]}
-        onPress={() => setPickingNav(true)}
-        divider
+        icon="local_cafe"
+        title="Break reminder"
+        value={formatBreakReminder(breakReminderMinutes)}
+        onPress={() => setPicking(true)}
       />
+
+      <SectionHeader variant="label" title="App" />
+      {KM_UNITS ? (
+        <ListRow
+          icon="straighten"
+          title="Units"
+          value={UNIT_LABELS[units]}
+          onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}
+          divider
+        />
+      ) : null}
       <ListRow
         icon="contrast"
         title="Theme"
@@ -297,13 +306,6 @@ export default function SettingsScreen() {
           const i = THEMES.findIndex(([k]) => k === theme);
           setTheme(THEMES[(i + 1) % THEMES.length][0]);
         }}
-        divider
-      />
-      <ListRow
-        icon="local_cafe"
-        title="Break reminder"
-        value={formatBreakReminder(breakReminderMinutes)}
-        onPress={() => setPicking(true)}
       />
 
       {/* The phone's own backup (Android Auto Backup, iCloud) needs no row: the file is what's extra. */}
