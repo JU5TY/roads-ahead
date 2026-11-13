@@ -77,7 +77,7 @@ function withMonthHeaders(trips) {
 }
 
 export default function PastTripsScreen() {
-  const { units, showIconicRoads } = useSettings();
+  const { units } = useSettings();
   const roadCounts = useRoadCounts();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -184,7 +184,7 @@ export default function PastTripsScreen() {
             <TripCard
               trip={item.trip}
               units={units}
-              roadCount={showIconicRoads ? (roadCounts.get(item.trip.id) ?? 0) : 0}
+              roadCount={roadCounts.get(item.trip.id) ?? 0}
             />
           )
         }

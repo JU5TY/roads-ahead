@@ -60,7 +60,7 @@ const MAX_MAP_POINTS = 3000;
 export default function TripScreen() {
   // `drive` opens on the day of one of the trip's drives (e.g. from an Iconic Road).
   const { id, drive: driveParam } = useLocalSearchParams();
-  const { units, showIconicRoads } = useSettings();
+  const { units } = useSettings();
   const premium = usePremium();
   const roadTotals = useRoadTotals();
   const { c } = useTheme();
@@ -267,7 +267,6 @@ export default function TripScreen() {
 
   // Every drive in view (the picked day's, or the trip's) is just an Iconic Road.
   const allHidden = hiddenCount === viewDrives.length;
-  const roadsShown = showIconicRoads ? completions : [];
   // Iconic Road rows name the drive ("Completed · Drive 2") when there's more than one.
   const driveOf =
     trip.drives.length > 1
@@ -318,8 +317,8 @@ export default function TripScreen() {
   // What the sections below cover: the picked drive, or the whole trip for All.
   const hideTimes = selected ? Boolean(selected.stats.timesHidden) : allHidden;
   const viewRoads = selected
-    ? roadsShown.filter((r) => r.driveId === selected.id)
-    : roadsShown.filter((r) => viewDrives.some((d) => d.id === r.driveId));
+    ? completions.filter((r) => r.driveId === selected.id)
+    : completions.filter((r) => viewDrives.some((d) => d.id === r.driveId));
   const viewPhotos = selected
     ? photos.filter((p) => p.time >= selected.startedAt && p.time <= selected.endedAt)
     : dayDrives

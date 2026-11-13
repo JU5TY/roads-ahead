@@ -42,7 +42,7 @@ function RoadsCard() {
 }
 
 export default function HomeScreen() {
-  const { units, showIconicRoads } = useSettings();
+  const { units } = useSettings();
   const roadCounts = useRoadCounts();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -108,9 +108,9 @@ export default function HomeScreen() {
         units={units}
         variant="large"
         showMap={focused}
-        roadCount={showIconicRoads ? (roadCounts.get(latest.id) ?? 0) : 0}
+        roadCount={roadCounts.get(latest.id) ?? 0}
       />
-      {showIconicRoads ? <RoadsCard /> : null}
+      <RoadsCard />
       <CountriesCard trips={trips} />
     </Animated.ScrollView>
   );

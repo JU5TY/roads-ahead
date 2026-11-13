@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,11 +12,9 @@ import VehicleSheet from '../components/VehicleSheet';
 import Icon from '../components/ui/Icon';
 import ListRow from '../components/ui/ListRow';
 import PremiumTag from '../components/ui/PremiumTag';
-import Switch from '../components/ui/Switch';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
 import { PREMIUM_TAGLINE, openPremium, usePremium } from '../hooks/usePremium';
-import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { useVehicles } from '../hooks/useVehicles';
 import { restoreBackup, saveBackup } from '../services/backupService';
@@ -31,7 +28,7 @@ import { spacing, type } from '../theme';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
 import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/fuel';
-import { ICONIC_ROADS, ROADS_ATTRIBUTION } from '../utils/iconicRoads';
+import { ROADS_ATTRIBUTION } from '../utils/iconicRoads';
 import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
 import { NAV_APPS } from '../utils/navLinks';
 import { READY_ROUTES_ATTRIBUTION } from '../utils/readyRoutes';
@@ -90,8 +87,6 @@ export default function SettingsScreen() {
     setUnits,
     breakReminderMinutes,
     setBreakReminderMinutes,
-    showIconicRoads,
-    setShowIconicRoads,
     theme,
     setTheme,
     prices,
@@ -100,8 +95,6 @@ export default function SettingsScreen() {
     replayOnboarding,
   } = useSettings();
   const { c } = useTheme();
-  const totals = useRoadTotals();
-  const completed = totals ? ICONIC_ROADS.filter((r) => totals.has(r.id)).length : 0;
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [picking, setPicking] = useState(false);
@@ -259,36 +252,6 @@ export default function SettingsScreen() {
         />
       ) : null}
 
-      <SectionHeader variant="label" title="Iconic Roads" />
-      <ListRow
-        icon="verified"
-        title="Show Iconic Roads"
-        onPress={() => setShowIconicRoads(!showIconicRoads)}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: showIconicRoads }}
-        divider={showIconicRoads}
-        right={
-          <Switch
-            value={showIconicRoads}
-            onValueChange={setShowIconicRoads}
-            accessibilityLabel="Show Iconic Roads"
-          />
-        }
-      />
-      {showIconicRoads ? (
-        <ListRow
-          icon="emoji_events"
-          title="Completed"
-          value={`${completed} of ${ICONIC_ROADS.length}`}
-          onPress={() => router.push('/roads')}
-        />
-      ) : (
-        <Text style={[type.small, styles.note]}>
-          Iconic Roads are hidden. Roads you drive still count, so they’ll be there if you turn
-          this back on.
-        </Text>
-      )}
-
       <SectionHeader variant="label" title="Preferences" />
       <ListRow
         icon="straighten"
@@ -416,7 +379,6 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },
   h1: { color: c.text, marginHorizontal: 4, marginTop: 8, height: 56, textAlignVertical: 'center' },
-  note: { color: c.textMuted, marginHorizontal: 4, marginTop: 4 },
   well: {
     width: 40,
     height: 40,

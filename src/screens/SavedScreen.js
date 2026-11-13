@@ -25,7 +25,7 @@ import { driveNumberFor, routeLabel, tripTitle } from '../utils/tripSummary';
 /** Shown after Stop: the drive just saved, with Share and View. */
 export default function SavedScreen() {
   const { id } = useLocalSearchParams();
-  const { units, showIconicRoads } = useSettings();
+  const { units } = useSettings();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -144,18 +144,16 @@ export default function SavedScreen() {
             ]}
           />
         </FadeUp>
-        {showIconicRoads ? (
-          // The Trip page's rows, so any number of roads list the same way.
-          <FadeUp delay={500}>
-            <IconicRoadsSection
-              completions={roads.completions}
-              totals={roads.totals}
-              today
-              header={false}
-              style={styles.roads}
-            />
-          </FadeUp>
-        ) : null}
+        {/* The Trip page's rows, so any number of roads list the same way. */}
+        <FadeUp delay={500}>
+          <IconicRoadsSection
+            completions={roads.completions}
+            totals={roads.totals}
+            today
+            header={false}
+            style={styles.roads}
+          />
+        </FadeUp>
       </ScrollView>
       <View style={[styles.buttons, { paddingBottom: insets.bottom + 24 }]}>
         <Button

@@ -16,7 +16,6 @@ export function SettingsProvider({ children }) {
   // Whether Welcome has been passed. null until known: people who used the app
   // before Welcome existed already have drives, so they skip it.
   const [onboarded, setOnboarded] = useState(settingsStorage.getOnboarded);
-  const [showIconicRoads, setShowIconicRoads] = useState(settingsStorage.getShowIconicRoads);
   const [theme, setTheme] = useState(settingsStorage.getTheme);
   const [mapView, setMapView] = useState(settingsStorage.getMapView);
   const [navApp, setNavApp] = useState(settingsStorage.getNavApp);
@@ -57,11 +56,6 @@ export function SettingsProvider({ children }) {
         setTheme(next);
         save(settingsStorage.setTheme(next));
       },
-      showIconicRoads,
-      setShowIconicRoads: (next) => {
-        setShowIconicRoads(next);
-        save(settingsStorage.setShowIconicRoads(next));
-      },
       mapView,
       setMapView: (next) => {
         setMapView(next);
@@ -91,7 +85,7 @@ export function SettingsProvider({ children }) {
         save(settingsStorage.setOnboarded(false));
       },
     }),
-    [units, breakReminderMinutes, theme, showIconicRoads, mapView, navApp, prices, onboarded]
+    [units, breakReminderMinutes, theme, mapView, navApp, prices, onboarded]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

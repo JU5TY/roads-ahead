@@ -26,7 +26,6 @@ export const BACKUP_EXTENSION = '.roadsahead';
 const CARRIED_KEYS = [
   'settings.units',
   'settings.breakReminderMinutes',
-  'settings.showIconicRoads',
   'settings.theme',
   'settings.mapView',
   'settings.fuelPrice',
