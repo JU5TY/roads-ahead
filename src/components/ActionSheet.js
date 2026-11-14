@@ -7,7 +7,7 @@ import Icon from './ui/Icon';
 
 /**
  * One menu row: an icon in a round blue well (red when `destructive`), the
- * label and an optional grey `detail`, a `badge` pill, a tick when `selected`,
+ * label and an optional grey `detail`, a `badge` pill, a blue tick when `selected`,
  * or a chevron. Without onPress it's a plain row (the Start drive sheet's
  * "Google Maps gets the whole route"). `detailLines` lets a longer detail wrap.
  */
@@ -23,11 +23,7 @@ export function MenuRow({ icon, label, detail, badge, selected, destructive, che
       ) : null}
       <View style={styles.actionText}>
         <Text
-          style={[
-            styles.actionLabel,
-            selected && styles.actionLabelSelected,
-            destructive && styles.actionLabelDestructive,
-          ]}
+          style={[styles.actionLabel, destructive && styles.actionLabelDestructive]}
           numberOfLines={1}
         >
           {label}
@@ -44,7 +40,7 @@ export function MenuRow({ icon, label, detail, badge, selected, destructive, che
           <Text style={styles.badgeText}>{badge}</Text>
         </View>
       ) : null}
-      {selected ? <Icon name="check" size={22} color={c.onAccentContainer} /> : null}
+      {selected ? <Icon name="check" size={22} color={c.accent} /> : null}
       {chevron ? <Icon name="chevron_right" size={24} color={c.textMuted} /> : null}
     </>
   );
@@ -52,7 +48,7 @@ export function MenuRow({ icon, label, detail, badge, selected, destructive, che
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.action, selected && styles.actionSelected, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.action, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityState={selected !== undefined ? { selected } : undefined}
     >
@@ -67,8 +63,8 @@ export function MenuRow({ icon, label, detail, badge, selected, destructive, che
  * (e.g. the break reminder), then rows: an icon in a round tinted well, the label
  * and an optional grey `detail` under it, and a `badge` pill (e.g. "Premium").
  * Destructive rows come last, red, under a divider. For picking one option,
- * `selected` tints that row and adds a tick (rows without icons, e.g. the break
- * reminder). Like every sheet, it closes on the handle, a pull down, the scrim
+ * `selected` adds a blue tick at the row's end; the row itself looks like any
+ * other (rows without icons, e.g. the break reminder). Like every sheet, it closes on the handle, a pull down, the scrim
  * or Back (onClose).
  * actions: [{ label, key?, detail?, icon?, badge?, selected?, onPress, style?: 'destructive' }]
  */
@@ -126,7 +122,6 @@ const makeStyles = (c) => ({
     alignItems: 'center',
     gap: spacing.md,
   },
-  actionSelected: { backgroundColor: c.accentContainer },
   well: {
     width: 40,
     height: 40,
@@ -138,7 +133,6 @@ const makeStyles = (c) => ({
   wellDestructive: { backgroundColor: c.dangerContainer },
   actionText: { flex: 1, minWidth: 0 },
   actionLabel: { ...type.bodyStrong, color: c.text },
-  actionLabelSelected: { color: c.onAccentContainer },
   actionLabelDestructive: { color: c.danger },
   actionDetail: { ...type.small, color: c.textMuted, marginTop: 2 },
   divider: {
