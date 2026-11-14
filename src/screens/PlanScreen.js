@@ -44,6 +44,7 @@ import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { countriesAlong } from '../utils/countries';
+import { lineLength } from '../utils/geoMath';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
@@ -260,6 +261,13 @@ export default function PlanScreen() {
     .filter((d) => d.seconds > LONG_DAY_S);
   // The countries the plan (or the picked day) passes through: its road lines once
   // routed, else the straight outline, a few points along each.
+  // Miles before (or without) Google's road times: measured along the saved road
+  // lines, once every day shown has one; Driving time waits for the times.
+  const routedDays = (all ? routes.drives.map((_, i) => i) : [picked]).filter((i) => mapPlan.drives[i].stops.length);
+  const lineMetres =
+    routedDays.length && routedDays.every((i) => routes.lines[i])
+      ? routedDays.reduce((sum, i) => sum + lineLength(routes.lines[i]), 0)
+      : null;
   const countryCount = countriesAlong(
     (all ? outline.map((_, i) => i) : [picked]).map((i) => routes.lines[i] ?? outline[i]?.coordinates ?? [])
   );
@@ -577,13 +585,17 @@ export default function PlanScreen() {
       )}
 
       {/* The trip page's headline, once the roads are in. */}
-      {summary.status === 'done' ? (
+      {summary.status === 'done' || lineMetres != null ? (
         <HeroStats
-          stats={{ distanceM: summary.metres, movingTimeMs: summary.seconds * 1000 }}
+          stats={{
+            distanceM: summary.status === 'done' ? summary.metres : lineMetres,
+            movingTimeMs: (summary.seconds ?? 0) * 1000,
+          }}
           units={units}
           roadCount={stopCounts(plan, all ? null : picked).roads}
           countryCount={countryCount}
           longDay={(!all || plan.drives.length === 1) && summary.seconds > LONG_DAY_S}
+          showTime={summary.status === 'done'}
         />
       ) : null}
       {all && plan.drives.length > 1

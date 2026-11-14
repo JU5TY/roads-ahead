@@ -43,6 +43,13 @@ export function haversineDistance(a, b) {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+/** Metres along a line ([{ latitude, longitude }]), point to point. */
+export function lineLength(line) {
+  let metres = 0;
+  for (let i = 1; i < line.length; i++) metres += haversineDistance(line[i - 1], line[i]);
+  return metres;
+}
+
 /** Normalise an expo-location LocationObject into the flat fix shape we store. */
 export function toFix(location) {
   const { coords, timestamp } = location;
