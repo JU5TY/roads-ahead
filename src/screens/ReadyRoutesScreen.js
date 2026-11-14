@@ -7,6 +7,7 @@ import RoadRow from '../components/roads/RoadRow';
 import RoadsRing from '../components/roads/RoadsRing';
 import FilterChip from '../components/ui/FilterChip';
 import IconButton from '../components/ui/IconButton';
+import PillRow from '../components/ui/PillRow';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
 import { useRouteStatus } from '../hooks/useRouteStatus';
@@ -88,9 +89,7 @@ export default function ReadyRoutesScreen() {
         </Text>
         <Text style={[type.bodySmall, styles.intro]}>{tripsIntro()}</Text>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
+      <PillRow
         style={styles.chipScroll}
         contentContainerStyle={styles.chips}
         role="radiogroup"
@@ -98,7 +97,7 @@ export default function ReadyRoutesScreen() {
         {COUNTRIES.map((name) => (
           <FilterChip key={name} label={name} selected={country === name} onPress={() => setCountry(name)} />
         ))}
-      </ScrollView>
+      </PillRow>
 
       {done.length > 0 ? (
         <>

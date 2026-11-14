@@ -7,6 +7,7 @@ import RoadRow from '../components/roads/RoadRow';
 import RoadsRing from '../components/roads/RoadsRing';
 import FilterChip from '../components/ui/FilterChip';
 import IconButton from '../components/ui/IconButton';
+import PillRow from '../components/ui/PillRow';
 import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
 import { useRoadTotals } from '../hooks/useRoadTotals';
@@ -70,9 +71,7 @@ export default function RoadsScreen() {
         <Text style={[type.bodySmall, styles.intro]}>{ROADS_INTRO}</Text>
       </View>
       {/* One row that scrolls sideways, edge to edge, as more countries get roads. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
+      <PillRow
         style={styles.chipScroll}
         contentContainerStyle={styles.chips}
         role="radiogroup"
@@ -85,7 +84,7 @@ export default function RoadsScreen() {
             onPress={() => setCountry(name)}
           />
         ))}
-      </ScrollView>
+      </PillRow>
 
       {done.length > 0 ? (
         <>

@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 import { showDialog } from '../components/ui/DialogHost';
 import ActionSheet from '../components/ActionSheet';
@@ -19,6 +19,7 @@ import LinkPlanDriveSheet from '../components/LinkPlanDriveSheet';
 import MoveDriveSheet from '../components/MoveDriveSheet';
 import RouteMap from '../components/RouteMap';
 import FilterChip from '../components/ui/FilterChip';
+import PillRow from '../components/ui/PillRow';
 import { useSettings } from '../context/SettingsContext';
 import { usePhotos } from '../hooks/usePhotos';
 import { usePremium } from '../hooks/usePremium';
@@ -544,9 +545,7 @@ export default function TripScreen() {
       />
       {days.length > 1 ? (
         // One page per trip: All, or one day at a time.
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
+        <PillRow
           style={styles.pillScroll}
           contentContainerStyle={styles.pills}
           role="radiogroup"
@@ -561,7 +560,7 @@ export default function TripScreen() {
               onPress={() => pick(day.number)}
             />
           ))}
-        </ScrollView>
+        </PillRow>
       ) : null}
       {dayDrives && dayDrives.length > 1 ? (
         // A day of more than one drive: where it went, and when.

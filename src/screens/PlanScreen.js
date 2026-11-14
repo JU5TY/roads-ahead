@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
@@ -18,6 +18,7 @@ import FilterChip from '../components/ui/FilterChip';
 import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
 import InfoNote from '../components/ui/InfoNote';
+import PillRow from '../components/ui/PillRow';
 import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
 import { useSettings } from '../context/SettingsContext';
@@ -510,9 +511,7 @@ export default function PlanScreen() {
 
       {/* All, where the route is planned, then a tab per day, once there's more than one. */}
       {plan.drives.length > 1 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
+        <PillRow
           style={styles.tabsScroll}
           contentContainerStyle={styles.tabs}
           role="radiogroup"
@@ -527,7 +526,7 @@ export default function PlanScreen() {
               onPress={() => setTab(i)}
             />
           ))}
-        </ScrollView>
+        </PillRow>
       ) : null}
 
       <View style={styles.heading}>
