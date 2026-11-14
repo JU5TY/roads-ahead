@@ -1,9 +1,12 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import ActionSheet from '../components/ActionSheet';
 import { showMessage } from '../components/ui/DialogHost';
 import DetailLayout from '../components/detail/DetailLayout';
+import FloatingButton from '../components/ui/FloatingButton';
 import RouteMap from '../components/RouteMap';
 import Icon from '../components/ui/Icon';
 import InfoNote from '../components/ui/InfoNote';
@@ -12,12 +15,15 @@ import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
 import StatusCard from '../components/roads/StatusCard';
 import { useSettings } from '../context/SettingsContext';
+import { useHere } from '../hooks/useHere';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { getRoadCompletions } from '../storage/roadStorage';
+import { addPlanStop, createPlan, drivenPlanDriveIds, getPlan, listPlans } from '../storage/planStorage';
 import { getTrip } from '../storage/tripStorage';
-import { pressedOpacity, radius, type } from '../theme';
+import { floating, pressedOpacity, radius, type } from '../theme';
 import { distanceParts, elevationParts, formatLongDate, formatShortDate } from '../utils/format';
 import { bendsLabel, completedLabel, getRoad } from '../utils/iconicRoads';
+import { addPosition, dateOf, groupPlans, mapPlanOf, roadStop } from '../utils/plans';
 import { driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const NOTE = 'Iconic Roads are never timed. Drive them at your own pace.';
@@ -53,7 +59,20 @@ function DriveRow({ item, isLast }) {
   );
 }
 
-/** An Iconic Road: its line, facts, how often it's been completed, and the drives that did. */
+/** "14 May 2027 · 3 days", or "2 days" for a plan with no date: a plan's row in the Plan sheet. */
+function planDetail(plan) {
+  const n = plan.drives.length;
+  const days = `${n} ${n === 1 ? 'day' : 'days'}`;
+  if (!plan.startDate) return days;
+  const date = dateOf(plan.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${date} · ${days}`;
+}
+
+/**
+ * An Iconic Road: its line, facts, how often it's been completed, and the drives
+ * that did. The floating Plan adds it to a new plan, or the last day of one
+ * still to drive (not a copied Iconic Trip, which can't be changed).
+ */
 export default function RoadScreen() {
   const { id } = useLocalSearchParams();
   const road = getRoad(id);
@@ -62,6 +81,9 @@ export default function RoadScreen() {
   const styles = useStyles(makeStyles);
   const [drives, setDrives] = useState(null); // [{ driveId, tripId, title, count, ... }]
   const [summary, setSummary] = useState({ count: 0, first: null, last: null });
+  const [plans, setPlans] = useState(null); // the Plan sheet's plans while it's open, else null
+  const { here } = useHere();
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -122,6 +144,36 @@ export default function RoadScreen() {
     ).catch(() => showMessage('Google Maps', 'Couldn’t open Google Maps.'));
   };
 
+  // The plans it can go in: still to drive, and not a copied Iconic Trip.
+  const openPlans = async () => {
+    try {
+      const [all, driven] = await Promise.all([listPlans(), drivenPlanDriveIds()]);
+      const { comingUp, someday } = groupPlans(all, driven);
+      setPlans([...comingUp, ...someday].filter((p) => !p.routeId));
+    } catch (err) {
+      console.warn('[road] plans failed', err);
+    }
+  };
+  const addTo = async (planId) => {
+    setPlans(null);
+    try {
+      let id = planId;
+      if (id == null) {
+        // A new plan named after the road, Day 1 from wherever the phone is.
+        const plan = { drives: [{ start: null, stops: [] }] };
+        const stop = roadStop(mapPlanOf(plan, here), 0, road);
+        id = await createPlan({ name: road.name, drives: [{ stops: [stop] }] });
+      } else {
+        const plan = await getPlan(id);
+        const last = plan.drives.length - 1;
+        await addPlanStop(plan.drives[last].id, roadStop(plan, last, road), addPosition(plan, last));
+      }
+      router.push(`/plans/${id}`);
+    } catch (err) {
+      console.warn('[road] add to plan failed', err);
+    }
+  };
+
   const map = (
     <RouteMap
       flat
@@ -155,7 +207,32 @@ export default function RoadScreen() {
       map={map}
       mapHeight={360}
       actions={[{ icon: 'near_me', label: 'Navigate to start', onPress: navigate }]}
+      floating={
+        <FloatingButton
+          icon="bookmark"
+          iconColor={c.accent}
+          label="Plan"
+          accessibilityLabel={`Add ${road.name} to a plan`}
+          onPress={openPlans}
+          style={{ bottom: insets.bottom + floating.recordPill.lift }}
+        />
+      }
     >
+      <ActionSheet
+        visible={plans != null}
+        message={`Add ${road.name} to`}
+        actions={[
+          { key: 'new', icon: 'add', label: 'A new plan', onPress: () => addTo(null) },
+          ...(plans ?? []).map((p) => ({
+            key: String(p.id),
+            icon: 'bookmark',
+            label: p.name,
+            detail: planDetail(p),
+            onPress: () => addTo(p.id),
+          })),
+        ]}
+        onClose={() => setPlans(null)}
+      />
       <Text style={[type.kicker, styles.kicker]}>
         {`${road.region} · ${road.country}`.toUpperCase()}
       </Text>

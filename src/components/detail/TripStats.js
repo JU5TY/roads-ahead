@@ -33,9 +33,18 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
  * a summarizeDrives() result. `timesHidden` swaps Driving time for a note (a
  * drive that starts and ends at an Iconic Road); `roadCount` and
  * `countryCount` (shown from 2) add chips. `longDay` marks a plan's day with
- * more driving than most people manage (amber Driving time).
+ * more driving than most people manage (amber Driving time). `showTime={false}`
+ * leaves Driving time out while it's still being worked out (an Iconic Trip).
  */
-export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, countryCount = 0, longDay = false }) {
+export function HeroStats({
+  stats,
+  units,
+  timesHidden = false,
+  roadCount = 0,
+  countryCount = 0,
+  longDay = false,
+  showTime = true,
+}) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const distance = distanceParts(stats.distanceM, units);
@@ -68,19 +77,21 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
           ) : null}
         </View>
       ) : null}
-      <View style={styles.grid}>
-        {timesHidden ? (
-          <TimesHiddenCard />
-        ) : (
-          <StatCard
-            layout="wide"
-            tone={longDay ? 'caution' : 'accent'}
-            icon="timer"
-            label={longDay ? 'Driving time · a long day' : 'Driving time'}
-            value={formatDurationShort(stats.movingTimeMs)}
-          />
-        )}
-      </View>
+      {showTime ? (
+        <View style={styles.grid}>
+          {timesHidden ? (
+            <TimesHiddenCard />
+          ) : (
+            <StatCard
+              layout="wide"
+              tone={longDay ? 'caution' : 'accent'}
+              icon="timer"
+              label={longDay ? 'Driving time · a long day' : 'Driving time'}
+              value={formatDurationShort(stats.movingTimeMs)}
+            />
+          )}
+        </View>
+      ) : null}
     </>
   );
 }

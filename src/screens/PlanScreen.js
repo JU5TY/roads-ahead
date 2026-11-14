@@ -7,6 +7,7 @@ import ActionSheet from '../components/ActionSheet';
 import DetailLayout from '../components/detail/DetailLayout';
 import PriceSheet from '../components/PriceSheet';
 import { HeroStats, TitleBlock } from '../components/detail/TripStats';
+import LongDayNote from '../components/plan/LongDayNote';
 import PlanSheet from '../components/plan/PlanSheet';
 import PlanTimeline from '../components/plan/PlanTimeline';
 import StartDriveSheet from '../components/plan/StartDriveSheet';
@@ -40,9 +41,9 @@ import {
   splitPlanDriveAt,
 } from '../storage/planStorage';
 import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
-import { dayColorFor, floating, pressedOpacity, radius, spacing, type } from '../theme';
+import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
-import { countryAt } from '../utils/countries';
+import { countriesAlong } from '../utils/countries';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
@@ -57,12 +58,10 @@ import {
   planOutline,
   planRouteName,
   roadStop,
+  LONG_DAY_S,
   stopCounts,
   withWayBack,
 } from '../utils/plans';
-
-// More driving than this in a day is flagged: most people keep a day to 6 hours.
-const LONG_DAY_S = 6 * 3600;
 
 /** Under the timeline: adds to the shown day (Add stop, Add Iconic Road), a row rather than a button. */
 function AddRow({ icon, iconColor, filled = false, label, onPress }) {
@@ -255,22 +254,15 @@ export default function PlanScreen() {
   ];
   const tripLine = lineParts(stopCounts(plan).stops, mapPlan.drives.some((d) => d.stops.length), tripSummary);
   const dayLine = lineParts(shownStops, wayStops.length > 0, daySummary);
-  // A day over this much driving is flagged: most people keep a day to 6 hours.
+  // Days with more driving than most people manage, flagged on All.
   const longDays = routes.drives
     .map((d, i) => ({ i, seconds: d.status === 'done' ? d.route.seconds : 0 }))
     .filter((d) => d.seconds > LONG_DAY_S);
   // The countries the plan (or the picked day) passes through: its road lines once
   // routed, else the straight outline, a few points along each.
-  const countryCount = new Set(
-    (all ? outline.map((_, i) => i) : [picked])
-      .flatMap((i) => {
-        const line = routes.lines[i] ?? outline[i]?.coordinates ?? [];
-        const step = Math.max(1, Math.floor(line.length / 40));
-        return line.filter((_, k) => k % step === 0 || k === line.length - 1);
-      })
-      .map((p) => countryAt(p.latitude, p.longitude))
-      .filter(Boolean)
-  ).size;
+  const countryCount = countriesAlong(
+    (all ? outline.map((_, i) => i) : [picked]).map((i) => routes.lines[i] ?? outline[i]?.coordinates ?? [])
+  );
   const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
   // The car's figure first (adding the car if there's none), then the price.
   const addCost = () => setMenu(vehicle && hasFigure(vehicle) ? 'price' : 'vehicle');
@@ -596,18 +588,7 @@ export default function PlanScreen() {
       ) : null}
       {all && plan.drives.length > 1
         ? longDays.map(({ i, seconds }) => (
-            <Pressable
-              key={plan.drives[i].id}
-              onPress={() => setTab(i)}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.longDay, pressed && styles.pressed]}
-            >
-              <Icon name="warning" filled size={22} color={c.onWarningContainer} />
-              <Text style={[type.bodyStrong, styles.longDayText]}>
-                Day {i + 1} is {time(seconds)} of driving
-              </Text>
-              <Icon name="chevron_right" size={22} color={c.onWarningContainer} />
-            </Pressable>
+            <LongDayNote key={plan.drives[i].id} day={i + 1} seconds={seconds} onPress={() => setTab(i)} />
           ))
         : null}
 
@@ -634,17 +615,6 @@ const makeStyles = (c) => ({
   tripLine: { marginTop: 2, marginHorizontal: 4 },
   heading: { marginTop: 20, marginHorizontal: 4, gap: 2 },
   timeline: { marginTop: 20 },
-  longDay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: radius.card,
-    backgroundColor: c.warningContainer,
-  },
-  longDayText: { flex: 1, color: c.onWarningContainer },
   // A gap, not a line, keeps them apart from the last stop; the icon sits in the timeline's rail.
   addRows: { marginTop: spacing.md },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52 },

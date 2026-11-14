@@ -160,6 +160,23 @@ export function countryAt(lat, lng) {
   return null;
 }
 
+/**
+ * How many countries `lines` ([{ latitude, longitude }] each) pass through,
+ * from a few points along each: a plan's or an Iconic Trip's countries pill.
+ */
+export function countriesAlong(lines, samples = 40) {
+  const codes = new Set();
+  for (const line of lines) {
+    const step = Math.max(1, Math.floor(line.length / samples));
+    line.forEach((p, k) => {
+      if (k % step && k !== line.length - 1) return;
+      const code = countryAt(p.latitude, p.longitude);
+      if (code) codes.add(code);
+    });
+  }
+  return codes.size;
+}
+
 function countryExactlyAt(lat, lng) {
   // Consecutive points are nearly always in the same country.
   if (lastHit && contains(lastHit, lat, lng)) return lastHit.code;

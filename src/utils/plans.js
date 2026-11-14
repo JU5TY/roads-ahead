@@ -93,6 +93,9 @@ export function groupPlans(plans, driven) {
   };
 }
 
+/** More driving than this in a day (seconds) is flagged: most people keep a day to 6 hours. */
+export const LONG_DAY_S = 6 * 3600;
+
 /** A 'YYYY-MM-DD' start date as a local Date. */
 export const dateOf = (startDate) => {
   const [y, m, d] = startDate.split('-').map(Number);

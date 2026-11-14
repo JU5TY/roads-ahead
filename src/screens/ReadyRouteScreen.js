@@ -5,24 +5,30 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import RouteDays from '../components/plan/RouteDays';
 import DetailLayout from '../components/detail/DetailLayout';
+import { HeroStats } from '../components/detail/TripStats';
+import LongDayNote from '../components/plan/LongDayNote';
 import StatusCard from '../components/roads/StatusCard';
 import RouteMap from '../components/RouteMap';
 import FloatingButton from '../components/ui/FloatingButton';
 import PremiumTag from '../components/ui/PremiumTag';
 import SectionHeader from '../components/ui/SectionHeader';
-import StatRow from '../components/ui/StatRow';
 import { useSettings } from '../context/SettingsContext';
+import { usePlanRoutes } from '../hooks/usePlanRoutes';
 import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { createPlan } from '../storage/planStorage';
 import { dayColorFor, floating, type } from '../theme';
-import { distanceParts, formatDateRange } from '../utils/format';
+import { countriesAlong } from '../utils/countries';
+import { formatDateRange } from '../utils/format';
+import { LONG_DAY_S, mapPlanOf } from '../utils/plans';
 import { getReadyRoute, routeDriveFrom, routeLabel, routePlanDrives } from '../utils/readyRoutes';
 
 /**
  * An Iconic Trip, laid out like an Iconic Road: its map (a colour per day),
  * where it starts and the way it goes, Completed once about 90% of it is
- * driven, its miles and days, About, and the route day by day. The floating
+ * driven, the plan page's headline (miles, its Iconic Roads and countries, and
+ * Driving time from the same road times a copy would get, kept 30 days), About,
+ * and the route day by day. The floating
  * Copy puts it in your plans (Premium, though free for now); once copied it's
  * Open. Params: `id`.
  */
@@ -46,6 +52,30 @@ export default function ReadyRouteScreen() {
       })),
     [route, c]
   );
+
+  // The route as a plan, so its days get road times as a copied plan's would
+  // (the same requests, so a copy finds them already there).
+  const asPlan = useMemo(
+    () =>
+      route
+        ? mapPlanOf(
+            {
+              id: null,
+              routeId: route.id,
+              roundTrip: false,
+              drives: routePlanDrives(route).map((d, i) => ({
+                ...d,
+                id: `${route.id}-${i}`,
+                position: i,
+                stops: d.stops.map((s, j) => ({ ...s, id: `${route.id}-${i}-${j}`, position: j })),
+              })),
+            },
+            null
+          )
+        : null,
+    [route]
+  );
+  const routes = usePlanRoutes(asPlan, null);
 
   if (!route) return null;
 
@@ -73,7 +103,13 @@ export default function ReadyRouteScreen() {
     { key: 'start', coordinate: start, title: start.name, color: c.start },
     { key: 'finish', coordinate: finish, title: lastStop.name, color: c.finish },
   ];
-  const distance = distanceParts(route.metres, units);
+  // Driving time once every day's road time is in; until then, just the miles.
+  const timed = routes.drives.every((d) => d.status === 'done');
+  const seconds = timed ? routes.drives.reduce((sum, d) => sum + d.route.seconds, 0) : 0;
+  const longDays = timed
+    ? routes.drives.map((d, i) => ({ i, seconds: d.route.seconds })).filter((d) => d.seconds > LONG_DAY_S)
+    : [];
+  const roadCount = new Set(route.drives.flatMap((d) => d.stops.map((s) => s.roadId).filter(Boolean))).size;
   const map = <RouteMap flat segments={segments} markers={markers} />;
 
   return (
@@ -120,13 +156,16 @@ export default function ReadyRouteScreen() {
         }
       />
 
-      <StatRow
-        style={styles.stats}
-        stats={[
-          { icon: 'straighten', ...distance, label: 'Distance' },
-          { icon: 'calendar_month', value: String(route.drives.length), label: 'Days' },
-        ]}
+      <HeroStats
+        stats={{ distanceM: route.metres, movingTimeMs: seconds * 1000 }}
+        units={units}
+        roadCount={roadCount}
+        countryCount={countriesAlong(segments.map((sg) => sg.coordinates))}
+        showTime={timed}
       />
+      {longDays.map(({ i, seconds: s }) => (
+        <LongDayNote key={i} day={i + 1} seconds={s} />
+      ))}
 
       <SectionHeader title="About" style={styles.aboutHeader} />
       <Text style={[type.lead, styles.muted, styles.blurb]}>{route.blurb}</Text>
@@ -143,7 +182,6 @@ const makeStyles = (c) => ({
   title: { color: c.text, marginTop: 4, marginHorizontal: 4 },
   subtitle: { marginTop: 2, marginHorizontal: 4 },
   muted: { color: c.textMuted },
-  stats: { marginTop: 20 },
   aboutHeader: { marginBottom: 8 },
   blurb: { marginHorizontal: 4 },
 });
