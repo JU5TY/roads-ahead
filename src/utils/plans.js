@@ -401,15 +401,18 @@ const listed = (items) =>
 /** What a stop is called on Record: its place name, its Iconic Road's name, or "Dropped pin". */
 /**
  * Where a whole plan goes, as its page's title line: "Brighton → Inverness",
- * "Round trip from Brighton", or "From Brighton" before it has stops; Drive 1
- * with no start runs from "Your location".
+ * "Round trip from Brighton" (set as one, or ending within a kilometre of its
+ * start, as an Iconic Trip like the NC500 does), or "From Brighton" before it
+ * has stops; Drive 1 with no start runs from "Your location".
  */
 export function planRouteName(plan, here) {
   const mapPlan = mapPlanOf(plan, here);
   const last = plan.drives.length - 1;
-  const from = driveStart(plan, 0)?.name;
+  const start = driveStart(plan, 0);
+  const from = start?.name;
   if (mapPlan.drives[last]?.stops.at(-1)?.home) return `Round trip from ${from ?? 'Your location'}`;
   const end = mapPlan.drives.some((d) => d.stops.length) ? driveReach(withWayBack(plan, here), last) : null;
+  if (end && start && haversineDistance(start, end) < 1000) return `Round trip from ${from ?? 'Your location'}`;
   return end ? `${from ?? 'Your location'} → ${end.name ?? 'Dropped pin'}` : `From ${from ?? 'your location'}`;
 }
 

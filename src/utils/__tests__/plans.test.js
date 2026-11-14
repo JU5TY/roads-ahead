@@ -14,6 +14,7 @@ import {
   planHandover,
   planProgress,
   planOutline,
+  planRouteName,
   regroupDays,
   roadReversedFrom,
   roadStop,
@@ -490,5 +491,23 @@ describe('stopCounts', () => {
   it('counts a place before the Iconic Road a day ends on', () => {
     expect(stopCounts(plan({ stops: [fortAugustus, road()] }), 0)).toEqual({ stops: 1, roads: 1 });
     expect(stopCounts(plan({ stops: [] }))).toEqual({ stops: 0, roads: 0 });
+  });
+});
+
+describe('planRouteName', () => {
+  const at = (name, latitude, longitude) => ({ name, latitude, longitude, source: 'search', roadId: null, reversed: false });
+  const plan = (stops) => ({
+    roundTrip: false,
+    setOff: null,
+    drives: [{ id: 1, start: { name: 'Inverness', latitude: 57.479, longitude: -4.2257 }, stops }],
+  });
+
+  it('says where it goes', () => {
+    expect(planRouteName(plan([at('Thurso', 58.5936, -3.5221)]), null)).toBe('Inverness → Thurso');
+  });
+
+  it('calls a plan that ends back at its start a round trip, as a copied NC500 does', () => {
+    const stops = [at('Thurso', 58.5936, -3.5221), at('Inverness', 57.4791, -4.2258)];
+    expect(planRouteName(plan(stops), null)).toBe('Round trip from Inverness');
   });
 });
