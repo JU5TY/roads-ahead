@@ -13,10 +13,10 @@ const LOGO_SIZE = 160;
 
 // One line each under the title, so the list reads evenly.
 const FEATURES = [
+  ['bookmark', 'Plan road trips', 'Day by day, sent to Google Maps or Waze'],
   ['route', 'Record every drive', 'Keeps recording with the screen off'],
-  ['auto_stories', 'Relive every trip', 'Day by day, with stops and photos'],
-  ['map', 'See everywhere you’ve been', 'Every road you’ve driven, on one map'],
-  ['landscape', 'Complete Iconic Roads', '20 of Europe’s greatest driving roads'],
+  ['auto_stories', 'Relive every trip', 'On one map, with stops and photos'],
+  ['landscape', 'Iconic Roads and Trips', '20 great roads, 10 ready-made trips'],
 ];
 
 /** First launch: what the app does, then on to the location explainer. */
