@@ -32,9 +32,10 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
  * and Driving time; the rest is in DetailsRows. `stats` is a drive's stats or
  * a summarizeDrives() result. `timesHidden` swaps Driving time for a note (a
  * drive that starts and ends at an Iconic Road); `roadCount` and
- * `countryCount` (shown from 2) add chips.
+ * `countryCount` (shown from 2) add chips. `longDay` marks a plan's day with
+ * more driving than most people manage (amber Driving time).
  */
-export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, countryCount = 0 }) {
+export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, countryCount = 0, longDay = false }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const distance = distanceParts(stats.distanceM, units);
@@ -73,9 +74,9 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
         ) : (
           <StatCard
             layout="wide"
-            tone="accent"
+            tone={longDay ? 'caution' : 'accent'}
             icon="timer"
-            label="Driving time"
+            label={longDay ? 'Driving time · a long day' : 'Driving time'}
             value={formatDurationShort(stats.movingTimeMs)}
           />
         )}

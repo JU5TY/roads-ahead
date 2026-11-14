@@ -6,7 +6,8 @@ import Icon from './Icon';
 
 /**
  * Stat tile from the Trip/Record bento grid.
- * tone: 'surface' (white, grey icon) | 'accent' (wide card, blue icon well) | 'warning' (amber, break due).
+ * tone: 'surface' (white, grey icon) | 'accent' (wide card, blue icon well) | 'warning' (amber, break due)
+ * | 'caution' (wide card, amber well and value: a plan's long day).
  * layout: 'tile' (icon over value over label) | 'wide' (icon well left, label
  * over the value: the full-width Driving time card).
  */
@@ -26,6 +27,13 @@ export default function StatCard({
     surface: { bg: c.card, fg: c.text, muted: c.textMuted, icon: c.textMuted },
     // Wide Driving time card: blue icon in a round blue well.
     accent: { bg: c.card, fg: c.text, muted: c.textMuted, icon: c.accent },
+    caution: {
+      bg: c.card,
+      fg: c.onWarningContainer,
+      muted: c.textMuted,
+      icon: c.onWarningContainer,
+      well: c.warningContainer,
+    },
     warning: {
       bg: c.warningContainer,
       fg: c.onWarningContainer,
@@ -47,7 +55,7 @@ export default function StatCard({
         accessible
         accessibilityLabel={`${label}: ${value}${unit ?? ''}`}
       >
-        <View style={[styles.well, { backgroundColor: c.accentContainer }]}>
+        <View style={[styles.well, { backgroundColor: tc.well ?? c.accentContainer }]}>
           <Icon name={icon} size={26} color={tc.icon} />
         </View>
         <View style={styles.flex}>
