@@ -9,13 +9,15 @@ import Icon from './Icon';
  * tone: 'surface' (white, grey icon) | 'accent' (wide card, blue icon well) | 'warning' (amber, break due)
  * | 'caution' (wide card, amber well and value: a plan's long day).
  * layout: 'tile' (icon over value over label) | 'wide' (icon well left, label
- * over the value: the full-width Driving time card).
+ * over the value: the full-width Driving time card). A wide card's `note`
+ * (grey) stands in for a value it can't show.
  */
 export default function StatCard({
   icon,
   value,
   unit,
   label,
+  note = null,
   tone = 'surface',
   layout = 'tile',
   style,
@@ -53,17 +55,21 @@ export default function StatCard({
       <View
         style={[card, styles.wide]}
         accessible
-        accessibilityLabel={`${label}: ${value}${unit ?? ''}`}
+        accessibilityLabel={`${label}: ${note ?? `${value}${unit ?? ''}`}`}
       >
         <View style={[styles.well, { backgroundColor: tc.well ?? c.accentContainer }]}>
           <Icon name={icon} size={26} color={tc.icon} />
         </View>
         <View style={styles.flex}>
           <Text style={labelStyle}>{label}</Text>
-          <Text style={[type.stat, { color: tc.fg }]} numberOfLines={1}>
-            {value}
-            {unit ? <Text style={[type.statUnit, { color: tc.muted }]}> {unit}</Text> : null}
-          </Text>
+          {note ? (
+            <Text style={[type.bodyLarge, styles.note, { color: tc.muted }]}>{note}</Text>
+          ) : (
+            <Text style={[type.stat, { color: tc.fg }]} numberOfLines={1}>
+              {value}
+              {unit ? <Text style={[type.statUnit, { color: tc.muted }]}> {unit}</Text> : null}
+            </Text>
+          )}
         </View>
       </View>
     );
@@ -93,5 +99,7 @@ const makeStyles = () => ({
   well: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   value: { marginTop: 10 },
+  // In place of a value: on the value's line, not as tall.
+  note: { marginTop: 4 },
   strongLabel: { fontFamily: type.smallStrong.fontFamily },
 });

@@ -34,7 +34,8 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
  * drive that starts and ends at an Iconic Road); `roadCount` and
  * `countryCount` (shown from 2) add chips. `longDay` marks a plan's day with
  * more driving than most people manage (amber Driving time). `showTime={false}`
- * leaves Driving time out while it's still being worked out (an Iconic Trip).
+ * leaves Driving time out while it's still being worked out (an Iconic Trip);
+ * `timeNote` takes the time's place when it can't be had ("Unavailable right now").
  */
 export function HeroStats({
   stats,
@@ -44,6 +45,7 @@ export function HeroStats({
   countryCount = 0,
   longDay = false,
   showTime = true,
+  timeNote = null,
 }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -87,7 +89,8 @@ export function HeroStats({
               tone={longDay ? 'caution' : 'accent'}
               icon="timer"
               label={longDay ? 'Driving time · a long day' : 'Driving time'}
-              value={formatDurationShort(stats.movingTimeMs)}
+              value={timeNote ? null : formatDurationShort(stats.movingTimeMs)}
+              note={timeNote}
             />
           )}
         </View>

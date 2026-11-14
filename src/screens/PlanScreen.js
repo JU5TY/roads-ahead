@@ -21,6 +21,7 @@ import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
 import InfoNote from '../components/ui/InfoNote';
 import PillRow from '../components/ui/PillRow';
+import StatCard from '../components/ui/StatCard';
 import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
 import { useSettings } from '../context/SettingsContext';
@@ -258,35 +259,47 @@ export default function PlanScreen() {
     const cost = pounds != null ? formatDriveCost(pounds, electric) : null;
     return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${cost ? ` · ${cost}` : ''}`, metres, seconds, cost };
   };
+  // Miles before (or without) Google's road times: measured along the saved road
+  // lines, once every day counted (those going somewhere) has one; null otherwise.
+  const lineMetresOf = (indexes) => {
+    const days = indexes.filter((i) => mapPlan.drives[i].stops.length);
+    return days.length && days.every((i) => routes.lines[i])
+      ? days.reduce((sum, i) => sum + lineLength(routes.lines[i]), 0)
+      : null;
+  };
+  const costOf = (metres) => {
+    const pounds =
+      vehicle && metres != null ? driveCost(metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
+    return pounds != null ? formatDriveCost(pounds, electric) : null;
+  };
+  const tripLineMetres = lineMetresOf(plan.drives.map((_, i) => i));
+  const lineMetres = all ? tripLineMetres : lineMetresOf([picked]);
   // The title's line is the whole trip's; a picked day has its own under the day pills.
   const tripSummary = summaryOf(routes.drives);
   const daySummary = summaryOf([routes.drives[picked]]);
   const summary = all ? tripSummary : daySummary;
   // Start drive's sheet is always about one drive.
   const goSummary = daySummary;
-  const askCost = tripSummary.status === 'done' && !tripSummary.cost && vehicles != null;
+  // Fuel from the road times, else from the lines' miles, so it shows either way.
+  const tripCost = tripSummary.status === 'done' ? tripSummary.cost : costOf(tripLineMetres);
+  const dayCost = daySummary.status === 'done' ? daySummary.cost : costOf(lineMetresOf([picked]));
+  const askCost = vehicles != null && !tripCost && (tripSummary.status === 'done' || tripLineMetres != null);
   const stopsText = (n) => `${n} ${n === 1 ? 'stop' : 'stops'}`;
   // "6 stops · £96 fuel": a stop count (or "No stops yet", unless it goes straight
-  // somewhere), the fuel once it's known, or why the road times are missing.
-  const lineParts = (stops, goesSomewhere, s) => [
+  // somewhere), then the fuel once it's known. Missing road times are said on
+  // the Driving time card, not here.
+  const lineParts = (stops, goesSomewhere, cost) => [
     stops ? stopsText(stops) : goesSomewhere ? null : 'No stops yet',
-    s.status === 'failed' ? s.text : s.cost,
+    cost,
   ];
-  const tripLine = lineParts(stopCounts(plan).stops, mapPlan.drives.some((d) => d.stops.length), tripSummary);
-  const dayLine = lineParts(shownStops, wayStops.length > 0, daySummary);
+  const tripLine = lineParts(stopCounts(plan).stops, mapPlan.drives.some((d) => d.stops.length), tripCost);
+  const dayLine = lineParts(shownStops, wayStops.length > 0, dayCost);
   // Days with more driving than most people manage, flagged on All.
   const longDays = routes.drives
     .map((d, i) => ({ i, seconds: d.status === 'done' ? d.route.seconds : 0 }))
     .filter((d) => d.seconds > LONG_DAY_S);
   // The countries the plan (or the picked day) passes through: its road lines once
   // routed, else the straight outline, a few points along each.
-  // Miles before (or without) Google's road times: measured along the saved road
-  // lines, once every day shown has one; Driving time waits for the times.
-  const routedDays = (all ? routes.drives.map((_, i) => i) : [picked]).filter((i) => mapPlan.drives[i].stops.length);
-  const lineMetres =
-    routedDays.length && routedDays.every((i) => routes.lines[i])
-      ? routedDays.reduce((sum, i) => sum + lineLength(routes.lines[i]), 0)
-      : null;
   const countryCount = countriesAlong(
     (all ? outline.map((_, i) => i) : [picked]).map((i) => routes.lines[i] ?? outline[i]?.coordinates ?? [])
   );
@@ -618,8 +631,13 @@ export default function PlanScreen() {
           roadCount={stopCounts(plan, all ? null : picked).roads}
           countryCount={countryCount}
           longDay={(!all || plan.drives.length === 1) && summary.seconds > LONG_DAY_S}
-          showTime={summary.status === 'done'}
+          // Hidden for the second the times take; said plainly when they can't be had.
+          showTime={summary.status === 'done' || summary.status === 'failed'}
+          timeNote={summary.status === 'failed' ? 'Unavailable right now' : null}
         />
+      ) : summary.status === 'failed' ? (
+        // No road times and no saved lines to measure: just say so, where the time goes.
+        <StatCard layout="wide" tone="accent" icon="timer" label="Driving time" note="Unavailable right now" style={styles.aloneTime} />
       ) : null}
       {all && plan.drives.length > 1
         ? longDays.map(({ i, seconds }) => (
@@ -650,6 +668,7 @@ const makeStyles = (c) => ({
   tripLine: { marginTop: 2, marginHorizontal: 4 },
   heading: { marginTop: 20, marginHorizontal: 4, gap: 2 },
   timeline: { marginTop: 20 },
+  aloneTime: { marginTop: 20 },
   // A gap, not a line, keeps them apart from the last stop; the icon sits in the timeline's rail.
   addRows: { marginTop: spacing.md },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52 },
