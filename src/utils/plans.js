@@ -93,6 +93,37 @@ export function groupPlans(plans, driven) {
   };
 }
 
+/**
+ * Metres of each leg along a drive's road line (driveRoute's points, its places
+ * being those not driven through), for the timeline when Google's road times
+ * can't be had. Each place is found on the line after the one before (the first
+ * point within 150 m, else the nearest), so a round trip's way home matches the
+ * end, not the start. Returns one number per place after the first.
+ */
+export function legMetresAlong(line, points) {
+  const places = points.filter((p) => !p.via);
+  const legs = [];
+  let from = 0;
+  for (const place of places.slice(1)) {
+    let best = -1;
+    let bestM = Infinity;
+    for (let k = from; k < line.length; k++) {
+      const m = haversineDistance(line[k], place);
+      if (m < bestM) {
+        bestM = m;
+        best = k;
+      }
+      if (m < 150) break;
+    }
+    if (best < 0) best = line.length - 1;
+    let metres = 0;
+    for (let k = from + 1; k <= best; k++) metres += haversineDistance(line[k - 1], line[k]);
+    legs.push(metres);
+    from = best;
+  }
+  return legs;
+}
+
 /** More driving than this in a day (seconds) is flagged: most people keep a day to 6 hours. */
 export const LONG_DAY_S = 6 * 3600;
 

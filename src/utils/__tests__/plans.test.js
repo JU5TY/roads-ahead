@@ -10,6 +10,7 @@ import {
   driveStart,
   fromHere,
   groupPlans,
+  legMetresAlong,
   planKicker,
   planHandover,
   planProgress,
@@ -509,5 +510,32 @@ describe('planRouteName', () => {
   it('calls a plan that ends back at its start a round trip, as a copied NC500 does', () => {
     const stops = [at('Thurso', 58.5936, -3.5221), at('Inverness', 57.4791, -4.2258)];
     expect(planRouteName(plan(stops), null)).toBe('Round trip from Inverness');
+  });
+});
+
+describe('legMetresAlong', () => {
+  // A straight road north, a point every ~1.1 km.
+  const line = Array.from({ length: 11 }, (_, k) => ({ latitude: 55 + k * 0.01, longitude: -3 }));
+  it('splits the line at each place', () => {
+    const points = [
+      { latitude: 55, longitude: -3, via: false },
+      { latitude: 55.03, longitude: -3, via: false },
+      { latitude: 55.05, longitude: -3, via: true },
+      { latitude: 55.1, longitude: -3, via: false },
+    ];
+    const [a, b] = legMetresAlong(line, points);
+    expect(Math.round(a / 100)).toBe(33);
+    expect(Math.round(b / 100)).toBe(78);
+  });
+  it('finds a round trip’s way home at the end of the line, not its start', () => {
+    const loop = [...line, ...[...line].reverse()];
+    const points = [
+      { latitude: 55, longitude: -3, via: false },
+      { latitude: 55.1, longitude: -3, via: false },
+      { latitude: 55, longitude: -3, via: false },
+    ];
+    const [out, back] = legMetresAlong(loop, points);
+    expect(Math.round(out / 1000)).toBe(11);
+    expect(Math.round(back / 1000)).toBe(11);
   });
 });

@@ -54,6 +54,7 @@ import {
   addPosition,
   driveMarkers,
   driveReach,
+  driveRoute,
   driveRouteName,
   driveStart,
   mapPlanOf,
@@ -63,6 +64,7 @@ import {
   planRouteName,
   roadStop,
   LONG_DAY_S,
+  legMetresAlong,
   stopCounts,
   withWayBack,
 } from '../utils/plans';
@@ -324,7 +326,17 @@ export default function PlanScreen() {
     const { status, route, legStops } = routes.drives[i];
     const legTexts = {};
     const ferryLegs = new Set();
-    if (status !== 'done') return { legTexts, ferryLegs };
+    if (status !== 'done') {
+      // No road times: each leg's miles along the saved road line, the time to come.
+      const ask = routes.lines[i] ? driveRoute(mapPlan, i) : null;
+      if (ask) {
+        legMetresAlong(routes.lines[i], ask.points).forEach((metres, k) => {
+          const stop = mapPlan.drives[i].stops[legStops[k]];
+          if (stop) legTexts[stop.id] = miles(metres);
+        });
+      }
+      return { legTexts, ferryLegs };
+    }
     route.legs.forEach((leg, k) => {
       const stop = mapPlan.drives[i].stops[legStops[k]];
       if (!stop) return;
