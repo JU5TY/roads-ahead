@@ -95,6 +95,7 @@ export default function PlanScreen() {
   // 'options' | 'edit' | 'road' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop, at } | { start, at }
   // (`at`: the day the stop or start is in)
   const [menu, setMenu] = useState(null);
+  const [sheet, setSheet] = useState(null); // the last { stop } or { start } menu, kept while it closes
   const priceNext = useRef(false); // the price sheet opens once the vehicle sheet has gone
   const [dragging, setDragging] = useState(false); // a stop is being dragged: the page holds still
   const { here, ready: hereReady } = useHere();
@@ -157,9 +158,11 @@ export default function PlanScreen() {
   // The day a sheet is about (a stop's, or a start's), and where new stops go:
   // the day's tab, or on All the end of the trip.
   // Only a stop's or a start's sheet is an object; the rest are names (and a
-  // name's `.at` is String's own function, so never read it off one).
-  const sheet = menu && typeof menu === 'object' ? menu : null;
-  const at = sheet?.at ?? picked;
+  // name's `.at` is String's own function, so never read it off one). The last
+  // one opened is kept while it slides away, so it doesn't flick to Day 1 (or
+  // empty) on the way out; capped in case days were joined meanwhile.
+  if (menu && typeof menu === 'object' && menu !== sheet) setSheet(menu);
+  const at = Math.min(sheet?.at ?? picked, plan.drives.length - 1);
   const atDrive = plan.drives[at];
   const addAt = tab ?? plan.drives.length - 1;
   const pickPlace = (mode, day = addAt) => {
@@ -359,7 +362,7 @@ export default function PlanScreen() {
             filled
             iconColor={c.start}
             label={`Day ${picked + 1}`}
-            accessibilityLabel={`Start day ${picked + 1}`}
+            accessibilityLabel={`Start Day ${picked + 1}`}
             onPress={() => setMenu('go')}
             style={{ bottom: insets.bottom + floating.recordPill.lift }}
           />
@@ -441,8 +444,8 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
       <ActionSheet
-        visible={!!sheet?.start}
-        message={`Where Day ${at + 1} starts`}
+        visible={!!menu?.start}
+        message={`Day ${at + 1} starts from`}
         actions={[
           at === 0
             ? {
@@ -481,7 +484,7 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
       <ActionSheet
-        visible={!!stop}
+        visible={!!menu?.stop}
         message={stop ? (stop.roadId ? getRoad(stop.roadId)?.name : (stop.name ?? 'Dropped pin')) : null}
         actions={[
           ...(stay ? [stay] : []),

@@ -9,7 +9,7 @@ import Icon from './ui/Icon';
  * One menu row: an icon in a round blue well (red when `destructive`), the
  * label and an optional grey `detail`, a `badge` pill, a blue tick when `selected`,
  * or a chevron. Without onPress it's a plain row (the Start drive sheet's
- * "Google Maps gets the whole route"). `detailLines` lets a longer detail wrap.
+ * "Google Maps gets the whole drive"). `detailLines` lets a longer detail wrap.
  */
 export function MenuRow({ icon, label, detail, badge, selected, destructive, chevron, detailLines = 1, onPress }) {
   const { c } = useTheme();

@@ -62,7 +62,7 @@ export default function StartDriveSheet({
 
         <MenuRow
           icon="near_me"
-          label={wholeDrive ? `${appName} gets the whole route` : `${appName} gets one stop at a time`}
+          label={wholeDrive ? `${appName} gets the whole drive` : `${appName} gets one place at a time`}
           detail={summary}
           detailLines={2}
         />

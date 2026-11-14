@@ -15,7 +15,7 @@ export default function NavAppSheet({ visible, onClose }) {
         key: app,
         icon: ICONS[app],
         label: NAV_APPS[app],
-        detail: takesWholeDrive(app) ? 'Gets the whole route at once' : 'One stop at a time',
+        detail: takesWholeDrive(app) ? 'The whole drive in one go' : 'One place at a time',
         selected: app === navApp,
         onPress: () => {
           setNavApp(app);

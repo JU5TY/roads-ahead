@@ -430,9 +430,9 @@ export function planProgress(plan, index, points) {
  * summary }. A drive with a start of its own (or linked to the drive before)
  * goes there first when the phone is AWAY_M or more from it, or when where the
  * phone is isn't known; `awayM` is how far, null when not away or unknown.
- * `wholeDrive` says whether `app` takes it all at once (Waze: one stop at a time).
+ * `wholeDrive` says whether `app` takes it all at once (Waze: one place at a time).
  * `summary` is the Start drive sheet's line: "Fort William, 2 stops and
- * Bealach na Bà, to Applecross", or for Waze "One stop at a time, starting
+ * Bealach na Bà, to Applecross", or for Waze "One place at a time, starting
  * with Fort Augustus". Once `underway` (Record's Navigate), the start is never
  * gone back to and the first `passed` stops (stopsPassed) are left out; with
  * none left, there are no links.
@@ -453,7 +453,7 @@ export function planHandover(plan, index, { here, app, underway = false, passed 
   let summary;
   if (!takesWholeDrive(app)) {
     const first = fromStart ? start : drive.stops[0] && (drive.stops[0].roadId ? getRoad(drive.stops[0].roadId) : drive.stops[0]);
-    summary = `One stop at a time, starting with ${first?.name ?? 'Dropped pin'}`;
+    summary = `One place at a time, starting with ${first?.name ?? 'Dropped pin'}`;
   } else {
     // The last place is the finish, unless an Iconic Road comes after it.
     const places = drive.stops.filter((s) => !s.roadId);

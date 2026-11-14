@@ -287,7 +287,7 @@ describe('planHandover', () => {
   it('gives Waze one leg at a time, Bealach na Bà its own leg', () => {
     const h = planHandover(scotland, 1, { here: fortWilliam, app: 'waze' });
     expect(h.links).toHaveLength(4);
-    expect(h.summary).toBe('One stop at a time, starting with Fort Augustus');
+    expect(h.summary).toBe('One place at a time, starting with Fort Augustus');
   });
 
   it('gives Apple Maps the whole drive in one link', () => {
