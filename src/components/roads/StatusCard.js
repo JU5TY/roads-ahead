@@ -5,8 +5,9 @@ import { radius, type } from '../../theme';
 import Icon from '../ui/Icon';
 
 /**
- * Under an Iconic Road's or Iconic Trip's name: teal with a tick once
- * `done`, otherwise outlined with a grey `icon` ("Not completed yet").
+ * Under an Iconic Road's or Iconic Trip's name: its `icon` (the mountain or
+ * the signpost), white on teal once `done`, otherwise grey in an outlined card
+ * ("Not completed yet").
  * `title` and `detail` are its two lines.
  */
 export default function StatusCard({ done, icon, title, detail }) {
@@ -16,7 +17,7 @@ export default function StatusCard({ done, icon, title, detail }) {
     <View style={[styles.status, done ? styles.done : styles.todo]}>
       <View style={[styles.well, { backgroundColor: done ? c.roadBadge : c.track }]}>
         {done ? (
-          <Icon name="landscape" filled size={26} color={c.onRoadBadge} />
+          <Icon name={icon} filled size={26} color={c.onRoadBadge} />
         ) : (
           <Icon name={icon} size={24} color={c.outlineStrong} />
         )}

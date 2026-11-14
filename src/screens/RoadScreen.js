@@ -166,7 +166,7 @@ export default function RoadScreen() {
 
       <StatusCard
         done={summary.count > 0}
-        icon="road"
+        icon="landscape"
         title={summary.count > 0 ? completedLabel(summary.count) : 'Not completed yet'}
         detail={
           summary.count > 1
