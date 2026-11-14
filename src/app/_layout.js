@@ -99,12 +99,17 @@ function AppStack() {
           <Stack.Screen name="poster/done" options={{ gestureEnabled: false }} />
           <Stack.Screen name="premium" />
           <Stack.Screen name="your-map" />
+          <Stack.Screen name="shared" />
         </Stack.Protected>
       </Stack>
       <DialogHost />
     </>
   );
 }
+
+// A link opened from outside (a shared plan) lands with the tabs underneath,
+// so Back goes to Home rather than out of the app.
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
   // KeyboardProvider: sheets with fields move in step with the keyboard (BottomSheet).

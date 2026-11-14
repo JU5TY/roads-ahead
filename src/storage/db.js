@@ -162,6 +162,11 @@ const MIGRATIONS = [
   `
     ALTER TABLE plans ADD COLUMN round_trip INTEGER NOT NULL DEFAULT 0;
   `,
+  // 11: a plan opened from a shared link remembers which (utils/planLink.js
+  // linkKey), so the same link opens it again rather than adding another.
+  `
+    ALTER TABLE plans ADD COLUMN shared_key TEXT;
+  `,
 ];
 
 /** The schema this build writes (PRAGMA user_version once migrated); a newer backup can't be restored. */

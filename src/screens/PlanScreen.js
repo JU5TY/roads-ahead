@@ -1,6 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import * as Updates from 'expo-updates';
+import { ActivityIndicator, Pressable, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
@@ -45,6 +46,7 @@ import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { countriesAlong } from '../utils/countries';
 import { lineLength } from '../utils/geoMath';
+import { planLink } from '../utils/planLink';
 import { driveCost, formatDriveCost } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
@@ -63,6 +65,10 @@ import {
   stopCounts,
   withWayBack,
 } from '../utils/plans';
+
+// Share sends a roadtrip:// link until the website's links are set up, so it
+// shows on test builds only: none goes out that would stop working.
+const SHARE_PLANS = __DEV__ || Updates.channel !== 'production';
 
 /** Under the timeline: adds to the shown day (Add stop, Add Iconic Road), a row rather than a button. */
 function AddRow({ icon, iconColor, filled = false, label, onPress }) {
@@ -180,6 +186,19 @@ export default function PlanScreen() {
   const followOn = driveStart({ ...plan, drives: plan.drives.map((d) => (d === atDrive ? { ...d, start: null } : d)) }, at);
   const addRoad = (road) =>
     act(() => addPlanStop(plan.drives[addAt].id, roadStop(plan, addAt, road), addPosition(plan, addAt)))();
+  // "Scotland 2027: 3 days, Brighton → Inverness, 2 Iconic Roads", then the link.
+  const sharePlan = () => {
+    const days = plan.drives.length;
+    const { roads } = stopCounts(plan);
+    const message = [
+      `${plan.name}: ${days} ${days === 1 ? 'day' : 'days'}`,
+      planRouteName(plan, here),
+      roads ? `${roads} ${roads === 1 ? 'Iconic Road' : 'Iconic Roads'}` : null,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    Share.share({ message: `${message}\n${planLink(plan)}` }).catch((err) => console.warn('[plan] share failed', err));
+  };
   const confirmDeletePlan = () => {
     setMenu(null);
     showDialog({
@@ -378,7 +397,11 @@ export default function PlanScreen() {
     <DetailLayout
       map={map}
       scrollEnabled={!dragging}
-      actions={[{ icon: 'more_vert', label: 'More options', onPress: () => setMenu('options') }]}
+      actions={[
+        // As a trip's: Share beside the menu. The plan goes inside the link.
+        ...(SHARE_PLANS ? [{ icon: 'share', label: 'Share', onPress: sharePlan }] : []),
+        { icon: 'more_vert', label: 'More options', onPress: () => setMenu('options') },
+      ]}
       floating={
         // Starts the picked drive (on All, the next one not yet driven), once it goes somewhere.
         wayStops.length ? (

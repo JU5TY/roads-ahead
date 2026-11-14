@@ -85,6 +85,13 @@ export async function getPlan(planId) {
   return plan;
 }
 
+/** The id of the plan opened from the shared link `sharedKey` (still kept), or null. */
+export async function getSharedPlanId(sharedKey) {
+  const db = await getDb();
+  const row = await db.getFirstAsync('SELECT id FROM plans WHERE shared_key = ?', sharedKey);
+  return row?.id ?? null;
+}
+
 async function insertStop(db, planDriveId, position, stop) {
   await db.runAsync(
     `INSERT INTO plan_stops (plan_drive_id, position, name, latitude, longitude, source, road_id, reversed)
@@ -101,20 +108,28 @@ async function insertStop(db, planDriveId, position, stop) {
 }
 
 /**
- * Save a new plan: { name, startDate?, routeId?, roundTrip?, drives?: [{ start?, stops? }] }
+ * Save a new plan: { name, startDate?, routeId?, roundTrip?, sharedKey?, drives?: [{ start?, stops? }] }
  * (a copied Iconic Trip has its drives; a new plan starts with one empty
- * drive). Returns its id.
+ * drive; `sharedKey` marks one opened from a shared link). Returns its id.
  */
-export async function createPlan({ name, startDate = null, routeId = null, roundTrip = false, drives = [{}] }) {
+export async function createPlan({
+  name,
+  startDate = null,
+  routeId = null,
+  roundTrip = false,
+  sharedKey = null,
+  drives = [{}],
+}) {
   const db = await getDb();
   let planId;
   await db.withTransactionAsync(async () => {
     const { lastInsertRowId } = await db.runAsync(
-      'INSERT INTO plans (name, start_date, route_id, round_trip, created_at) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO plans (name, start_date, route_id, round_trip, shared_key, created_at) VALUES (?, ?, ?, ?, ?, ?)',
       name,
       startDate,
       routeId,
       roundTrip ? 1 : 0,
+      sharedKey,
       Date.now()
     );
     planId = lastInsertRowId;
