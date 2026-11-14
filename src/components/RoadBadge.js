@@ -5,7 +5,7 @@ import Icon from './ui/Icon';
 
 /**
  * The Iconic Road mark: a teal round badge with the mountain, sitting on the
- * corner of a route thumbnail (20) or the edge of a card's map (28). `ring` is
+ * corner of a route thumbnail (20) or the edge of a card's map (30). `ring` is
  * the colour behind it, so it reads as cut out. The parent places it with `style`.
  */
 export default function RoadBadge({ ring, size = 20, style }) {
