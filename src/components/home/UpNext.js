@@ -12,7 +12,7 @@ import RoadBadge from '../RoadBadge';
 import RoutePreview from '../RoutePreview';
 import SectionHeader from '../ui/SectionHeader';
 
-const MAP_HEIGHT = 180;
+const MAP_HEIGHT = 132;
 
 /** The day after a dated plan's last day, as 'YYYY-MM-DD'. */
 function dayAfter(plan) {

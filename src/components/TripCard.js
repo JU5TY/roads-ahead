@@ -10,7 +10,7 @@ import RoadBadge from './RoadBadge';
 import RoutePreview from './RoutePreview';
 import RouteThumb from './RouteThumb';
 
-const MAP_HEIGHT = 180;
+const MAP_HEIGHT = 132;
 
 /**
  * Trip card: route map, green date line, name, "780 km · 11h 55m". Tapping it
