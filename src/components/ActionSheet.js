@@ -105,10 +105,12 @@ export default function ActionSheet({ visible, message, actions, onClose }) {
 
 const makeStyles = (c) => ({
   sheet: { flexShrink: 1 },
-  // 24 in from the edge, in line with the icons.
+  // 24 in from the edge, in line with the icons; a little lower than the rows
+  // start, which have their own padding above the icon.
   message: {
     ...type.body,
     color: c.textMuted,
+    paddingTop: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm + spacing.xs,
   },

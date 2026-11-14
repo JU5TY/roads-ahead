@@ -321,8 +321,15 @@ export default function PastTripsScreen() {
 const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -8 },
-  h1: { color: c.text, marginHorizontal: 4, marginTop: 8, height: 56, textAlignVertical: 'center' },
+  // The top margin sits on the row, not the title, so the search button centres on the title.
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginRight: -8,
+  },
+  h1: { color: c.text, marginHorizontal: 4, height: 56, textAlignVertical: 'center' },
   // As Add stop's search box; in the title's place, the same height overall.
   search: {
     flexDirection: 'row',

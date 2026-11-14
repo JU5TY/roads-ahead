@@ -447,22 +447,20 @@ export default function PlanScreen() {
           at === 0
             ? {
                 icon: 'my_location',
-                label: 'Wherever you are',
-                detail: 'Where the phone is when you start',
+                label: 'Your location',
                 selected: !atDrive.start,
                 onPress: act(() => setPlanDriveStart(atDrive.id, null)),
               }
             : {
+                // The place you stayed, by name: it follows the stay if that changes.
                 icon: 'bedtime',
-                label: 'Where you stayed',
-                detail: `${followOn?.name ?? 'Your overnight stop'} · moves if the stay changes`,
+                label: followOn?.name ?? 'Where you stayed',
                 selected: !atDrive.start,
                 onPress: act(() => setPlanDriveStart(atDrive.id, null)),
               },
           {
             icon: 'edit_location_alt',
-            label: 'Start somewhere else',
-            detail: at === 0 ? 'Pick a place, or drop a pin' : 'After a ferry, train or hire car',
+            label: 'New location',
             selected: !!atDrive.start,
             onPress: () => pickPlace('start', at),
           },
