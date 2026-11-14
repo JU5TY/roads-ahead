@@ -61,7 +61,7 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
             <Text style={[large ? type.section : styles.rowTitle, styles.title]} numberOfLines={1}>
               {title}
             </Text>
-            <Text style={[type.body, styles.muted, large && styles.largeMeta]} numberOfLines={1}>
+            <Text style={[type.body, styles.muted]} numberOfLines={1}>
               {meta}
             </Text>
           </View>
@@ -87,7 +87,6 @@ const makeStyles = (c) => ({
     ...c.cardShadow,
   },
   largeText: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 18, gap: 2 },
-  largeMeta: { marginTop: 4 },
   // Half on the map, half on the card, at the map's bottom right.
   mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 16 },
   row: {
