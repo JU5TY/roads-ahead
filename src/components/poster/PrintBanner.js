@@ -5,7 +5,7 @@ import BannerCard from '../ui/BannerCard';
 
 /**
  * The Trip page's way in to printing the whole trip, or `drive` alone when one is
- * picked. Matches the Photos card above it. Opens the print page.
+ * picked, at the end of the page. Opens the print page.
  */
 export default function PrintBanner({ trip, drive }) {
   const what = drive ? 'drive' : 'trip';

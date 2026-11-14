@@ -637,8 +637,6 @@ export default function TripScreen() {
         // Like the print banner: a picked day, else the trip.
         what={dayNo ? 'day' : 'trip'}
       />
-      {/* Under Photos, whose picture of the trip it follows; under Timeline when there are none. */}
-      <PrintBanner trip={trip} drive={single ? null : selected} />
       <CountriesSection rows={viewCountries} units={units} scope={selected ? 'drive' : 'trip'} />
       {pointsByDrive ? (
         <ChartsCard
@@ -699,6 +697,8 @@ export default function TripScreen() {
           selected && vehicles.some((v) => v !== viewVehicle) ? () => setMenu('vehicle') : null
         }
       />
+      {/* Last: the trip's story reads through unbroken, then the offer to print it. */}
+      <PrintBanner trip={trip} drive={single ? null : selected} />
     </DetailLayout>
   );
 }
