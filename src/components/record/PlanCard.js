@@ -44,7 +44,7 @@ export default function PlanCard({ progress, nextLeg, onNavigate, onNextLeg }) {
           </View>
         </View>
         {next && nextLeg ? (
-          <Button label={`Next leg: ${stopName(next)}`} icon="near_me" onPress={onNextLeg} style={styles.button} />
+          <Button label={`Next leg: ${stopName(next)}`} onPress={onNextLeg} style={styles.button} />
         ) : null}
       </View>
     );

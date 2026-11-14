@@ -427,8 +427,8 @@ export function planProgress(plan, index, points) {
 /**
  * Handing drive `index` to the sat nav `app` ('google' | 'waze' | 'apple'),
  * from `here` (the phone, or null when unknown): { links, start, awayM,
- * summary }. A drive with a start of its own (or linked to the drive before)
- * goes there first when the phone is AWAY_M or more from it, or when where the
+ * summary, app, appName, wholeDrive }. A drive with a start of its own (or
+ * linked to the drive before) goes there first when the phone is AWAY_M or more from it, or when where the
  * phone is isn't known; `awayM` is how far, null when not away or unknown.
  * `wholeDrive` says whether `app` takes it all at once (Waze: one place at a time).
  * `summary` is the Start drive sheet's line: "Fort William, 2 stops and
@@ -476,6 +476,7 @@ export function planHandover(plan, index, { here, app, underway = false, passed 
     start,
     awayM: fromStart && metres != null ? metres : null,
     summary,
+    app,
     wholeDrive: takesWholeDrive(app),
     appName: NAV_APPS[app],
   };

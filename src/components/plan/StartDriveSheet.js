@@ -4,6 +4,7 @@ import { useStyles, useTheme } from '../../hooks/useTheme';
 import { spacing, type } from '../../theme';
 import { formatDistance } from '../../utils/format';
 import { MenuRow } from '../ActionSheet';
+import { NAV_APP_ICONS } from '../NavAppSheet';
 import BottomSheet from '../ui/BottomSheet';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
@@ -11,8 +12,8 @@ import Icon from '../ui/Icon';
 /**
  * Start a planned day: what it is ("Day 3 · Fort William → Applecross" and
  * `detail`, its miles, time and fuel), how far you are from its start when
- * you're away from it, what the sat nav gets, Navigate with, and Record and
- * navigate. `handover` is planHandover's answer (utils/plans.js).
+ * you're away from it, the sat nav and what it gets (tap to change it), and
+ * Record and navigate. `handover` is planHandover's answer (utils/plans.js).
  */
 export default function StartDriveSheet({
   visible,
@@ -29,7 +30,7 @@ export default function StartDriveSheet({
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   if (!handover) return <BottomSheet visible={false} onClose={onClose} />;
-  const { start, awayM, summary, appName, wholeDrive } = handover;
+  const { start, awayM, summary, app, appName, wholeDrive } = handover;
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.sheet}>
@@ -60,19 +61,19 @@ export default function StartDriveSheet({
           </View>
         ) : null}
 
+        {/* The sat nav and what it gets; tapping it picks another (Navigate with). */}
         <MenuRow
-          icon="near_me"
-          label={wholeDrive ? `${appName} gets the whole drive` : `${appName} gets one place at a time`}
-          detail={summary}
+          icon={NAV_APP_ICONS[app]}
+          label={appName}
+          detail={wholeDrive ? `Whole drive · ${summary}` : summary}
           detailLines={2}
+          chevron
+          onPress={onPickApp}
         />
-        <MenuRow icon="map" label="Navigate with" detail={appName} chevron onPress={onPickApp} />
 
         <View style={styles.footer}>
-          <Button label="Record and navigate" icon="radio_button_checked" onPress={onStart} style={styles.start} />
-          <Text style={[type.small, styles.muted, styles.note]}>
-            Recording starts now and keeps going in the background.
-          </Text>
+          <Button label="Record and navigate" onPress={onStart} style={styles.start} />
+          <Text style={[type.small, styles.muted, styles.note]}>{`Keeps recording while you’re in ${appName}.`}</Text>
         </View>
       </View>
     </BottomSheet>

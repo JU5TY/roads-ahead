@@ -3,7 +3,7 @@ import { NAV_APP_OPTIONS } from '../storage/settingsStorage';
 import { NAV_APPS, takesWholeDrive } from '../utils/navLinks';
 import ActionSheet from './ActionSheet';
 
-const ICONS = { google: 'map', apple: 'map', waze: 'navigation' };
+export const NAV_APP_ICONS = { google: 'map', apple: 'map', waze: 'navigation' };
 
 /** Navigate with: picks the sat nav app planned drives are handed to (on You and Start drive). */
 export default function NavAppSheet({ visible, onClose }) {
@@ -13,7 +13,7 @@ export default function NavAppSheet({ visible, onClose }) {
       visible={visible}
       actions={NAV_APP_OPTIONS.map((app) => ({
         key: app,
-        icon: ICONS[app],
+        icon: NAV_APP_ICONS[app],
         label: NAV_APPS[app],
         detail: takesWholeDrive(app) ? 'The whole drive in one go' : 'One place at a time',
         selected: app === navApp,
