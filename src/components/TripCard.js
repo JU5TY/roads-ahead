@@ -66,7 +66,7 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
             </Text>
           </View>
           {large ? (
-            roads ? <RoadBadge ring={c.card} size={32} style={styles.mapEdge} /> : null
+            roads ? <RoadBadge ring={c.card} size={28} style={styles.mapEdge} /> : null
           ) : (
             <View>
               <RouteThumb segments={segments ?? []} />
@@ -89,7 +89,7 @@ const makeStyles = (c) => ({
   // The same text, size and spacing as a row card.
   largeText: { paddingVertical: 14, paddingHorizontal: 16, gap: 2 },
   // Half on the map, half on the card, at the map's bottom right.
-  mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 16 },
+  mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 14 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

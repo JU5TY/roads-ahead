@@ -99,7 +99,7 @@ export default function UpNext({ plan, active }) {
                 {route}
               </Text>
             </View>
-            {lines && roads > 0 ? <RoadBadge ring={c.card} size={32} style={styles.mapEdge} /> : null}
+            {lines && roads > 0 ? <RoadBadge ring={c.card} size={28} style={styles.mapEdge} /> : null}
           </>
         )}
       </Pressable>
@@ -112,7 +112,7 @@ const makeStyles = (c) => ({
   // The same text, size and spacing as its Trips card.
   body: { paddingVertical: 14, paddingHorizontal: 16, gap: 2 },
   // Half on the map, half on the card, at the map's bottom right.
-  mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 16 },
+  mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 14 },
   kicker: { color: c.accent },
   text: { color: c.text },
   muted: { color: c.textMuted },
