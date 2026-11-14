@@ -47,11 +47,13 @@ import {
   addPosition,
   driveMarkers,
   driveReach,
+  driveRouteName,
   driveStart,
   mapPlanOf,
   planKicker,
   planHandover,
   planOutline,
+  planRouteName,
   roadStop,
   stopCounts,
   withWayBack,
@@ -83,7 +85,10 @@ function AddRow({ icon, iconColor, filled = false, label, onPress }) {
  * Each day is stored as a planned drive (planStorage splitPlanDriveAt / joinPlanDriveWithNext).
  */
 export default function PlanScreen() {
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const { id } = params;
+  // Asked to open Start drive (from Home); the param is cleared once it's done.
+  const startNow = params.start === '1';
   const planId = Number(id);
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -107,11 +112,20 @@ export default function PlanScreen() {
         .then(([p, drives]) => {
           if (!p) return router.back();
           setPlan(p);
-          setDriven(new Set(drives.keys()));
+          const done = new Set(drives.keys());
+          setDriven(done);
           setTab((i) => (i === null || p.drives.length < 2 ? null : Math.min(i, p.drives.length - 1)));
+          // From Home's "Start Day N" (`start=1`): Start drive opens for the next
+          // day not yet driven, as the floating button would, once it goes somewhere.
+          if (startNow) {
+            router.setParams({ start: undefined });
+            const next = p.drives.findIndex((d) => !done.has(d.id));
+            const day = mapPlanOf(p, null).drives[next >= 0 ? next : p.drives.length - 1];
+            if (day.stops.length) setMenu('go');
+          }
         })
         .catch((err) => console.warn('[plan] load failed', err)),
-    [planId]
+    [planId, startNow]
   );
   useFocusEffect(
     useCallback(() => {
@@ -187,20 +201,11 @@ export default function PlanScreen() {
   // A copied Iconic Trip can't be changed for now: its days and stops are as they came.
   const locked = !!plan.routeId;
   // "Fort William → Applecross"; Drive 1 with no start runs from wherever you are.
-  const startName = start?.name ?? 'Your location';
-  let routeName = finish ? `${startName} → ${finish.name ?? 'Dropped pin'}` : null;
-  // A round trip's way back is the last stop (driveReach gives its place, not that it's the way back).
-  const goesHome = !!wayStops.at(-1)?.home;
-  if (goesHome) routeName = picked === 0 ? `Round trip from ${startName}` : `${startName} → back to the start`;
+  const routeName = driveRouteName(plan, picked, here);
   // All: where the trip starts and where it ends.
+  const tripName = planRouteName(plan, here);
   const lastIndex = plan.drives.length - 1;
-  const tripStart = driveStart(plan, 0)?.name;
-  const tripEnd = mapPlan.drives.some((d) => d.stops.length) ? driveReach(wayPlan, lastIndex) : null;
-  let tripName = tripEnd
-    ? `${tripStart ?? 'Your location'} → ${tripEnd.name ?? 'Dropped pin'}`
-    : `From ${tripStart ?? 'your location'}`;
   const tripGoesHome = !!mapPlan.drives[lastIndex].stops.at(-1)?.home;
-  if (tripGoesHome) tripName = `Round trip from ${tripStart ?? 'Your location'}`;
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
   const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
 

@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import UpNext, { upNextPlan } from '../components/home/UpNext';
 import WeekDistance from '../components/home/WeekDistance';
 import YourMap from '../components/home/YourMap';
 import NoTrips from '../components/NoTrips';
@@ -15,6 +16,7 @@ import { useRoadCounts } from '../hooks/useRoadCounts';
 import { useRoadTotals } from '../hooks/useRoadTotals';
 import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
+import { drivenPlanDriveIds, listPlans } from '../storage/planStorage';
 import { listTrips } from '../storage/tripStorage';
 import { bottomSpace, pressedOpacity, radius, spacing, type } from '../theme';
 import { ICONIC_ROADS } from '../utils/iconicRoads';
@@ -78,14 +80,19 @@ export default function HomeScreen() {
   const [scrollY] = useState(() => new Animated.Value(0));
   // Only keep the map preview alive while Home is showing, to save memory.
   const focused = useIsFocused();
-  // Trips plus the time they were loaded, so "today" is stable while open.
-  const [data, setData] = useState(null); // { trips, now }
+  // Trips plus the time they were loaded, so "today" is stable while open;
+  // the next planned trip and the plan drives already driven.
+  const [data, setData] = useState(null); // { trips, now, plan, driven }
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      listTrips()
-        .then((trips) => !cancelled && setData({ trips, now: Date.now() }))
+      Promise.all([listTrips(), listPlans(), drivenPlanDriveIds()])
+        .then(([trips, plans, driven]) => {
+          if (cancelled) return;
+          const now = Date.now();
+          setData({ trips, now, plan: upNextPlan(plans, driven, now), driven });
+        })
         .catch((err) => console.warn('[home] load failed', err));
       return () => {
         cancelled = true;
@@ -101,7 +108,7 @@ export default function HomeScreen() {
     );
   }
 
-  const { trips, now } = data;
+  const { trips, now, plan, driven } = data;
   const latest = trips[0];
 
   if (!latest) {
@@ -126,6 +133,7 @@ export default function HomeScreen() {
     >
       <YourMap trips={trips} units={units} scrollY={scrollY} />
       <WeekDistance trips={trips} units={units} now={now} />
+      {plan ? <UpNext plan={plan} driven={driven} now={now} active={focused} /> : null}
       <SectionHeader title="Latest trip" />
       <TripCard
         trip={latest}

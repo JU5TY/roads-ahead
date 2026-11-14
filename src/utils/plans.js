@@ -396,6 +396,33 @@ const listed = (items) =>
   items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : (items[0] ?? '');
 
 /** What a stop is called on Record: its place name, its Iconic Road's name, or "Dropped pin". */
+/**
+ * Where a whole plan goes, as its page's title line: "Brighton → Inverness",
+ * "Round trip from Brighton", or "From Brighton" before it has stops; Drive 1
+ * with no start runs from "Your location".
+ */
+export function planRouteName(plan, here) {
+  const mapPlan = mapPlanOf(plan, here);
+  const last = plan.drives.length - 1;
+  const from = driveStart(plan, 0)?.name;
+  if (mapPlan.drives[last]?.stops.at(-1)?.home) return `Round trip from ${from ?? 'Your location'}`;
+  const end = mapPlan.drives.some((d) => d.stops.length) ? driveReach(withWayBack(plan, here), last) : null;
+  return end ? `${from ?? 'Your location'} → ${end.name ?? 'Dropped pin'}` : `From ${from ?? 'your location'}`;
+}
+
+/**
+ * Where drive `index` goes: "Fort William → Applecross", "Round trip from
+ * Brighton" (Drive 1 of a round trip that comes straight back), "Inverness →
+ * back to the start", or null with no stops yet.
+ */
+export function driveRouteName(plan, index, here) {
+  const stops = mapPlanOf(plan, here).drives[index].stops;
+  if (!stops.length) return null;
+  const from = driveStart(plan, index)?.name ?? 'Your location';
+  if (stops.at(-1).home) return index === 0 ? `Round trip from ${from}` : `${from} → back to the start`;
+  return `${from} → ${driveReach(withWayBack(plan, here), index).name ?? 'Dropped pin'}`;
+}
+
 export function stopName(stop) {
   if (stop.roadId) return getRoad(stop.roadId)?.name ?? 'Iconic Road';
   return stop.name ?? 'Dropped pin';

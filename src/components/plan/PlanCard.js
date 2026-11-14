@@ -5,14 +5,14 @@ import { Pressable, Text, View } from 'react-native';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
 import { formatDateRange } from '../../utils/format';
-import { mapPlanOf, planKicker, planOutline, stopCounts, stopName } from '../../utils/plans';
+import { mapPlanOf, planKicker, planOutline, planRouteName, stopCounts } from '../../utils/plans';
 import { getReadyRoute } from '../../utils/readyRoutes';
 import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
 
 /**
  * A plan on the Planned tab, like a Trips card: blue date line (just the days with no
- * date), name, "23 stops" (or "Straight to Inverness"), an Iconic Roads chip, and the planned outline
+ * date), name, where it goes ("Brighton → Inverness", as on its page), an Iconic Roads chip, and the planned outline
  * in the round thumbnail, starting and ending where the plan's map does (`here`
  * is the phone, for a Day 1 from "Your location"). `done` adds a "Driven
  * 11–12 Oct 2026" chip, its dates from `drivenDates` ({ from, to }). Tapping opens the plan.
@@ -20,7 +20,7 @@ import Icon from '../ui/Icon';
 export default function PlanCard({ plan, here = null, done = false, drivenDates = null }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
-  const { stops, roads } = stopCounts(plan);
+  const { roads } = stopCounts(plan);
   const end = plan.drives.flatMap((d) => d.stops).at(-1);
   // Solid, like a Trips card. A copied Iconic Trip follows its own road lines
   // (OpenStreetMap, ours to draw anywhere); any other plan runs straight from
@@ -50,11 +50,7 @@ export default function PlanCard({ plan, here = null, done = false, drivenDates 
           {plan.name}
         </Text>
         <Text style={[type.body, styles.muted]} numberOfLines={1}>
-          {stops > 0
-            ? `${stops} ${stops === 1 ? 'stop' : 'stops'}`
-            : !end
-              ? 'No stops yet'
-              : `${end.roadId ? 'Along' : 'Straight to'} ${stopName(end)}`}
+          {end ? planRouteName(plan, here) : 'No stops yet'}
         </Text>
         {roads > 0 || done ? (
           <View style={styles.chips}>
