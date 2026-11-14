@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
+import RoadBadge from '../RoadBadge';
 import RouteThumb from '../RouteThumb';
 import Icon from '../ui/Icon';
 
@@ -12,7 +13,7 @@ const THUMB = 48;
  * One Iconic Road (or Iconic Trip), a card like a Trips card: green once
  * completed, blue when it's `planned` (an Iconic Trip in your plans),
  * white otherwise, with its
- * shape on the right like a Trips card (a tick on it once completed, a
+ * shape on the right like a Trips card (the Iconic Road mark on it once completed, a
  * bookmark once planned). `line` is its [latitude, longitude] points.
  * `subtitle` is e.g. "Completed 2 times · Day 3" or "Peak District · 21 km".
  */
@@ -54,11 +55,9 @@ export default function RoadRow({ name, subtitle, line, completed, planned = fal
       <View>
         <RouteThumb segments={segments} size={THUMB} />
         {completed ? (
-          <View style={styles.badge}>
-            <Icon name="check" size={13} color={c.onRoadBadge} />
-          </View>
+          <RoadBadge ring={c.roadContainer} style={styles.corner} />
         ) : blue ? (
-          <View style={[styles.badge, styles.plannedBadge]}>
+          <View style={styles.plannedBadge}>
             <Icon name="bookmark" filled size={13} color={c.onAccent} />
           </View>
         ) : null}
@@ -82,8 +81,9 @@ const makeStyles = (c) => ({
   planned: { backgroundColor: c.accentContainer },
   notYet: { backgroundColor: c.card },
   text: { flex: 1, minWidth: 0 },
-  // Sits on the thumbnail's corner, ringed in the row colour so it reads as cut out.
-  badge: {
+  corner: { position: 'absolute', right: -3, bottom: -3 },
+  // The bookmark sits where the Iconic Road mark does, ringed in the row colour so it reads as cut out.
+  plannedBadge: {
     position: 'absolute',
     right: -3,
     bottom: -3,
@@ -91,11 +91,10 @@ const makeStyles = (c) => ({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: c.roadContainer,
-    backgroundColor: c.roadBadge,
+    borderColor: c.accentContainer,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  plannedBadge: { borderColor: c.accentContainer, backgroundColor: c.accent },
   pressed: { opacity: pressedOpacity },
 });

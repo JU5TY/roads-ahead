@@ -136,7 +136,7 @@ function GapRow({ item, color, units, hideTimes, roads = [] }) {
         </Text>
         {roads.map((name) => (
           <View key={name} style={styles.roadChip}>
-            <Icon name="verified" size={14} color={c.onRoadContainer} />
+            <Icon name="landscape" size={14} color={c.onRoadContainer} filled />
             <Text style={[type.nav, styles.roadChipText]} numberOfLines={1}>
               {name}
             </Text>

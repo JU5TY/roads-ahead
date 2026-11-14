@@ -282,7 +282,7 @@ export default function AddStopScreen() {
               {roads.map(({ road, metres, inPlan }) => (
                 <PlaceRow
                   key={road.id}
-                  icon="verified"
+                  icon="landscape"
                   well={c.roadContainer}
                   ink={c.onRoadContainer}
                   name={road.name}

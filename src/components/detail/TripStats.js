@@ -53,7 +53,7 @@ export function HeroStats({ stats, units, timesHidden = false, roadCount = 0, co
         <View style={styles.chips}>
           {roadCount > 0 ? (
             <View style={[styles.chip, styles.chipRoads]}>
-              <Icon name="verified" size={18} color={c.onRoadContainer} />
+              <Icon name="landscape" size={18} color={c.onRoadContainer} filled />
               <Text style={[type.label, styles.chipRoadsText]}>
                 {roadCount} {roadCount === 1 ? 'Iconic Road' : 'Iconic Roads'}
               </Text>
@@ -125,7 +125,7 @@ export function DetailsRows({
   const longest = stats.longestStintMs == null ? null : formatDurationShort(stats.longestStintMs);
   const showLongest = longest != null && longest !== formatDurationShort(stats.movingTimeMs);
   const height = [
-    ['landscape', 'Highest point', formatElevation(stats.maxAltitudeM, units)],
+    ['altitude', 'Highest point', formatElevation(stats.maxAltitudeM, units)],
     ['trending_up', 'Climb', formatElevation(stats.elevationGainM, units)],
   ];
   const rows = timesHidden

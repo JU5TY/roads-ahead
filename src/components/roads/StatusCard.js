@@ -16,7 +16,7 @@ export default function StatusCard({ done, icon, title, detail }) {
     <View style={[styles.status, done ? styles.done : styles.todo]}>
       <View style={[styles.well, { backgroundColor: done ? c.roadBadge : c.track }]}>
         {done ? (
-          <Icon name="verified" filled size={26} color={c.onRoadBadge} />
+          <Icon name="landscape" filled size={26} color={c.onRoadBadge} />
         ) : (
           <Icon name={icon} size={24} color={c.outlineStrong} />
         )}

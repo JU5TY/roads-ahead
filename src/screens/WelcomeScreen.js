@@ -16,7 +16,7 @@ const FEATURES = [
   ['route', 'Record every drive', 'Keeps recording with the screen off'],
   ['auto_stories', 'Relive every trip', 'Day by day, with stops and photos'],
   ['map', 'See everywhere you’ve been', 'Every road you’ve driven, on one map'],
-  ['verified', 'Complete Iconic Roads', '20 of Europe’s greatest driving roads'],
+  ['landscape', 'Complete Iconic Roads', '20 of Europe’s greatest driving roads'],
 ];
 
 /** First launch: what the app does, then on to the location explainer. */

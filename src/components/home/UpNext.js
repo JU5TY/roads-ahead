@@ -5,12 +5,14 @@ import { Pressable, Text, View } from 'react-native';
 import { useHere } from '../../hooks/useHere';
 import { useSavedLines } from '../../hooks/usePlanRoutes';
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { dayColorFor, pressedOpacity, radius, spacing, type } from '../../theme';
-import { dateKey, dateOf, driveRoute, driveRouteName, groupPlans, mapPlanOf, planKicker } from '../../utils/plans';
+import { pressedOpacity, radius, type } from '../../theme';
+import { dateKey, dateOf, driveRoute, groupPlans, mapPlanOf, planKicker, planRouteName, stopCounts } from '../../utils/plans';
 import { getReadyRoute } from '../../utils/readyRoutes';
+import RoadBadge from '../RoadBadge';
 import RoutePreview from '../RoutePreview';
-import Button from '../ui/Button';
 import SectionHeader from '../ui/SectionHeader';
+
+const MAP_HEIGHT = 180;
 
 /** The day after a dated plan's last day, as 'YYYY-MM-DD'. */
 function dayAfter(plan) {
@@ -57,77 +59,62 @@ function useLines(plan, here, color) {
 }
 
 /**
- * Home's Up next card: the next planned trip's map (its saved road lines),
- * date line and name, then the next day to drive with Open plan, or on the
- * trip's days a filled Start Day N that opens the plan's Start drive sheet.
+ * Home's Up next card, the same card as Latest trip: the next planned trip's map
+ * (its saved road lines) with the Iconic Road mark when it has any, then the lines
+ * its Trips card shows: date line, name, where it goes. Tapping opens the plan.
  * `active` keeps the native map only while Home is showing.
  */
-export default function UpNext({ plan, driven, now, active }) {
+export default function UpNext({ plan, active }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const { here } = useHere();
   const lines = useLines(plan, here, c.accent);
-  const next = Math.max(
-    0,
-    plan.drives.findIndex((d) => !driven.has(d.id))
-  );
-  const route = driveRouteName(plan, next, here) ?? 'No stops yet';
-  const today = plan.startDate <= dateKey(new Date(now));
-  const open = () => router.push(`/plans/${plan.id}`);
-  const start = () => router.push({ pathname: `/plans/${plan.id}`, params: { start: '1' } });
+  const { roads } = stopCounts(plan);
+  const end = plan.drives.flatMap((d) => d.stops).at(-1);
+  const route = end ? planRouteName(plan, here) : 'No stops yet';
+  const kicker = planKicker(plan);
+  const roadsLabel = roads > 0 ? `, includes ${roads} ${roads === 1 ? 'Iconic Road' : 'Iconic Roads'}` : '';
 
   return (
     <>
       <SectionHeader title="Up next" />
-      <View style={styles.card}>
-        <Pressable
-          onPress={open}
-          accessibilityRole="link"
-          accessibilityLabel={`${plan.name}, ${planKicker(plan).toLowerCase()}`}
-          style={({ pressed }) => pressed && styles.pressed}
-        >
-          {lines ? <RoutePreview segments={lines} height={132} active={active} /> : null}
-          <View style={styles.body}>
-            <Text style={[type.caps, styles.kicker]} numberOfLines={1}>
-              {planKicker(plan)}
-            </Text>
-            <Text style={[type.section, styles.text]} numberOfLines={1}>
-              {plan.name}
-            </Text>
-          </View>
-        </Pressable>
-        <View style={styles.divider} />
-        <View style={styles.day}>
-          <View style={styles.dayText}>
-            <View style={styles.dayLabel}>
-              <View style={[styles.dot, { backgroundColor: dayColorFor(c, next + 1) }]} />
-              <Text style={[type.label, styles.text]}>Day {next + 1}</Text>
+      <Pressable
+        onPress={() => router.push(`/plans/${plan.id}`)}
+        accessibilityRole="link"
+        accessibilityLabel={`${plan.name}, ${kicker.toLowerCase()}, ${route}${roadsLabel}`}
+        style={styles.card}
+      >
+        {({ pressed }) => (
+          <>
+            {lines ? <RoutePreview segments={lines} height={MAP_HEIGHT} active={active} /> : null}
+            {/* As Latest trip, only the text fades: a faded map shows the card's shadow through it. */}
+            <View style={[styles.body, pressed && styles.pressed]}>
+              <Text style={[type.caps, styles.kicker]} numberOfLines={1}>
+                {kicker}
+              </Text>
+              <Text style={[type.section, styles.text]} numberOfLines={1}>
+                {plan.name}
+              </Text>
+              <Text style={[type.body, styles.muted, styles.route]} numberOfLines={1}>
+                {route}
+              </Text>
             </View>
-            <Text style={[type.small, styles.muted]} numberOfLines={1}>
-              {route}
-            </Text>
-          </View>
-          {today ? (
-            <Button label={`Start Day ${next + 1}`} size="small" onPress={start} />
-          ) : (
-            <Button label="Open plan" variant="tonal" size="small" onPress={open} />
-          )}
-        </View>
-      </View>
+            {lines && roads > 0 ? <RoadBadge ring={c.card} size={32} style={styles.mapEdge} /> : null}
+          </>
+        )}
+      </Pressable>
     </>
   );
 }
 
 const makeStyles = (c) => ({
   card: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: c.card, ...c.cardShadow },
-  body: { paddingTop: 14, paddingBottom: 14, paddingHorizontal: 20, gap: 2 },
+  body: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 18, gap: 2 },
+  route: { marginTop: 4 },
+  // Half on the map, half on the card, at the map's bottom right.
+  mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 16 },
   kicker: { color: c.accent },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  divider: { height: 1, marginHorizontal: 20, backgroundColor: c.divider },
-  day: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingLeft: 20, paddingRight: spacing.md },
-  dayText: { flex: 1, minWidth: 0, gap: 2 },
-  dayLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
   pressed: { opacity: pressedOpacity },
 });

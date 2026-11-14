@@ -56,7 +56,7 @@ export default function RouteDays({ route }) {
                 </Text>
                 {routeDriveRoads(route, i).map((road) => (
                   <View key={road} style={styles.roadChip}>
-                    <Icon name="verified" size={14} color={c.onRoadContainer} filled />
+                    <Icon name="landscape" size={14} color={c.onRoadContainer} filled />
                     <Text style={[type.nav, styles.roadChipText]} numberOfLines={1}>
                       {road}
                     </Text>

@@ -79,7 +79,7 @@ function LegRow({ color, road, text, ferry, onPress, handlers, held }) {
         {text ? <Text style={[type.label, styles.muted, styles.regular]}>{text}</Text> : null}
         {road ? (
           <View style={styles.roadChip}>
-            <Icon name="verified" size={14} color={c.onRoadContainer} filled />
+            <Icon name="landscape" size={14} color={c.onRoadContainer} filled />
             <Text style={[type.nav, styles.roadChipText]} numberOfLines={1}>
               {road}
             </Text>

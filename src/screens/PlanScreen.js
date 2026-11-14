@@ -85,10 +85,7 @@ function AddRow({ icon, iconColor, filled = false, label, onPress }) {
  * Each day is stored as a planned drive (planStorage splitPlanDriveAt / joinPlanDriveWithNext).
  */
 export default function PlanScreen() {
-  const params = useLocalSearchParams();
-  const { id } = params;
-  // Asked to open Start drive (from Home); the param is cleared once it's done.
-  const startNow = params.start === '1';
+  const { id } = useLocalSearchParams();
   const planId = Number(id);
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -112,20 +109,11 @@ export default function PlanScreen() {
         .then(([p, drives]) => {
           if (!p) return router.back();
           setPlan(p);
-          const done = new Set(drives.keys());
-          setDriven(done);
+          setDriven(new Set(drives.keys()));
           setTab((i) => (i === null || p.drives.length < 2 ? null : Math.min(i, p.drives.length - 1)));
-          // From Home's "Start Day N" (`start=1`): Start drive opens for the next
-          // day not yet driven, as the floating button would, once it goes somewhere.
-          if (startNow) {
-            router.setParams({ start: undefined });
-            const next = p.drives.findIndex((d) => !done.has(d.id));
-            const day = mapPlanOf(p, null).drives[next >= 0 ? next : p.drives.length - 1];
-            if (day.stops.length) setMenu('go');
-          }
         })
         .catch((err) => console.warn('[plan] load failed', err)),
-    [planId, startNow]
+    [planId]
   );
   useFocusEffect(
     useCallback(() => {
@@ -441,7 +429,7 @@ export default function PlanScreen() {
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((road) => ({
             key: road.id,
-            icon: 'verified',
+            icon: 'landscape',
             label: road.name,
             detail: roadPlace(road),
             onPress: () => addRoad(road),
@@ -576,7 +564,7 @@ export default function PlanScreen() {
       ) : (
         <View style={styles.addRows}>
           <AddRow icon="add_location_alt" label="Add stop" onPress={() => pickPlace('stop')} />
-          <AddRow icon="verified" iconColor={c.ringNumber} filled label="Add Iconic Road" onPress={() => setMenu('road')} />
+          <AddRow icon="landscape" iconColor={c.ringNumber} filled label="Add Iconic Road" onPress={() => setMenu('road')} />
         </View>
       )}
     </DetailLayout>

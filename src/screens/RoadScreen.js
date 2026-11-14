@@ -38,7 +38,7 @@ function DriveRow({ item, isLast }) {
       ]}
     >
       <View style={styles.badge}>
-        <Icon name="verified" size={22} color={c.onRoadContainer} />
+        <Icon name="landscape" filled size={22} color={c.onRoadContainer} />
       </View>
       <View style={styles.flex}>
         <Text style={[type.bodyStrong, styles.text]} numberOfLines={1}>
@@ -138,7 +138,7 @@ export default function RoadScreen() {
   const steepest = road.steepestPct ? `${road.steepestPct}%` : null;
   const stats = [
     { icon: 'straighten', ...length, label: 'Length' },
-    { icon: 'landscape', ...highest, label: 'Highest point' },
+    { icon: 'altitude', ...highest, label: 'Highest point' },
   ];
   // [icon, title, value]
   const details = [

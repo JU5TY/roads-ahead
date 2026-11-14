@@ -81,8 +81,8 @@ export default function HomeScreen() {
   // Only keep the map preview alive while Home is showing, to save memory.
   const focused = useIsFocused();
   // Trips plus the time they were loaded, so "today" is stable while open;
-  // the next planned trip and the plan drives already driven.
-  const [data, setData] = useState(null); // { trips, now, plan, driven }
+  // and the next planned trip.
+  const [data, setData] = useState(null); // { trips, now, plan }
 
   useFocusEffect(
     useCallback(() => {
@@ -91,7 +91,7 @@ export default function HomeScreen() {
         .then(([trips, plans, driven]) => {
           if (cancelled) return;
           const now = Date.now();
-          setData({ trips, now, plan: upNextPlan(plans, driven, now), driven });
+          setData({ trips, now, plan: upNextPlan(plans, driven, now) });
         })
         .catch((err) => console.warn('[home] load failed', err));
       return () => {
@@ -108,7 +108,7 @@ export default function HomeScreen() {
     );
   }
 
-  const { trips, now, plan, driven } = data;
+  const { trips, now, plan } = data;
   const latest = trips[0];
 
   if (!latest) {
@@ -133,7 +133,7 @@ export default function HomeScreen() {
     >
       <YourMap trips={trips} units={units} scrollY={scrollY} />
       <WeekDistance trips={trips} units={units} now={now} />
-      {plan ? <UpNext plan={plan} driven={driven} now={now} active={focused} /> : null}
+      {plan ? <UpNext plan={plan} active={focused} /> : null}
       <SectionHeader title="Latest trip" />
       <TripCard
         trip={latest}

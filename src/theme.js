@@ -24,7 +24,7 @@ const light = {
   ringTrack: '#D5F2EC', // Iconic Roads progress ring
   ringFill: '#1EB59F',
   ringNumber: '#00796B',
-  roadBadge: '#00796B', // round badge behind a completed road's tick (road page, Drive saved)
+  roadBadge: '#00796B', // round Iconic Road badge (road page, route thumbnails, Home's cards)
   onRoadBadge: '#FFFFFF',
   // Stat cards: white with a blue number (Driving time adds a blue icon well).
   warningContainer: '#FEEFC3',

@@ -7,15 +7,16 @@ import { pressedOpacity, radius, type } from '../../theme';
 import { formatDateRange } from '../../utils/format';
 import { mapPlanOf, planKicker, planOutline, planRouteName, stopCounts } from '../../utils/plans';
 import { getReadyRoute } from '../../utils/readyRoutes';
+import RoadBadge from '../RoadBadge';
 import RouteThumb from '../RouteThumb';
-import Icon from '../ui/Icon';
 
 /**
  * A plan on the Planned tab, like a Trips card: blue date line (just the days with no
- * date), name, where it goes ("Brighton → Inverness", as on its page), an Iconic Roads chip, and the planned outline
+ * date), name, where it goes ("Brighton → Inverness", as on its page), and the planned outline
  * in the round thumbnail, starting and ending where the plan's map does (`here`
- * is the phone, for a Day 1 from "Your location"). `done` adds a "Driven
- * 11–12 Oct 2026" chip, its dates from `drivenDates` ({ from, to }). Tapping opens the plan.
+ * is the phone, for a Day 1 from "Your location"), with the Iconic Road mark when it
+ * has any. `done` makes the date line "DRIVEN 11–12 OCT 2026", its dates from
+ * `drivenDates` ({ from, to }). Tapping opens the plan.
  */
 export default function PlanCard({ plan, here = null, done = false, drivenDates = null }) {
   const { c } = useTheme();
@@ -36,44 +37,38 @@ export default function PlanCard({ plan, here = null, done = false, drivenDates 
     return lines.map(({ index, coordinates }) => ({ key: `drive-${index}`, coordinates, color: c.accent }));
   }, [plan, here, c.accent]);
 
+  const kicker =
+    done && drivenDates
+      ? `DRIVEN ${formatDateRange(drivenDates.from, drivenDates.to).toUpperCase()}`
+      : planKicker(plan);
+  const route = end ? planRouteName(plan, here) : 'No stops yet';
+
   return (
     <Pressable
       onPress={() => router.push(`/plans/${plan.id}`)}
       accessibilityRole="link"
+      accessibilityLabel={
+        roads > 0
+          ? `${plan.name}, ${kicker.toLowerCase()}, ${route}, includes ${roads} ${roads === 1 ? 'Iconic Road' : 'Iconic Roads'}`
+          : undefined
+      }
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <View style={styles.text}>
         <Text style={[type.caps, styles.kicker]} numberOfLines={1}>
-          {planKicker(plan)}
+          {kicker}
         </Text>
         <Text style={[type.bodyStrong, styles.title]} numberOfLines={1}>
           {plan.name}
         </Text>
         <Text style={[type.body, styles.muted]} numberOfLines={1}>
-          {end ? planRouteName(plan, here) : 'No stops yet'}
+          {route}
         </Text>
-        {roads > 0 || done ? (
-          <View style={styles.chips}>
-            {roads > 0 ? (
-              <View style={[styles.chip, styles.roadChip]}>
-                <Icon name="verified" size={14} color={c.onRoadContainer} />
-                <Text style={[type.nav, styles.roadChipText]}>
-                  {roads} {roads === 1 ? 'Iconic Road' : 'Iconic Roads'}
-                </Text>
-              </View>
-            ) : null}
-            {done ? (
-              <View style={[styles.chip, styles.outlinedChip]}>
-                <Icon name="check" size={14} color={c.textMuted} />
-                <Text style={[type.nav, styles.muted]}>
-                  {drivenDates ? `Driven ${formatDateRange(drivenDates.from, drivenDates.to)}` : 'Driven'}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
       </View>
-      <RouteThumb segments={segments} />
+      <View>
+        <RouteThumb segments={segments} />
+        {roads > 0 ? <RoadBadge ring={c.card} style={styles.corner} /> : null}
+      </View>
     </Pressable>
   );
 }
@@ -93,16 +88,6 @@ const makeStyles = (c) => ({
   kicker: { color: c.accent },
   title: { color: c.text },
   muted: { color: c.textMuted },
-  chips: { flexDirection: 'row', gap: 6, marginTop: 4 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 6 },
-  roadChip: { paddingVertical: 2, paddingLeft: 6, paddingRight: 8, backgroundColor: c.roadContainer },
-  roadChipText: { color: c.onRoadContainer },
-  outlinedChip: {
-    paddingVertical: 1,
-    paddingLeft: 5,
-    paddingRight: 7,
-    borderWidth: 1,
-    borderColor: c.outline,
-  },
+  corner: { position: 'absolute', right: -3, bottom: -3 },
   pressed: { opacity: pressedOpacity },
 });
