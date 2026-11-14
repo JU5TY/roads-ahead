@@ -5,6 +5,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 
 const FADE = 56;
+const EDGE = 4; // this close to an end counts as there
 
 /** A fade from clear to the page colour, pointing `to` 'left' or 'right'. */
 function Fade({ to, color }) {
@@ -35,6 +36,9 @@ export default function PillRow({ style, contentContainerStyle, children, ...res
   const [x, setX] = useState(0);
   const [width, setWidth] = useState(0);
   const [contentWidth, setContentWidth] = useState(0);
+  // Also read where it stopped: the last scroll event of a fling can be skipped,
+  // which left the end fade showing at the end.
+  const track = (e) => setX(e.nativeEvent.contentOffset.x);
   return (
     <View style={style}>
       <ScrollView
@@ -43,14 +47,16 @@ export default function PillRow({ style, contentContainerStyle, children, ...res
         contentContainerStyle={contentContainerStyle}
         onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
         onContentSizeChange={(w) => setContentWidth(w)}
-        onScroll={(e) => setX(e.nativeEvent.contentOffset.x)}
-        scrollEventThrottle={32}
+        onScroll={track}
+        onScrollEndDrag={track}
+        onMomentumScrollEnd={track}
+        scrollEventThrottle={16}
         {...rest}
       >
         {children}
       </ScrollView>
-      {x > 1 ? <Fade to="left" color={c.background} /> : null}
-      {x + width < contentWidth - 1 ? <Fade to="right" color={c.background} /> : null}
+      {x > EDGE ? <Fade to="left" color={c.background} /> : null}
+      {x + width < contentWidth - EDGE ? <Fade to="right" color={c.background} /> : null}
     </View>
   );
 }

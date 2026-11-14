@@ -92,7 +92,7 @@ export default function UpNext({ plan, active }) {
               <Text style={[type.caps, styles.kicker]} numberOfLines={1}>
                 {kicker}
               </Text>
-              <Text style={[type.section, styles.text]} numberOfLines={1}>
+              <Text style={[type.bodyStrong, styles.text]} numberOfLines={1}>
                 {plan.name}
               </Text>
               <Text style={[type.body, styles.muted]} numberOfLines={1}>
@@ -109,7 +109,8 @@ export default function UpNext({ plan, active }) {
 
 const makeStyles = (c) => ({
   card: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: c.card, ...c.cardShadow },
-  body: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 18, gap: 2 },
+  // The same text, size and spacing as its Trips card.
+  body: { paddingVertical: 14, paddingHorizontal: 16, gap: 2 },
   // Half on the map, half on the card, at the map's bottom right.
   mapEdge: { position: 'absolute', right: 16, top: MAP_HEIGHT - 16 },
   kicker: { color: c.accent },
