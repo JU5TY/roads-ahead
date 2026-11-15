@@ -1,12 +1,11 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import * as Updates from 'expo-updates';
 import { ActivityIndicator, Pressable, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
 import DetailLayout from '../components/detail/DetailLayout';
-import PriceSheet from '../components/PriceSheet';
 import { HeroStats, TitleBlock } from '../components/detail/TripStats';
 import LongDayNote from '../components/plan/LongDayNote';
 import PlanSheet from '../components/plan/PlanSheet';
@@ -14,7 +13,6 @@ import PlanTimeline from '../components/plan/PlanTimeline';
 import StartDriveSheet from '../components/plan/StartDriveSheet';
 import NavAppSheet from '../components/NavAppSheet';
 import RouteMap from '../components/RouteMap';
-import VehicleSheet from '../components/VehicleSheet';
 import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
 import FloatingButton from '../components/ui/FloatingButton';
@@ -42,7 +40,6 @@ import {
   setPlanStartDate,
   splitPlanDriveAt,
 } from '../storage/planStorage';
-import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { lineLength } from '../utils/geoMath';
@@ -107,11 +104,10 @@ export default function PlanScreen() {
   // (tabs show once there are two days).
   const [tab, setTab] = useState(null);
   const [driven, setDriven] = useState(() => new Set()); // planned drive ids with a recording
-  // 'options' | 'edit' | 'road' | 'back' | 'vehicle' | 'price' | 'go' | 'nav' | { stop, at } | { start, at }
+  // 'options' | 'edit' | 'road' | 'back' | 'go' | 'nav' | { stop, at } | { start, at }
   // (`at`: the day the stop or start is in)
   const [menu, setMenu] = useState(null);
   const [sheet, setSheet] = useState(null); // the last { stop } or { start } menu, kept while it closes
-  const priceNext = useRef(false); // the price sheet opens once the vehicle sheet has gone
   const [dragging, setDragging] = useState(false); // a stop is being dragged: the page holds still
   const { here, ready: hereReady } = useHere();
   const insets = useSafeAreaInsets();
@@ -140,8 +136,8 @@ export default function PlanScreen() {
   const mapPlan = useMemo(() => (plan ? mapPlanOf(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const routes = usePlanRoutes(mapPlan, tab, hereReady);
-  const { units, prices, setPrice, navApp } = useSettings();
-  const [vehicles, reloadVehicles] = useVehicles();
+  const { units, prices, navApp } = useSettings();
+  const [vehicles] = useVehicles();
   // Plans aren't tied to a car: the fuel is worked out for the default one.
   const vehicle = vehicles?.find((v) => v.isDefault) ?? null;
 
@@ -242,9 +238,8 @@ export default function PlanScreen() {
   const miles = (metres) => formatDistance(metres, units);
   const time = (seconds) => formatDurationShort(seconds * 1000);
   // '£19 fuel' (or '£8 charging') once the car's own figure and its price are
-  // both set; until then, a link to add them.
+  // both set; until then, nothing.
   const electric = !!vehicle?.electric;
-  const priceKind = electric ? 'charge' : 'fuel';
   const summaryOf = (results) => {
     const asked = results.filter((r) => r.status !== 'none');
     if (asked.some((r) => r.status === 'failed' || r.status === 'limited')) {
@@ -282,27 +277,10 @@ export default function PlanScreen() {
   const goSummary = daySummary;
   // Fuel from the road times, else from the lines' miles, so it shows either way.
   const tripCost = tripSummary.status === 'done' ? tripSummary.cost : costOf(tripLineMetres);
-  const askCost = vehicles != null && !tripCost && (tripSummary.status === 'done' || tripLineMetres != null);
   // Days with more driving than most people manage, flagged on All.
   const longDays = routes.drives
     .map((d, i) => ({ i, seconds: d.status === 'done' ? d.route.seconds : 0 }))
     .filter((d) => d.seconds > LONG_DAY_S);
-  const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
-  // The car's figure first (adding the car if there's none), then the price.
-  const addCost = () => setMenu(vehicle && hasFigure(vehicle) ? 'price' : 'vehicle');
-  const saveVehicle = async (fields) => {
-    try {
-      if (vehicle) await updateVehicle(vehicle.id, fields);
-      else await addVehicle(fields);
-    } catch (err) {
-      console.warn('[garage] save failed', err);
-    }
-    // Reloaded first, so the price sheet opens for the car's fuel as saved.
-    await reloadVehicles();
-    // Then the price, if that's still missing, once the vehicle sheet has gone.
-    priceNext.current = hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'];
-    setMenu(null);
-  };
   // Drive i's leg texts and which legs take a ferry, by the id of the stop each leg arrives at.
   const legsOf = (i) => {
     const { status, route, legStops } = routes.drives[i];
@@ -462,29 +440,6 @@ export default function PlanScreen() {
         }
         onClose={() => setMenu(null)}
       />
-      <VehicleSheet
-        visible={menu === 'vehicle'}
-        vehicle={vehicle}
-        others={(vehicles ?? []).filter((v) => v !== vehicle)}
-        focusEfficiency
-        onSave={saveVehicle}
-        onClose={() => setMenu(null)}
-        onClosed={() => {
-          if (!priceNext.current) return;
-          priceNext.current = false;
-          setMenu('price');
-        }}
-      />
-      <PriceSheet
-        visible={menu === 'price'}
-        kind={priceKind}
-        price={prices[priceKind]?.price}
-        onSave={(price) => {
-          setPrice(priceKind, price);
-          setMenu(null);
-        }}
-        onClose={() => setMenu(null)}
-      />
       <ActionSheet
         visible={menu === 'road'}
         actions={[...ICONIC_ROADS]
@@ -568,24 +523,12 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
 
-      {/* The trip's fuel goes with its date and days ("14 MAY 2027 · 3 DAYS · £96 FUEL");
-          until it can be worked out, a link to add it follows where it goes. */}
+      {/* The trip's fuel goes with its date and days ("14 MAY 2027 · 3 DAYS · £96 FUEL"),
+          once the car's figure and its price are set. */}
       <TitleBlock
         kicker={tripCost ? `${planKicker(plan)} · ${tripCost.toUpperCase()}` : planKicker(plan)}
         title={plan.name}
-        subtitle={
-          <>
-            {tripName}
-            {askCost ? (
-              <>
-                {' · '}
-                <Text style={styles.link} onPress={addCost} accessibilityRole="link">
-                  {electric ? 'Add charging cost' : 'Add fuel cost'}
-                </Text>
-              </>
-            ) : null}
-          </>
-        }
+        subtitle={tripName}
       />
 
       {/* All, where the route is planned, then a tab per day, once there's more than one. */}
@@ -671,5 +614,4 @@ const makeStyles = (c) => ({
   pressed: { opacity: pressedOpacity },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  link: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
 });

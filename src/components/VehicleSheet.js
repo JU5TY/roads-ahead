@@ -35,7 +35,7 @@ function Field({ label, error, suffix, ...input }) {
 }
 
 // Mounted only while the sheet is open, so it starts from the saved vehicle each time.
-function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDelete }) {
+function VehicleForm({ vehicle, others: othersNow, onSave, onDelete }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const [fields, setFields] = useState({
@@ -106,7 +106,7 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
           value={fields.make}
           onChangeText={set('make')}
           autoCapitalize="words"
-          autoFocus={!vehicle && !focusEfficiency}
+          autoFocus={!vehicle}
           returnKeyType="next"
         />
         <Field
@@ -151,7 +151,6 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
           onChangeText={set(fields.electric ? 'milesPerKwh' : 'mpg')}
           keyboardType="decimal-pad"
           maxLength={5}
-          autoFocus={!!vehicle && focusEfficiency}
           returnKeyType="done"
           onSubmitEditing={save}
         />
@@ -178,29 +177,12 @@ function VehicleForm({ vehicle, others: othersNow, focusEfficiency, onSave, onDe
  * Add a vehicle (no `vehicle`) or edit / remove one. `others` are the Garage's
  * other vehicles, to tell when a registration is needed. onSave gets
  * { make, model, registration } as typed, `electric`, and mpg and
- * milesPerKwh as numbers or null. Without onDelete there's no Remove;
- * `focusEfficiency` starts a saved vehicle's sheet in its mpg (or miles per
- * kWh) field, for Add fuel cost on a plan.
+ * milesPerKwh as numbers or null. Without onDelete there's no Remove.
  */
-export default function VehicleSheet({
-  visible,
-  vehicle,
-  others,
-  focusEfficiency,
-  onSave,
-  onDelete,
-  onClose,
-  onClosed,
-}) {
+export default function VehicleSheet({ visible, vehicle, others, onSave, onDelete, onClose }) {
   return (
-    <BottomSheet visible={visible} onClose={onClose} onClosed={onClosed}>
-      <VehicleForm
-        vehicle={vehicle}
-        others={others}
-        focusEfficiency={focusEfficiency}
-        onSave={onSave}
-        onDelete={onDelete}
-      />
+    <BottomSheet visible={visible} onClose={onClose}>
+      <VehicleForm vehicle={vehicle} others={others} onSave={onSave} onDelete={onDelete} />
     </BottomSheet>
   );
 }
