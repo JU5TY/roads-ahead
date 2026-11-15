@@ -568,15 +568,14 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
 
-      {/* As a trip's page: where it goes under its name, here with the trip's fuel
-          ("Brighton → Inverness · £96 fuel"), or a link to add it. */}
+      {/* The trip's fuel goes with its date and days ("14 MAY 2027 · 3 DAYS · £96 FUEL");
+          until it can be worked out, a link to add it follows where it goes. */}
       <TitleBlock
-        kicker={planKicker(plan)}
+        kicker={tripCost ? `${planKicker(plan)} · ${tripCost.toUpperCase()}` : planKicker(plan)}
         title={plan.name}
         subtitle={
           <>
             {tripName}
-            {tripCost ? ` · ${tripCost}` : null}
             {askCost ? (
               <>
                 {' · '}

@@ -580,9 +580,9 @@ export default function TripScreen() {
           <Text style={[type.section, styles.text]} numberOfLines={1}>
             {oneWayLabel({ start: dayDrives[0].places.start, end: dayDrives.at(-1).places.end }) ?? `Day ${dayNo}`}
           </Text>
+          {/* The picked pill already says which day. */}
           <Text style={[type.body, styles.muted]} numberOfLines={1}>
             {[
-              `Day ${dayNo}`,
               formatDayDate(dayDrives[0].startedAt),
               `${dayDrives.length} drives`,
               ...(hiddenCount
@@ -599,7 +599,7 @@ export default function TripScreen() {
           </Text>
           <Text style={[type.body, styles.muted]} numberOfLines={1}>
             {[
-              ...(days.length > 1 ? [`Day ${dayNumberOf(selected)}`] : []),
+              ...(days.length > 1 && !dayNo ? [`Day ${dayNumberOf(selected)}`] : []),
               formatDayDate(selected.startedAt),
               ...(selected.stats.timesHidden
                 ? []
