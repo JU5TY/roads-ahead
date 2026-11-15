@@ -25,8 +25,7 @@ function Marker({ kind, color }) {
   return <View style={[styles.dot, { backgroundColor: kind === 'start' ? c.start : c.finish }]} />;
 }
 
-function EventRow({ item, color, onPress, onDriveOptions, hideTimes }) {
-  const { c } = useTheme();
+function EventRow({ item, color, onPress, hideTimes }) {
   const styles = useStyles(makeStyles);
   const isStop = item.type === 'stop';
   const isCrossing = item.type === 'crossing';
@@ -58,17 +57,6 @@ function EventRow({ item, color, onPress, onDriveOptions, hideTimes }) {
         </Text>
         <Text style={[type.small, styles.muted]}>{subtitle}</Text>
       </View>
-      {item.type === 'start' && item.driveId && onDriveOptions ? (
-        <Pressable
-          onPress={() => onDriveOptions(item.driveId)}
-          accessibilityRole="button"
-          accessibilityLabel="Drive options"
-          hitSlop={4}
-          style={({ pressed }) => [styles.options, pressed && styles.pressed]}
-        >
-          <Icon name="more_vert" size={24} color={c.textMuted} />
-        </Pressable>
-      ) : null}
     </View>
   );
 
@@ -186,8 +174,6 @@ function roadsOnLeg(items, i, roads) {
  * completed on; `hideTimes` drops clock times and durations. `photos` (from
  * usePhotos) puts the ones taken at a rest stop under it. `colorOfDay(n)`
  * colours a trip timeline's items by their day instead of `color`.
- * `onDriveOptions(driveId)` puts a ⋮ on each drive's Start row, for that
- * drive's own actions (move, link, delete), now that the tabs are days.
  */
 export default function Timeline({
   items,
@@ -198,7 +184,6 @@ export default function Timeline({
   hideTimes = false,
   photos = [],
   colorOfDay,
-  onDriveOptions,
 }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -243,7 +228,6 @@ export default function Timeline({
             item={item}
             color={colorOfDay && item.day ? colorOfDay(item.day) : color}
             onPress={onStopPress}
-            onDriveOptions={onDriveOptions}
             hideTimes={hideTimes}
           />
         );
@@ -277,7 +261,6 @@ const makeStyles = (c) => ({
   dots: { flex: 1, justifyContent: 'space-evenly' },
   railDot: { width: 4, height: 4, borderRadius: 2 },
   flex: { flex: 1, minWidth: 0 },
-  options: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   title: { color: c.text },
   muted: { color: c.textMuted, flexShrink: 1 },
   gapText: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -50,6 +50,7 @@ import {
   driveElapsedMs,
   groupIntoDays,
   oneWayLabel,
+  routeLabel,
   summarizeDrives,
   tripOneWayLabel,
   tripTitle,
@@ -73,7 +74,7 @@ export default function TripScreen() {
   const [menu, setMenu] = useState(null); // null | 'options' | 'edit' | 'drive' | 'move' | 'link' | 'vehicle'
   // The tab: a day's number, or null for All; until one's tapped, the day of `drive`.
   const [pickedDay, setPickedDay] = useState(undefined);
-  const [menuDriveId, setMenuDriveId] = useState(null); // the drive whose ⋮ was tapped
+  const [menuDriveId, setMenuDriveId] = useState(null); // the drive whose options are open
   const [vehicles, setVehicles] = useState([]); // the Garage
   const [loads, setLoads] = useState(0); // bumped to load the trip again (after deleting or linking a drive)
   // The plans the trip's drives were planned as: planned drive id → { planId, planName, number }.
@@ -296,7 +297,9 @@ export default function TripScreen() {
   const selectedLink = selected ? (planLinks.get(selected.planDriveId) ?? null) : null;
   const latestLink = [...trip.drives].reverse().map((d) => planLinks.get(d.planDriveId)).find(Boolean);
   const tripPlan = selectedLink ?? latestLink ?? null;
-  // The drive whose ⋮ (on its Start row in the Timeline) was tapped, and its plan link.
+  // The drives the menu offers options for: a picked day's, or a one-drive trip's; none on All.
+  const menuDrives = single ? trip.drives : (dayDrives ?? []);
+  // The drive whose options were opened from the menu, and its plan link.
   const menuDrive = trip.drives.find((d) => d.id === menuDriveId) ?? null;
   const menuLink = menuDrive ? (planLinks.get(menuDrive.planDriveId) ?? null) : null;
   const openDriveMenu = (driveId) => {
@@ -463,11 +466,20 @@ export default function TripScreen() {
               exportTrip(trip);
             },
           },
+          // The picked day's drives (a one-drive trip's drive), each opening its own menu.
+          ...menuDrives.map((d) => ({
+            key: `drive-${d.id}`,
+            icon: 'directions_car',
+            label: menuDrives.length > 1 ? `Drive ${trip.drives.indexOf(d) + 1} options` : 'Drive options',
+            detail: menuDrives.length > 1 ? routeLabel(d.places) : null,
+            chevron: true,
+            onPress: () => openDriveMenu(d.id),
+          })),
           { icon: 'delete', label: 'Delete trip', style: 'destructive', onPress: confirmDelete },
         ]}
         onClose={() => setMenu(null)}
       />
-      {/* One drive's own actions, from the ⋮ on its Start row. */}
+      {/* One drive's own actions, from the trip menu's Drive options. */}
       <ActionSheet
         visible={menu === 'drive' && !!menuDrive}
         message={menuDrive ? `Drive ${trip.drives.indexOf(menuDrive) + 1}` : null}
@@ -620,7 +632,6 @@ export default function TripScreen() {
           colorOfDay={selected || days.length === 1 ? undefined : dayColorOf}
           units={units}
           onStopPress={selected ? showDriveStop : showTripStop}
-          onDriveOptions={openDriveMenu}
           roads={viewRoads.map((r) => ({
             name: getRoad(r.roadId)?.name,
             completedAt: r.completedAt,

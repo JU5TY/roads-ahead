@@ -65,7 +65,8 @@ export function MenuRow({ icon, label, detail, badge, selected, destructive, che
  * `selected` adds a blue tick at the row's end; the row itself looks like any
  * other (rows without icons, e.g. the break reminder). Like every sheet, it closes on the handle, a pull down, the scrim
  * or Back (onClose).
- * actions: [{ label, key?, detail?, icon?, badge?, selected?, onPress, style?: 'destructive' }]
+ * A `chevron` row opens another menu.
+ * actions: [{ label, key?, detail?, icon?, badge?, selected?, chevron?, onPress, style?: 'destructive' }]
  */
 export default function ActionSheet({ visible, message, actions, onClose }) {
   const styles = useStyles(makeStyles);
@@ -86,6 +87,7 @@ export default function ActionSheet({ visible, message, actions, onClose }) {
                   detail={a.detail}
                   badge={a.badge}
                   selected={a.selected}
+                  chevron={a.chevron}
                   destructive={destructive}
                   onPress={a.onPress}
                 />
