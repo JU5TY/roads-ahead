@@ -164,7 +164,6 @@ export default function PlanScreen() {
   const start = driveStart(plan, picked);
   const fitCoords = all ? outline.flatMap((d) => d.coordinates) : (outline[picked]?.coordinates ?? []);
   const finish = wayStops.length ? driveReach(wayPlan, picked) : null;
-  const shownStops = stopCounts(plan, all ? null : picked).stops;
   const act = (fn) => () => {
     setMenu(null);
     fn().then(reload).catch((err) => console.warn('[plan] change failed', err));
@@ -283,18 +282,7 @@ export default function PlanScreen() {
   const goSummary = daySummary;
   // Fuel from the road times, else from the lines' miles, so it shows either way.
   const tripCost = tripSummary.status === 'done' ? tripSummary.cost : costOf(tripLineMetres);
-  const dayCost = daySummary.status === 'done' ? daySummary.cost : costOf(lineMetresOf([picked]));
   const askCost = vehicles != null && !tripCost && (tripSummary.status === 'done' || tripLineMetres != null);
-  const stopsText = (n) => `${n} ${n === 1 ? 'stop' : 'stops'}`;
-  // "6 stops · £96 fuel": a stop count (or "No stops yet", unless it goes straight
-  // somewhere), then the fuel once it's known. Missing road times are said on
-  // the Driving time card, not here.
-  const lineParts = (stops, goesSomewhere, cost) => [
-    stops ? stopsText(stops) : goesSomewhere ? null : 'No stops yet',
-    cost,
-  ];
-  const tripLine = lineParts(stopCounts(plan).stops, mapPlan.drives.some((d) => d.stops.length), tripCost);
-  const dayLine = lineParts(shownStops, wayStops.length > 0, dayCost);
   // Days with more driving than most people manage, flagged on All.
   const longDays = routes.drives
     .map((d, i) => ({ i, seconds: d.status === 'done' ? d.route.seconds : 0 }))
@@ -580,19 +568,26 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
 
-      {/* As a trip's page: where it goes under its name, here with its stops and fuel. */}
-      <TitleBlock kicker={planKicker(plan)} title={plan.name} subtitle={tripName} />
-      <Text style={[type.bodySmall, styles.muted, styles.tripLine]}>
-        {tripLine.filter(Boolean).join(' · ')}
-        {askCost ? (
+      {/* As a trip's page: where it goes under its name, here with the trip's fuel
+          ("Brighton → Inverness · £96 fuel"), or a link to add it. */}
+      <TitleBlock
+        kicker={planKicker(plan)}
+        title={plan.name}
+        subtitle={
           <>
-            {tripLine.some(Boolean) ? ' · ' : ''}
-            <Text style={styles.link} onPress={addCost} accessibilityRole="link">
-              {electric ? 'Add charging cost' : 'Add fuel cost'}
-            </Text>
+            {tripName}
+            {tripCost ? ` · ${tripCost}` : null}
+            {askCost ? (
+              <>
+                {' · '}
+                <Text style={styles.link} onPress={addCost} accessibilityRole="link">
+                  {electric ? 'Add charging cost' : 'Add fuel cost'}
+                </Text>
+              </>
+            ) : null}
           </>
-        ) : null}
-      </Text>
+        }
+      />
 
       {/* All, where the route is planned, then a tab per day, once there's more than one. */}
       {plan.drives.length > 1 ? (
@@ -620,9 +615,6 @@ export default function PlanScreen() {
           <Text style={[type.section, styles.text]} numberOfLines={2}>
             {finish ? routeName : `From ${start?.name ?? 'your location'}`}
           </Text>
-          {dayLine.some(Boolean) ? (
-            <Text style={[type.bodySmall, styles.muted]}>{dayLine.filter(Boolean).join(' · ')}</Text>
-          ) : null}
         </View>
       )}
 
@@ -669,7 +661,6 @@ const makeStyles = (c) => ({
   noMap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: c.mapLand },
   tabsScroll: { flexGrow: 0, marginTop: spacing.md, marginHorizontal: -spacing.md },
   tabs: { gap: 8, paddingHorizontal: spacing.md },
-  tripLine: { marginTop: 2, marginHorizontal: 4 },
   heading: { marginTop: 20, marginHorizontal: 4, gap: 2 },
   timeline: { marginTop: 20 },
   aloneTime: { marginTop: 20 },
