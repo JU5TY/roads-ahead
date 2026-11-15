@@ -18,7 +18,6 @@ import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { createPlan } from '../storage/planStorage';
 import { dayColorFor, floating, type } from '../theme';
-import { countriesAlong } from '../utils/countries';
 import { formatDateRange } from '../utils/format';
 import { LONG_DAY_S, mapPlanOf } from '../utils/plans';
 import { getReadyRoute, routeDriveFrom, routeLabel, routePlanDrives } from '../utils/readyRoutes';
@@ -104,12 +103,13 @@ export default function ReadyRouteScreen() {
     { key: 'finish', coordinate: finish, title: lastStop.name, color: c.finish },
   ];
   // Driving time once every day's road time is in; until then, just the miles.
+  // A day Google couldn't route (offline, or its daily cap) says Unavailable, as on a plan.
   const timed = routes.drives.every((d) => d.status === 'done');
+  const unavailable = routes.drives.some((d) => d.status === 'failed' || d.status === 'limited');
   const seconds = timed ? routes.drives.reduce((sum, d) => sum + d.route.seconds, 0) : 0;
   const longDays = timed
     ? routes.drives.map((d, i) => ({ i, seconds: d.route.seconds })).filter((d) => d.seconds > LONG_DAY_S)
     : [];
-  const roadCount = new Set(route.drives.flatMap((d) => d.stops.map((s) => s.roadId).filter(Boolean))).size;
   const map = <RouteMap flat segments={segments} markers={markers} />;
 
   return (
@@ -159,9 +159,8 @@ export default function ReadyRouteScreen() {
       <HeroStats
         stats={{ distanceM: route.metres, movingTimeMs: seconds * 1000 }}
         units={units}
-        roadCount={roadCount}
-        countryCount={countriesAlong(segments.map((sg) => sg.coordinates))}
-        showTime={timed}
+        showTime={timed || unavailable}
+        timeNote={unavailable ? 'Unavailable' : null}
       />
       {longDays.map(({ i, seconds: s }) => (
         <LongDayNote key={i} day={i + 1} seconds={s} />

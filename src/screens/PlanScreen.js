@@ -45,7 +45,6 @@ import {
 import { addVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
 import { formatDistance, formatDurationShort } from '../utils/format';
-import { countriesAlong } from '../utils/countries';
 import { lineLength } from '../utils/geoMath';
 import { planLink } from '../utils/planLink';
 import { driveCost, formatDriveCost } from '../utils/fuel';
@@ -300,11 +299,6 @@ export default function PlanScreen() {
   const longDays = routes.drives
     .map((d, i) => ({ i, seconds: d.status === 'done' ? d.route.seconds : 0 }))
     .filter((d) => d.seconds > LONG_DAY_S);
-  // The countries the plan (or the picked day) passes through: its road lines once
-  // routed, else the straight outline, a few points along each.
-  const countryCount = countriesAlong(
-    (all ? outline.map((_, i) => i) : [picked]).map((i) => routes.lines[i] ?? outline[i]?.coordinates ?? [])
-  );
   const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
   // The car's figure first (adding the car if there's none), then the price.
   const addCost = () => setMenu(vehicle && hasFigure(vehicle) ? 'price' : 'vehicle');
@@ -640,8 +634,6 @@ export default function PlanScreen() {
             movingTimeMs: (summary.seconds ?? 0) * 1000,
           }}
           units={units}
-          roadCount={stopCounts(plan, all ? null : picked).roads}
-          countryCount={countryCount}
           longDay={(!all || plan.drives.length === 1) && summary.seconds > LONG_DAY_S}
           // Hidden for the second the times take; said plainly when they can't be had.
           showTime={summary.status === 'done' || summary.status === 'failed'}
@@ -649,7 +641,7 @@ export default function PlanScreen() {
         />
       ) : summary.status === 'failed' ? (
         // No road times and no saved lines to measure: just say so, where the time goes.
-        <StatRow style={styles.aloneTime} stats={[{ icon: 'timer', label: 'Driving time', note: 'Unavailable' }]} />
+        <StatRow style={styles.aloneTime} stats={[{ icon: 'timer', label: 'Driving time', value: 'Unavailable' }]} />
       ) : null}
       {all && plan.drives.length > 1
         ? longDays.map(({ i, seconds }) => (

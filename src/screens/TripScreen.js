@@ -613,8 +613,6 @@ export default function TripScreen() {
         stats={selected ? selected.stats : { ...summary, movingTimeMs: timeSummary.movingTimeMs }}
         units={units}
         timesHidden={hideTimes}
-        roadCount={new Set(viewRoads.map((r) => r.roadId)).size}
-        countryCount={viewCountries.length}
       />
       {selected ? (
         <IconicRoadsSection

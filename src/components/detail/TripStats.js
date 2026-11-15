@@ -29,12 +29,11 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
 }
 
 /**
- * The headline: Distance and Driving time in one split card, then Iconic Roads
- * and countries chips (as on the trip list); the rest is in DetailsRows.
- * `stats` is a drive's stats or a summarizeDrives() result. `timesHidden`
- * (a drive that starts and ends at an Iconic Road) puts Highest point in
- * Driving time's place, as on an Iconic Road, with a note under the card; `roadCount` and `countryCount` (shown from 2)
- * add chips. `longDay` marks a plan's day with more driving than most people
+ * The headline: Distance and Driving time in one split card; the rest is in
+ * DetailsRows. `stats` is a drive's stats or a summarizeDrives() result.
+ * `timesHidden` (a drive that starts and ends at an Iconic Road) puts Highest
+ * point in Driving time's place, as on an Iconic Road, with a note under the
+ * card. `longDay` marks a plan's day with more driving than most people
  * manage (amber Driving time). `showTime={false}` leaves Driving time out
  * while it's still being worked out (an Iconic Trip); `timeNote` takes the
  * time's place when it can't be had ("Unavailable").
@@ -43,13 +42,10 @@ export function HeroStats({
   stats,
   units,
   timesHidden = false,
-  roadCount = 0,
-  countryCount = 0,
   longDay = false,
   showTime = true,
   timeNote = null,
 }) {
-  const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const distance = distanceParts(stats.distanceM, units);
 
@@ -66,9 +62,8 @@ export function HeroStats({
             ? [
                 {
                   icon: 'timer',
-                  value: timeNote ? null : formatDurationShort(stats.movingTimeMs),
+                  value: timeNote ?? formatDurationShort(stats.movingTimeMs),
                   label: 'Driving time',
-                  note: timeNote,
                   caution: longDay,
                 },
               ]
@@ -76,24 +71,6 @@ export function HeroStats({
         ]}
       />
       {timesHidden ? <TimesHiddenCard /> : null}
-      {roadCount > 0 || countryCount > 1 ? (
-        <View style={styles.chips}>
-          {roadCount > 0 ? (
-            <View style={[styles.chip, styles.chipRoads]}>
-              <Icon name="landscape" size={18} color={c.onRoadContainer} filled />
-              <Text style={[type.label, styles.chipRoadsText]}>
-                {roadCount} {roadCount === 1 ? 'Iconic Road' : 'Iconic Roads'}
-              </Text>
-            </View>
-          ) : null}
-          {countryCount > 1 ? (
-            <View style={styles.chip}>
-              <Icon name="public" size={18} color={c.textMuted} />
-              <Text style={[type.label, styles.chipText]}>{countryCount} countries</Text>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
     </>
   );
 }
@@ -191,26 +168,12 @@ const makeStyles = (c) => ({
   subtitle: { color: c.textMuted, marginTop: 2, marginHorizontal: 4 },
   notes: { color: c.text, marginTop: 10, marginHorizontal: 4 },
   stats: { marginTop: 18 },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 32,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: c.outline,
-  },
-  chipText: { color: c.textMuted, fontFamily: type.nav.fontFamily },
   group: {
     paddingHorizontal: 12,
     borderRadius: radius.card,
     backgroundColor: c.card,
     ...c.cardShadow,
   },
-  chipRoads: { borderWidth: 0, backgroundColor: c.roadContainer },
-  chipRoadsText: { color: c.onRoadContainer },
   hidden: {
     marginTop: 10,
     flexDirection: 'row',
