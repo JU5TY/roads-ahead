@@ -70,7 +70,7 @@ describe('Iconic Trips', () => {
     expect(routeLabel(nc500)).toBe('Round trip from Inverness');
     expect(routeDriveFrom(nc500, 0)).toBe('Inverness');
     expect(routeDriveFrom(nc500, 1)).toBe('Applecross');
-    expect(routeDriveLine(nc500, 0, 'imperial')).toMatch(/^\d+ mi · 2 stops$/);
+    expect(routeDriveLine(nc500, 0, 'imperial')).toMatch(/^\d+(\.\d)? mi · 2 stops$/);
     expect(routeDriveRoads(nc500, 0)).toEqual(['Bealach na Bà']);
     expect(routeDriveRoads(nc500, 2)).toEqual([]);
   });

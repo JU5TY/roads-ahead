@@ -29,7 +29,7 @@ function routeLine(route, state, units) {
   }
   if (state) return `${route.country} · in ${state.plan.name}`;
   const days = `${route.drives.length} ${route.drives.length === 1 ? 'day' : 'days'}`;
-  return `${route.country} · ${formatDistance(route.metres, units, 0)} · ${days}`;
+  return `${route.country} · ${formatDistance(route.metres, units)} · ${days}`;
 }
 
 /**

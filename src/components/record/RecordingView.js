@@ -223,14 +223,14 @@ export default function RecordingView({
             <Text style={[type.stat, styles.liveValue]} numberOfLines={1} adjustsFontSizeToFit>
               {distance}
             </Text>
-            <Text style={styles.liveLabel}>distance</Text>
+            <Text style={styles.liveLabel}>Distance</Text>
           </View>
           <View style={styles.liveDivider} />
-          <View style={styles.liveStat} accessible accessibilityLabel={`Driving ${driving}`}>
+          <View style={styles.liveStat} accessible accessibilityLabel={`Driving time ${driving}`}>
             <Text style={[type.stat, styles.liveValue]} numberOfLines={1} adjustsFontSizeToFit>
               {driving}
             </Text>
-            <Text style={styles.liveLabel}>driving</Text>
+            <Text style={styles.liveLabel}>Driving time</Text>
           </View>
         </View>
 

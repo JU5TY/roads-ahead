@@ -32,7 +32,7 @@ export default function CountriesSection({ rows, units, scope }) {
               ) : null}
             </View>
             <Text style={[type.bodyStrong, styles.text]}>
-              {formatDistance(row.distanceM, units, row.distanceM < 16000 ? 1 : 0)}
+              {formatDistance(row.distanceM, units)}
             </Text>
           </View>
         ))}

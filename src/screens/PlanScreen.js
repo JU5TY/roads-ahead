@@ -241,7 +241,7 @@ export default function PlanScreen() {
 
   // Miles and times: '142 mi · 3h 10m', for the picked drive or (All) the whole
   // trip once every drive has come back, and each leg's.
-  const miles = (metres) => formatDistance(metres, units, metres < 16000 ? 1 : 0);
+  const miles = (metres) => formatDistance(metres, units);
   const time = (seconds) => formatDurationShort(seconds * 1000);
   // '£19 fuel' (or '£8 charging') once the car's own figure and its price are
   // both set; until then, a link to add them.

@@ -286,7 +286,7 @@ export default function AddStopScreen() {
                   well={c.roadContainer}
                   ink={c.onRoadContainer}
                   name={road.name}
-                  detail={`${roadPlace(road)} · ${formatDistance(metres, units, 0)} away`}
+                  detail={`${roadPlace(road)} · ${formatDistance(metres, units)} away`}
                   note={inPlan ? 'In plan' : null}
                   addLabel={addLabel(road.name)}
                   onAdd={

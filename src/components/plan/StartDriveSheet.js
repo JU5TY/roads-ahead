@@ -54,7 +54,7 @@ export default function StartDriveSheet({
             </View>
             <View style={styles.flex}>
               <Text style={[type.bodyStrong, styles.onAccent]}>
-                {`You’re ${formatDistance(awayM, units, 0)} from ${start.name ?? 'the start'}`}
+                {`You’re ${formatDistance(awayM, units)} from ${start.name ?? 'the start'}`}
               </Text>
               <Text style={[type.small, styles.accentMuted, styles.detail]}>{`${appName} takes you there first`}</Text>
             </View>

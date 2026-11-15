@@ -15,8 +15,11 @@ export const toDistance = (meters, units) =>
 export const toSpeed = (mps, units) =>
   (mps ?? 0) * (units === 'imperial' ? 3600 / METERS_PER_MILE : 3.6);
 
-export const formatDistance = (meters, units, digits = 1) =>
-  `${grouped(toDistance(meters, units), digits)} ${distanceUnit(units)}`;
+/** "11.8 mi", "485 mi": one decimal under 100, as distanceParts, everywhere a distance shows. */
+export function formatDistance(meters, units) {
+  const { value, unit } = distanceParts(meters, units);
+  return `${value} ${unit}`;
+}
 
 export const formatSpeed = (mps, units) => `${Math.round(toSpeed(mps, units))} ${speedUnit(units)}`;
 

@@ -4,6 +4,7 @@ import { useStyles, useTheme } from '../../hooks/useTheme';
 import { radius, type } from '../../theme';
 import {
   distanceParts,
+  elevationParts,
   formatDurationShort,
   formatElevation,
   formatSpeed,
@@ -31,8 +32,8 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
  * The headline: Distance and Driving time in one split card, then Iconic Roads
  * and countries chips (as on the trip list); the rest is in DetailsRows.
  * `stats` is a drive's stats or a summarizeDrives() result. `timesHidden`
- * leaves Distance alone in the card with a note under it (a drive that starts
- * and ends at an Iconic Road); `roadCount` and `countryCount` (shown from 2)
+ * (a drive that starts and ends at an Iconic Road) puts Highest point in
+ * Driving time's place, as on an Iconic Road, with a note under the card; `roadCount` and `countryCount` (shown from 2)
  * add chips. `longDay` marks a plan's day with more driving than most people
  * manage (amber Driving time). `showTime={false}` leaves Driving time out
  * while it's still being worked out (an Iconic Trip); `timeNote` takes the
@@ -58,6 +59,9 @@ export function HeroStats({
         style={styles.stats}
         stats={[
           { icon: 'conversion_path', ...distance, label: 'Distance' },
+          ...(timesHidden
+            ? [{ icon: 'altitude', ...elevationParts(stats.maxAltitudeM, units), label: 'Highest point' }]
+            : []),
           ...(showTime && !timesHidden
             ? [
                 {
@@ -71,7 +75,7 @@ export function HeroStats({
             : []),
         ]}
       />
-      {showTime && timesHidden ? <TimesHiddenCard /> : null}
+      {timesHidden ? <TimesHiddenCard /> : null}
       {roadCount > 0 || countryCount > 1 ? (
         <View style={styles.chips}>
           {roadCount > 0 ? (
@@ -116,9 +120,10 @@ function TimesHiddenCard() {
 /**
  * "Details" rows, in three groups: time (Elapsed, Longest stretch, Rest stops),
  * height (Highest point, Climb) and speed (Avg, then Max, low-key last).
- * With `timesHidden` only rest stops and height are left. Rest stops is left
- * out when there are none, Longest stretch when it's just the moving time
- * again (or unknown), and the section when no rows are left.
+ * With `timesHidden` only rest stops and Climb are left (Highest point is in
+ * the card). Rest stops is left out when there are none, Longest stretch
+ * when it's just the moving time again (or unknown), and the section when no
+ * rows are left.
  * `hiddenNote` explains that some drives' times were left out of a trip's totals.
  */
 export function DetailsRows({
@@ -139,7 +144,7 @@ export function DetailsRows({
     ['trending_up', 'Climb', formatElevation(stats.elevationGainM, units)],
   ];
   const rows = timesHidden
-    ? [...(hasStops ? [['local_cafe', 'Rest stops', String(stats.stopCount)]] : []), ...height]
+    ? [...(hasStops ? [['local_cafe', 'Rest stops', String(stats.stopCount)]] : []), height[1]]
     : [
         ['schedule', 'Elapsed time', formatDurationShort(elapsedMs)],
         ...(showLongest ? [['hourglass_top', 'Longest stretch', longest]] : []),

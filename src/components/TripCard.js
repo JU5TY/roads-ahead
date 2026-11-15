@@ -34,7 +34,7 @@ export default function TripCard({ trip, units, variant = 'row', showMap = true,
   const kicker = tripKicker(first.startedAt, last.endedAt, dayCount);
   const title = tripTitle(trip) ?? formatDate(first.startedAt);
   const meta =
-    formatDistance(summary.distanceM, units, summary.distanceM < 100000 ? 1 : 0) +
+    formatDistance(summary.distanceM, units) +
     (timed.length > 0 ? ` · ${formatDurationShort(movingTimeMs)}` : '');
   const roads = roadCount > 0 ? `includes ${roadCount} ${roadCount === 1 ? 'Iconic Road' : 'Iconic Roads'}` : null;
 

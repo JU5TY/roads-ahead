@@ -185,11 +185,11 @@ export default function RoadScreen() {
     />
   );
 
-  // Length and Highest point on every road; the rest is in Details, Corners
+  // Distance and Highest point on every road; the rest is in Details, Corners
   // taking Bends' place where they're counted (the Ring).
   const steepest = road.steepestPct ? `${road.steepestPct}%` : null;
   const stats = [
-    { icon: 'conversion_path', ...length, label: 'Length' },
+    { icon: 'conversion_path', ...length, label: 'Distance' },
     { icon: 'altitude', ...highest, label: 'Highest point' },
   ];
   // [icon, title, value]

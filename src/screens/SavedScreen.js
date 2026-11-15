@@ -84,7 +84,7 @@ export default function SavedScreen() {
     trip.drives.length > 1 ? `Drive ${driveNumber} saved${name ? ` · ${name}` : ''}` : 'Drive saved'
   ).toUpperCase();
   const distance = distanceParts(drive.stats.distanceM, units);
-  const climb = elevationParts(drive.stats.elevationGainM, units);
+  const highest = elevationParts(drive.stats.maxAltitudeM, units);
   // The cross goes Home. View goes Home too, then opens the trip on top with
   // this drive picked, so Back from the trip lands on Home, not Record.
   const close = () => router.navigate('/');
@@ -129,13 +129,14 @@ export default function SavedScreen() {
           {routeLabel(drive.places) ?? formatDate(drive.startedAt)}
         </Text>
         <FadeUp delay={300} style={styles.stats}>
-          {/* Same tiles as an Iconic Road's. When times are hidden, Climb takes
-              Driving time's place; the rest is on the trip page (View). */}
+          {/* Distance and Driving time, as everywhere; when times are hidden, Highest
+              point takes Driving time's place, as on an Iconic Road. The rest is on
+              the trip page (View). */}
           <StatRow
             stats={[
               { icon: 'conversion_path', ...distance, label: 'Distance' },
               drive.stats.timesHidden
-                ? { icon: 'trending_up', ...climb, label: 'Climb' }
+                ? { icon: 'altitude', ...highest, label: 'Highest point' }
                 : {
                     icon: 'timer',
                     value: formatDurationShort(drive.stats.movingTimeMs),

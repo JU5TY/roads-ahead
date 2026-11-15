@@ -73,7 +73,7 @@ export const routeDriveRoads = (route, index) =>
 export function routeDriveLine(route, index, units) {
   const { stops, metres } = route.drives[index];
   const places = stops.filter((s) => !s.roadId).length - (stops.at(-1).roadId ? 0 : 1);
-  return [formatDistance(metres, units, 0), ...(places > 0 ? [`${places} ${places === 1 ? 'stop' : 'stops'}`] : [])].join(
+  return [formatDistance(metres, units), ...(places > 0 ? [`${places} ${places === 1 ? 'stop' : 'stops'}`] : [])].join(
     ' · '
   );
 }
