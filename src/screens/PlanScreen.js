@@ -5,8 +5,10 @@ import { ActivityIndicator, Pressable, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ActionSheet from '../components/ActionSheet';
+import CountriesSection from '../components/countries/CountriesSection';
 import DetailLayout from '../components/detail/DetailLayout';
-import { HeroStats, TitleBlock } from '../components/detail/TripStats';
+import FuelCostRow from '../components/detail/FuelCostRow';
+import { DetailsCard, HeroStats, TitleBlock } from '../components/detail/TripStats';
 import LongDayNote from '../components/plan/LongDayNote';
 import PlanSheet from '../components/plan/PlanSheet';
 import PlanTimeline from '../components/plan/PlanTimeline';
@@ -17,7 +19,7 @@ import { showDialog } from '../components/ui/DialogHost';
 import FilterChip from '../components/ui/FilterChip';
 import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
-import InfoNote from '../components/ui/InfoNote';
+import ListRow from '../components/ui/ListRow';
 import PillRow from '../components/ui/PillRow';
 import StatRow from '../components/ui/StatRow';
 import { useHere } from '../hooks/useHere';
@@ -41,6 +43,7 @@ import {
   splitPlanDriveAt,
 } from '../storage/planStorage';
 import { dayColorFor, floating, pressedOpacity, spacing, type } from '../theme';
+import { lineCountryRows } from '../utils/countries';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { lineLength } from '../utils/geoMath';
 import { planLink } from '../utils/planLink';
@@ -137,7 +140,7 @@ export default function PlanScreen() {
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const routes = usePlanRoutes(mapPlan, tab, hereReady);
   const { units, prices, navApp } = useSettings();
-  const [vehicles] = useVehicles();
+  const [vehicles, reloadVehicles] = useVehicles();
   // Plans aren't tied to a car: the fuel is worked out for the default one.
   const vehicle = vehicles?.find((v) => v.isDefault) ?? null;
 
@@ -262,11 +265,6 @@ export default function PlanScreen() {
       ? days.reduce((sum, i) => sum + lineLength(routes.lines[i]), 0)
       : null;
   };
-  const costOf = (metres) => {
-    const pounds =
-      vehicle && metres != null ? driveCost(metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
-    return pounds != null ? formatDriveCost(pounds, electric) : null;
-  };
   const tripLineMetres = lineMetresOf(plan.drives.map((_, i) => i));
   const lineMetres = all ? tripLineMetres : lineMetresOf([picked]);
   // The title's line is the whole trip's; a picked day has its own under the day pills.
@@ -275,8 +273,24 @@ export default function PlanScreen() {
   const summary = all ? tripSummary : daySummary;
   // Start drive's sheet is always about one drive.
   const goSummary = daySummary;
-  // Fuel from the road times, else from the lines' miles, so it shows either way.
-  const tripCost = tripSummary.status === 'done' ? tripSummary.cost : costOf(tripLineMetres);
+  // The Distance shown: Google's road miles, else the saved lines' (null until either is in).
+  const shownMetres = summary.status === 'done' ? summary.metres : lineMetres;
+  // Fuel from those miles, so it shows either way; null until the car's figure and price are set.
+  const shownPounds =
+    vehicle && shownMetres != null
+      ? driveCost(shownMetres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price })
+      : null;
+  const shownStops = stopCounts(plan, all ? null : picked).stops;
+  // Countries from the road lines, once every day going somewhere has one.
+  const goingDays = (all ? plan.drives.map((_, i) => i) : [picked]).filter((i) => mapPlan.drives[i].stops.length);
+  const countryRows =
+    goingDays.length && goingDays.every((i) => routes.lines[i])
+      ? lineCountryRows(
+          goingDays.map((i) => routes.lines[i]),
+          goingDays.map((i) => i + 1),
+          { scaleToM: shownMetres, withDays: all && plan.drives.length > 1 }
+        )
+      : [];
   // Days with more driving than most people manage, flagged on All.
   const longDays = routes.drives
     .map((d, i) => ({ i, seconds: d.status === 'done' ? d.route.seconds : 0 }))
@@ -523,13 +537,8 @@ export default function PlanScreen() {
         onClose={() => setMenu(null)}
       />
 
-      {/* The trip's fuel goes with its date and days ("14 MAY 2027 · 3 DAYS · £96 FUEL"),
-          once the car's figure and its price are set. */}
-      <TitleBlock
-        kicker={tripCost ? `${planKicker(plan)} · ${tripCost.toUpperCase()}` : planKicker(plan)}
-        title={plan.name}
-        subtitle={tripName}
-      />
+      {/* As a trip's page: where it goes under its name. */}
+      <TitleBlock kicker={planKicker(plan)} title={plan.name} subtitle={tripName} />
 
       {/* All, where the route is planned, then a tab per day, once there's more than one. */}
       {plan.drives.length > 1 ? (
@@ -585,14 +594,37 @@ export default function PlanScreen() {
 
       <View style={styles.timeline}>{timeline}</View>
 
-      {locked ? (
-        <InfoNote text="Iconic Trips come planned for you. Their days and stops can't be changed." />
-      ) : (
+      {locked ? null : (
         <View style={styles.addRows}>
           <AddRow icon="add_location_alt" label="Add stop" onPress={() => pickPlace('stop')} />
           <AddRow icon="landscape" iconColor={c.ringNumber} filled label="Add Iconic Road" onPress={() => setMenu('road')} />
         </View>
       )}
+
+      {/* As a trip's page: its countries, then Details, for All or the picked day. */}
+      <CountriesSection rows={countryRows} units={units} scope={all ? 'trip' : 'day'} />
+      {shownStops || (shownMetres != null && vehicles != null) ? (
+        <DetailsCard subtitle={all ? 'Whole trip' : 'This day'}>
+          {shownStops ? (
+            <ListRow
+              icon="local_cafe"
+              title="Rest stops"
+              value={String(shownStops)}
+              strongValue
+              dense
+              divider={shownMetres != null && vehicles != null}
+            />
+          ) : null}
+          {shownMetres != null && vehicles != null ? (
+            <FuelCostRow
+              pounds={shownPounds}
+              vehicle={vehicle}
+              vehicles={vehicles}
+              onVehiclesChanged={reloadVehicles}
+            />
+          ) : null}
+        </DetailsCard>
+      ) : null}
     </DetailLayout>
   );
 }

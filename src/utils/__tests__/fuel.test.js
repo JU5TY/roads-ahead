@@ -4,6 +4,7 @@ import {
   formatDriveCost,
   formatEfficiency,
   formatMpg,
+  formatPounds,
   parseChargePrice,
   parseFuelPrice,
   parseMilesPerKwh,
@@ -103,6 +104,11 @@ describe('drive cost', () => {
 
   it('never shows £0', () => {
     expect(formatDriveCost(0.2, false)).toBe('£1 fuel');
+  });
+
+  it('shows just the pounds for a Details row', () => {
+    expect(formatPounds(131.6)).toBe('£132');
+    expect(formatPounds(0.2)).toBe('£1');
   });
 });
 

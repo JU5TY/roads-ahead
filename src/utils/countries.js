@@ -177,6 +177,52 @@ export function countriesAlong(lines, samples = 40) {
   return codes.size;
 }
 
+/** How often a planned road line is checked for its country, in metres along it. */
+const LINE_SAMPLE_M = 1000;
+
+/**
+ * Rows for a plan's Countries section from its road lines (`lines[k]`
+ * [{ latitude, longitude }] is day `days[k]`'s): [{ code, name, flag,
+ * distanceM, subtitle }], in first-visited order. The subtitle is the days a
+ * country is on ("Days 1–3"), left out with `withDays: false` (one day).
+ * `scaleToM` scales the distances to the page's Distance. Stretches at sea
+ * (a ferry) count to the country before them.
+ */
+export function lineCountryRows(lines, days, { scaleToM, withDays = true } = {}) {
+  const visits = lines.flatMap((line, k) => lineVisits(line).map((v) => ({ ...v, day: days[k] })));
+  return summarizeCountries(visits, scaleToM).map((g) => ({
+    ...g,
+    subtitle: withDays ? dayLabel(g.visits.map((v) => v.day)) : null,
+  }));
+}
+
+// A line's countries, worked out once per line (the page redraws often).
+const visitsByLine = new WeakMap();
+
+/** The countries along one road line, in order: [{ code, distanceM }]. */
+function lineVisits(line) {
+  let visits = visitsByLine.get(line);
+  if (visits) return visits;
+  visits = [];
+  let visit = null;
+  let sinceCheck = Infinity;
+  for (let i = 1; i < line.length; i++) {
+    const metres = haversineDistance(line[i - 1], line[i]);
+    if (sinceCheck >= LINE_SAMPLE_M) {
+      sinceCheck = 0;
+      const code = countryAt(line[i - 1].latitude, line[i - 1].longitude);
+      if (code && code !== visit?.code) {
+        visit = { code, distanceM: 0 };
+        visits.push(visit);
+      }
+    }
+    sinceCheck += metres;
+    if (visit) visit.distanceM += metres;
+  }
+  visitsByLine.set(line, visits);
+  return visits;
+}
+
 function countryExactlyAt(lat, lng) {
   // Consecutive points are nearly always in the same country.
   if (lastHit && contains(lastHit, lat, lng)) return lastHit.code;

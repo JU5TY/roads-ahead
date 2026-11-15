@@ -9,6 +9,7 @@ import TripPhotos from '../components/photos/TripPhotos';
 import CountriesSection from '../components/countries/CountriesSection';
 import PrintBanner from '../components/poster/PrintBanner';
 import DetailLayout from '../components/detail/DetailLayout';
+import FuelCostRow from '../components/detail/FuelCostRow';
 import { routeMarkers, stopMarkerKey, stopMarkers } from '../components/detail/mapMarkers';
 import Timeline from '../components/detail/Timeline';
 import IconicRoadsSection from '../components/roads/IconicRoadsSection';
@@ -42,6 +43,7 @@ import { routeGaps, routeSegments, withoutCrossings } from '../utils/crossings';
 import { averageMovingSpeed, downsample } from '../utils/geoMath';
 import { getRoad } from '../utils/iconicRoads';
 import { exportTrip } from '../services/exportService';
+import { driveCost } from '../utils/fuel';
 import { countryRows } from '../utils/countries';
 import { buildDriveTimeline, buildTripTimeline } from '../utils/timeline';
 import { vehicleLabel } from '../utils/vehicles';
@@ -62,7 +64,7 @@ const MAX_MAP_POINTS = 3000;
 export default function TripScreen() {
   // `drive` opens on the day of one of the trip's drives (e.g. from an Iconic Road).
   const { id, drive: driveParam } = useLocalSearchParams();
-  const { units } = useSettings();
+  const { units, prices } = useSettings();
   const premium = usePremium();
   const roadTotals = useRoadTotals();
   const { c } = useTheme();
@@ -337,6 +339,22 @@ export default function TripScreen() {
     : usedVehicleIds.length === 1
       ? (vehicles.find((v) => v.id === usedVehicleIds[0]) ?? null)
       : null;
+  // Fuel for what's shown: each drive in its own vehicle (the default when it has
+  // none), at today's price; null until every one can be worked out.
+  const vehicleOf = (d) => vehicles.find((v) => v.id === d.vehicleId) ?? vehicles.find((v) => v.isDefault) ?? null;
+  const costDrives = selected ? [selected] : viewDrives;
+  const driveCosts = costDrives.map((d) => {
+    const v = vehicleOf(d);
+    return v ? driveCost(d.stats.distanceM, v, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
+  });
+  const fuelPounds = driveCosts.every((p) => p != null) ? driveCosts.reduce((sum, p) => sum + p, 0) : null;
+  // Add asks for the first one missing: its vehicle's figure (or a vehicle), then the price.
+  const missingCost = costDrives.find((_, i) => driveCosts[i] == null);
+  const fuelVehicle = missingCost ? vehicleOf(missingCost) : (viewVehicle ?? vehicleOf(costDrives[0]));
+  const reloadVehicles = () =>
+    listVehicles()
+      .then(setVehicles)
+      .catch((err) => console.warn('[garage] load failed', err));
   const chooseVehicle = (vehicleId) => {
     setMenu(null);
     setDriveVehicle(selected.id, vehicleId)
@@ -692,6 +710,14 @@ export default function TripScreen() {
         units={units}
         timesHidden={hideTimes}
         subtitle={dayNo ? 'This day' : selected ? 'This drive' : 'Whole trip'}
+        fuel={
+          <FuelCostRow
+            pounds={fuelPounds}
+            vehicle={fuelVehicle}
+            vehicles={vehicles}
+            onVehiclesChanged={reloadVehicles}
+          />
+        }
         hiddenNote={
           !selected && hiddenCount > 0 && !allHidden
             ? `Times leave out ${hiddenCount === 1 ? 'a drive' : `${hiddenCount} drives`} that ${hiddenCount === 1 ? 'is' : 'are'} just an Iconic Road, for safety.`

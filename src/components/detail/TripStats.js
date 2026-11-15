@@ -102,6 +102,7 @@ function TimesHiddenCard() {
  * when it's just the moving time again (or unknown), and the section when no
  * rows are left.
  * `hiddenNote` explains that some drives' times were left out of a trip's totals.
+ * `fuel` (a FuelCostRow, without its divider) ends the card.
  */
 export function DetailsRows({
   stats,
@@ -110,6 +111,7 @@ export function DetailsRows({
   timesHidden = false,
   hiddenNote,
   subtitle,
+  fuel,
 }) {
   const styles = useStyles(makeStyles);
   const hasStops = stats.stopCount > 0;
@@ -138,11 +140,10 @@ export function DetailsRows({
         ['speed', 'Average speed', formatSpeed(averageMovingSpeed(stats), units)],
         ['bolt', 'Max speed', formatSpeed(stats.topSpeedMps, units)],
       ];
-  if (rows.length === 0) return null;
+  if (rows.length === 0 && !fuel) return null;
   return (
     <>
-      <SectionHeader title="Details" subtitle={subtitle} />
-      <View style={styles.group}>
+      <DetailsCard subtitle={subtitle}>
         {rows.map(([icon, title, value], i) => (
           <ListRow
             key={title}
@@ -151,13 +152,25 @@ export function DetailsRows({
             value={value}
             strongValue
             dense
-            divider={i < rows.length - 1}
+            divider={i < rows.length - 1 || !!fuel}
           />
         ))}
-      </View>
+        {fuel}
+      </DetailsCard>
       {hiddenNote ? (
         <Text style={[type.small, styles.subtitleText, styles.hiddenNote]}>{hiddenNote}</Text>
       ) : null}
+    </>
+  );
+}
+
+/** The "Details" heading ("Whole trip" under it) and the card its rows sit in. */
+export function DetailsCard({ subtitle, children }) {
+  const styles = useStyles(makeStyles);
+  return (
+    <>
+      <SectionHeader title="Details" subtitle={subtitle} />
+      <View style={styles.group}>{children}</View>
     </>
   );
 }
