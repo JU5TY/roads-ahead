@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
+import { fonts, radius, type } from '../../theme';
 import Icon from './Icon';
 
 /**
@@ -10,7 +10,7 @@ import Icon from './Icon';
  * | 'caution' (wide card, amber well and value: a plan's long day).
  * layout: 'tile' (icon over value over label) | 'wide' (icon well left, label
  * over the value: the full-width Driving time card). A wide card's `note`
- * (grey) stands in for a value it can't show.
+ * ("Unavailable") stands in for a value it can't show.
  */
 export default function StatCard({
   icon,
@@ -63,7 +63,7 @@ export default function StatCard({
         <View style={styles.flex}>
           <Text style={labelStyle}>{label}</Text>
           {note ? (
-            <Text style={[type.bodyLarge, styles.note, { color: tc.muted }]}>{note}</Text>
+            <Text style={[type.bodyLarge, styles.note, { color: tc.fg }]}>{note}</Text>
           ) : (
             <Text style={[type.stat, { color: tc.fg }]} numberOfLines={1}>
               {value}
@@ -99,7 +99,8 @@ const makeStyles = () => ({
   well: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   value: { marginTop: 10 },
-  // In place of a value: on the value's line, not as tall.
-  note: { marginTop: 4 },
+  // In place of a value: on the value's line, not as tall, but in its colour
+  // and weight so it reads as the answer under the grey label.
+  note: { marginTop: 4, fontFamily: fonts.medium },
   strongLabel: { fontFamily: type.smallStrong.fontFamily },
 });

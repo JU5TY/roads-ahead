@@ -35,7 +35,7 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
  * `countryCount` (shown from 2) add chips. `longDay` marks a plan's day with
  * more driving than most people manage (amber Driving time). `showTime={false}`
  * leaves Driving time out while it's still being worked out (an Iconic Trip);
- * `timeNote` takes the time's place when it can't be had ("Unavailable right now").
+ * `timeNote` takes the time's place when it can't be had ("Unavailable").
  */
 export function HeroStats({
   stats,

@@ -250,7 +250,7 @@ export default function PlanScreen() {
   const summaryOf = (results) => {
     const asked = results.filter((r) => r.status !== 'none');
     if (asked.some((r) => r.status === 'failed' || r.status === 'limited')) {
-      return { status: 'failed', text: 'Road times unavailable right now' };
+      return { status: 'failed', text: 'Road times unavailable' };
     }
     if (!asked.length || asked.some((r) => r.status !== 'done')) return { status: asked.length ? 'loading' : 'none' };
     // Miles on the road (a ferry's crossing isn't driven, so isn't in the fuel either); time door to door.
@@ -645,11 +645,11 @@ export default function PlanScreen() {
           longDay={(!all || plan.drives.length === 1) && summary.seconds > LONG_DAY_S}
           // Hidden for the second the times take; said plainly when they can't be had.
           showTime={summary.status === 'done' || summary.status === 'failed'}
-          timeNote={summary.status === 'failed' ? 'Unavailable right now' : null}
+          timeNote={summary.status === 'failed' ? 'Unavailable' : null}
         />
       ) : summary.status === 'failed' ? (
         // No road times and no saved lines to measure: just say so, where the time goes.
-        <StatCard layout="wide" tone="accent" icon="timer" label="Driving time" note="Unavailable right now" style={styles.aloneTime} />
+        <StatCard layout="wide" tone="accent" icon="timer" label="Driving time" note="Unavailable" style={styles.aloneTime} />
       ) : null}
       {all && plan.drives.length > 1
         ? longDays.map(({ i, seconds }) => (
