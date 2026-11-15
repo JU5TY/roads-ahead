@@ -12,7 +12,7 @@ import { averageMovingSpeed } from '../../utils/geoMath';
 import Icon from '../ui/Icon';
 import ListRow from '../ui/ListRow';
 import SectionHeader from '../ui/SectionHeader';
-import StatCard from '../ui/StatCard';
+import StatRow from '../ui/StatRow';
 
 /** Green caps line, title, grey subtitle and optional notes. Edited from the menu, not by tapping. */
 export function TitleBlock({ kicker, title, subtitle, notes }) {
@@ -28,14 +28,15 @@ export function TitleBlock({ kicker, title, subtitle, notes }) {
 }
 
 /**
- * The headline: distance, with Iconic Roads and countries chips (as on the trip list),
- * and Driving time; the rest is in DetailsRows. `stats` is a drive's stats or
- * a summarizeDrives() result. `timesHidden` swaps Driving time for a note (a
- * drive that starts and ends at an Iconic Road); `roadCount` and
- * `countryCount` (shown from 2) add chips. `longDay` marks a plan's day with
- * more driving than most people manage (amber Driving time). `showTime={false}`
- * leaves Driving time out while it's still being worked out (an Iconic Trip);
- * `timeNote` takes the time's place when it can't be had ("Unavailable").
+ * The headline: Distance and Driving time in one split card, then Iconic Roads
+ * and countries chips (as on the trip list); the rest is in DetailsRows.
+ * `stats` is a drive's stats or a summarizeDrives() result. `timesHidden`
+ * leaves Distance alone in the card with a note under it (a drive that starts
+ * and ends at an Iconic Road); `roadCount` and `countryCount` (shown from 2)
+ * add chips. `longDay` marks a plan's day with more driving than most people
+ * manage (amber Driving time). `showTime={false}` leaves Driving time out
+ * while it's still being worked out (an Iconic Trip); `timeNote` takes the
+ * time's place when it can't be had ("Unavailable").
  */
 export function HeroStats({
   stats,
@@ -53,14 +54,24 @@ export function HeroStats({
 
   return (
     <>
-      <View
-        style={styles.hero}
-        accessible
-        accessibilityLabel={`Distance ${distance.value} ${distance.unit}`}
-      >
-        <Text style={styles.heroValue}>{distance.value}</Text>
-        <Text style={styles.heroUnit}>{distance.unit}</Text>
-      </View>
+      <StatRow
+        style={styles.stats}
+        stats={[
+          { icon: 'conversion_path', ...distance, label: 'Distance' },
+          ...(showTime && !timesHidden
+            ? [
+                {
+                  icon: 'timer',
+                  value: timeNote ? null : formatDurationShort(stats.movingTimeMs),
+                  label: 'Driving time',
+                  note: timeNote,
+                  caution: longDay,
+                },
+              ]
+            : []),
+        ]}
+      />
+      {showTime && timesHidden ? <TimesHiddenCard /> : null}
       {roadCount > 0 || countryCount > 1 ? (
         <View style={styles.chips}>
           {roadCount > 0 ? (
@@ -77,22 +88,6 @@ export function HeroStats({
               <Text style={[type.label, styles.chipText]}>{countryCount} countries</Text>
             </View>
           ) : null}
-        </View>
-      ) : null}
-      {showTime ? (
-        <View style={styles.grid}>
-          {timesHidden ? (
-            <TimesHiddenCard />
-          ) : (
-            <StatCard
-              layout="wide"
-              tone={longDay ? 'caution' : 'accent'}
-              icon="timer"
-              label={longDay ? 'Driving time · a long day' : 'Driving time'}
-              value={timeNote ? null : formatDurationShort(stats.movingTimeMs)}
-              note={timeNote}
-            />
-          )}
         </View>
       ) : null}
     </>
@@ -190,16 +185,8 @@ const makeStyles = (c) => ({
   title: { color: c.text, marginTop: 4, marginHorizontal: 4 },
   subtitle: { color: c.textMuted, marginTop: 2, marginHorizontal: 4 },
   notes: { color: c.text, marginTop: 10, marginHorizontal: 4 },
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginTop: 18,
-    marginHorizontal: 4,
-  },
-  heroValue: { ...type.total, color: c.text },
-  heroUnit: { ...type.totalUnit, color: c.textMuted },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  stats: { marginTop: 18 },
+  chips: { flexDirection: 'row', gap: 8, marginTop: 12 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,7 +198,6 @@ const makeStyles = (c) => ({
     borderColor: c.outline,
   },
   chipText: { color: c.textMuted, fontFamily: type.nav.fontFamily },
-  grid: { gap: 10, marginTop: 20 },
   group: {
     paddingHorizontal: 12,
     borderRadius: radius.card,
@@ -221,6 +207,7 @@ const makeStyles = (c) => ({
   chipRoads: { borderWidth: 0, backgroundColor: c.roadContainer },
   chipRoadsText: { color: c.onRoadContainer },
   hidden: {
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,

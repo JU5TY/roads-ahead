@@ -291,7 +291,7 @@ export default function SettingsScreen() {
       <SectionHeader variant="label" title="App" />
       {KM_UNITS ? (
         <ListRow
-          icon="straighten"
+          icon="conversion_path"
           title="Units"
           value={UNIT_LABELS[units]}
           onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}

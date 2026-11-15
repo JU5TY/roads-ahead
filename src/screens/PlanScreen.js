@@ -21,7 +21,7 @@ import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
 import InfoNote from '../components/ui/InfoNote';
 import PillRow from '../components/ui/PillRow';
-import StatCard from '../components/ui/StatCard';
+import StatRow from '../components/ui/StatRow';
 import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
 import { useSettings } from '../context/SettingsContext';
@@ -649,7 +649,7 @@ export default function PlanScreen() {
         />
       ) : summary.status === 'failed' ? (
         // No road times and no saved lines to measure: just say so, where the time goes.
-        <StatCard layout="wide" tone="accent" icon="timer" label="Driving time" note="Unavailable" style={styles.aloneTime} />
+        <StatRow style={styles.aloneTime} stats={[{ icon: 'timer', label: 'Driving time', note: 'Unavailable' }]} />
       ) : null}
       {all && plan.drives.length > 1
         ? longDays.map(({ i, seconds }) => (

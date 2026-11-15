@@ -133,7 +133,7 @@ export default function SavedScreen() {
               Driving time's place; the rest is on the trip page (View). */}
           <StatRow
             stats={[
-              { icon: 'straighten', ...distance, label: 'Distance' },
+              { icon: 'conversion_path', ...distance, label: 'Distance' },
               drive.stats.timesHidden
                 ? { icon: 'trending_up', ...climb, label: 'Climb' }
                 : {

@@ -189,7 +189,7 @@ export default function RoadScreen() {
   // taking Bends' place where they're counted (the Ring).
   const steepest = road.steepestPct ? `${road.steepestPct}%` : null;
   const stats = [
-    { icon: 'straighten', ...length, label: 'Length' },
+    { icon: 'conversion_path', ...length, label: 'Length' },
     { icon: 'altitude', ...highest, label: 'Highest point' },
   ];
   // [icon, title, value]
