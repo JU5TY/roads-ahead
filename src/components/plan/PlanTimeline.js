@@ -5,7 +5,6 @@ import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, type } from '../../theme';
 import { getRoad } from '../../utils/iconicRoads';
 import { regroupDays } from '../../utils/plans';
-import Button from '../ui/Button';
 import Icon from '../ui/Icon';
 
 const RAIL_W = 22;
@@ -31,7 +30,7 @@ function Handle({ name, handlers, held }) {
   );
 }
 
-function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, handlers, held }) {
+function EventRow({ kind, color, name, subtitle, linked, onPress, handlers, held }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const body = (
@@ -50,7 +49,6 @@ function EventRow({ kind, color, name, subtitle, linked, onPress, onChange, hand
           </Text>
         </View>
       </View>
-      {onChange ? <Button label="Change" variant="text" size="small" onPress={onChange} /> : null}
       {handlers ? <Handle name={name} handlers={handlers} held={held} /> : null}
     </View>
   );
@@ -140,8 +138,8 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
 
 /**
  * A plan as a timeline, like the Trip page's: one day (its tab), or the whole
- * route (All: `days` of them). A day starts on a green dot ("Day 2 · Start",
- * with Change); its stops are rings and an Iconic Road a chip on the leg it's
+ * route (All: `days` of them). A day starts on a green dot ("Day 2 · Start");
+ * its stops are rings and an Iconic Road a chip on the leg it's
  * driven on. Every day but the last ends where you stay (a red Finish), then
  * the overnight break and the next day's start; the last day ends at its last
  * place, or at the way back (`home`, from withWayBack: onBackPress()).
@@ -153,7 +151,8 @@ function Draggable({ index, shift, dragging, dy, handlers, onLayout, children })
  * Set) are by the id of the stop each leg arrives at; onStopPress(stop, day),
  * onStartPress(day), colorOf(day), by day index. `numbered` (a plan of more
  * than one day) labels starts "Day 2 · Start". `locked` (a copied Iconic
- * Trip) leaves out the handles and taps: nothing can be changed.
+ * Trip) leaves out the handles and taps: nothing can be changed. Every place
+ * that can be changed opens its menu when tapped, the start included.
  */
 export default function PlanTimeline({
   days,
@@ -274,7 +273,7 @@ export default function PlanTimeline({
       kind="start"
       name={d.start?.name ?? 'Your location'}
       subtitle={numbered ? `Day ${d.index + 1} · Start` : 'Start'}
-      onChange={locked || !onStartPress ? undefined : () => onStartPress(d.index)}
+      onPress={locked || !onStartPress ? undefined : () => onStartPress(d.index)}
     />
   );
   // A day with nowhere to go yet; a day going home (the way back) needs no stops.
