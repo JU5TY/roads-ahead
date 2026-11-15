@@ -9,8 +9,7 @@ import PhotoThumb from '../photos/PhotoThumb';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
 
-const TIME_W = 44;
-const RAIL_W = 20;
+const RAIL_W = 22; // as on a plan's timeline, so the two line up
 /** Photos taken this long before or after a rest stop still belong to it. */
 const PHOTO_SLACK_MS = 2 * 60 * 1000;
 const PHOTO_SIZE = 64;
@@ -33,21 +32,22 @@ function EventRow({ item, color, onPress, hideTimes }) {
     ? `Crossed into ${item.country}`
     : item.place ||
       (item.type === 'start' ? 'Start' : item.type === 'finish' ? 'Finish' : 'Rest stop');
-  const subtitle = isCrossing
+  // What the row is, then (unless times are hidden) when: "Day 2 · Start · 08:40".
+  const kind = isCrossing
     ? `${item.from} → ${item.country}`
     : isStop
-      ? hideTimes
-        ? 'Rest stop'
-        : `Rest stop · ${formatDurationShort(item.endTime - item.time)}`
+      ? 'Rest stop'
       : item.type === 'start'
         ? item.dayNumber
           ? `Day ${item.dayNumber} · Start`
           : 'Start'
         : 'Finish';
+  const subtitle = hideTimes
+    ? kind
+    : [kind, formatTime(item.time), ...(isStop ? [formatDurationShort(item.endTime - item.time)] : [])].join(' · ');
 
   const body = (
     <View style={styles.event}>
-      {hideTimes ? null : <Text style={[type.small, styles.time]}>{formatTime(item.time)}</Text>}
       <View style={styles.rail}>
         <Marker kind={item.type} color={color} />
       </View>
@@ -105,7 +105,6 @@ function GapRow({ item, color, units, hideTimes, roads = [] }) {
 
   return (
     <View style={styles.gap}>
-      {hideTimes ? null : <View style={styles.timeSpacer} />}
       <View style={styles.rail}>
         {isSea ? (
           <View style={styles.dots}>
@@ -136,12 +135,12 @@ function GapRow({ item, color, units, hideTimes, roads = [] }) {
 }
 
 /** Thumbnails under a rest stop, lined up with its text; "+N" on the last when there are more. */
-function PhotoRow({ photos, hideTimes, onPress }) {
+function PhotoRow({ photos, onPress }) {
   const styles = useStyles(makeStyles);
   const shown = photos.slice(0, MAX_STOP_PHOTOS);
   const more = photos.length - shown.length;
   return (
-    <View style={[styles.photos, { marginLeft: (hideTimes ? 0 : TIME_W + 12) + RAIL_W + 12 }]}>
+    <View style={[styles.photos, { marginLeft: RAIL_W + 12 }]}>
       {shown.map((photo, i) => (
         <PhotoThumb key={photo.id} photo={photo} size={PHOTO_SIZE} onPress={() => onPress(photo)}>
           {i === shown.length - 1 && more > 0 ? (
@@ -238,7 +237,6 @@ export default function Timeline({
               <PhotoRow
                 key={`photos-${i}`}
                 photos={atStop}
-                hideTimes={hideTimes}
                 onPress={(photo) => setViewing(photos.indexOf(photo))}
               />,
             ]
@@ -252,8 +250,6 @@ const makeStyles = (c) => ({
   regular: { fontFamily: type.body.fontFamily },
   event: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56 },
   gap: { flexDirection: 'row', alignItems: 'stretch', gap: 12, minHeight: 44 },
-  time: { width: TIME_W, textAlign: 'right', color: c.textMuted },
-  timeSpacer: { width: TIME_W },
   rail: { width: RAIL_W, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8 },
   ring: { width: 16, height: 16, borderRadius: 8, borderWidth: 3, backgroundColor: c.background },
