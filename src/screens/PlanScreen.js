@@ -434,8 +434,8 @@ export default function PlanScreen() {
             icon="play_arrow"
             filled
             iconColor={c.start}
-            label={`Day ${picked + 1}`}
-            accessibilityLabel={`Start Day ${picked + 1}`}
+            label={all || plan.drives.length === 1 ? 'Start' : `Day ${picked + 1}`}
+            accessibilityLabel={plan.drives.length === 1 ? 'Start' : `Start Day ${picked + 1}`}
             onPress={() => setMenu('go')}
             style={{ bottom: insets.bottom + floating.recordPill.lift }}
           />
