@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { Children, useEffect, useId, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -27,25 +27,35 @@ function Fade({ to, color }) {
   );
 }
 
-/** A round ‹ or › over a solid end of the row, `side` 'left' or 'right'. */
+/**
+ * A round ‹ or › over a solid end of the row, `side` 'left' or 'right'. The
+ * whole solid end is the button; taps on the fade go through to the pill
+ * under it, so a half-faded pill can still be picked.
+ */
 function Arrow({ side, onPress }) {
   const { c } = useTheme();
   const right = side === 'right';
+  const fade = (
+    <View pointerEvents="none">
+      <Fade to={side} color={c.background} />
+    </View>
+  );
   return (
     <View pointerEvents="box-none" style={[styles.end, right ? styles.right : styles.left]}>
-      {right ? <Fade to="right" color={c.background} /> : null}
-      <View style={[styles.solid, { backgroundColor: c.background }]}>
-        <Pressable
-          onPress={onPress}
-          accessibilityRole="button"
-          accessibilityLabel={right ? 'Show more' : 'Show earlier'}
-          hitSlop={(48 - ARROW) / 2}
-          style={({ pressed }) => [styles.arrow, { borderColor: c.outline }, pressed && { opacity: pressedOpacity }]}
-        >
-          <Icon name={right ? 'chevron_right' : 'chevron_left'} size={20} color={c.text} />
-        </Pressable>
-      </View>
-      {right ? null : <Fade to="left" color={c.background} />}
+      {right ? fade : null}
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={right ? 'Show more' : 'Show earlier'}
+        style={[styles.solid, { backgroundColor: c.background }]}
+      >
+        {({ pressed }) => (
+          <View style={[styles.arrow, { borderColor: c.outline }, pressed && { opacity: pressedOpacity }]}>
+            <Icon name={right ? 'chevron_right' : 'chevron_left'} size={20} color={c.text} />
+          </View>
+        )}
+      </Pressable>
+      {right ? null : fade}
     </View>
   );
 }
@@ -55,7 +65,9 @@ function Arrow({ side, onPress }) {
  * countries). While there's more out of view, that end shows a round › (or ‹
  * once it's been scrolled), even when the pills stop neatly short of the edge;
  * tapping it moves the row on about a screen. A row that fits shows neither.
- * `style` and `contentContainerStyle` are the ScrollView's.
+ * The `selected` pill slides fully into view, clear of the fade and arrow,
+ * when it's picked (or the row opens on it). `style` and
+ * `contentContainerStyle` are the ScrollView's.
  */
 export default function PillRow({ style, contentContainerStyle, children, ...rest }) {
   const scroller = useRef(null);
@@ -67,8 +79,25 @@ export default function PillRow({ style, contentContainerStyle, children, ...res
   const track = (e) => setX(e.nativeEvent.contentOffset.x);
   // A screen less both ends, so the pill that was at the edge stays in view.
   const step = Math.max(width - 2 * END - LEAD, 80);
-  const scrollBy = (dx) =>
-    scroller.current?.scrollTo({ x: Math.min(Math.max(x + dx, 0), contentWidth - width), animated: true });
+  const scrollTo = (to) =>
+    scroller.current?.scrollTo({ x: Math.min(Math.max(to, 0), contentWidth - width), animated: true });
+  const scrollBy = (dx) => scrollTo(x + dx);
+
+  // Where each pill sits along the row, to bring the picked one into view.
+  const pills = Children.toArray(children);
+  const boxes = useRef([]);
+  const picked = pills.findIndex((p) => p.props?.selected);
+  useEffect(() => {
+    const box = boxes.current[picked];
+    if (!box || !width) return;
+    // Clear of the end that's covered: the fade and arrow show while there's more that way.
+    const left = x + (x > EDGE ? END + LEAD : 0);
+    const right = x + width - (x + width < contentWidth - EDGE ? END + LEAD : 0);
+    if (box.x < left) scrollTo(box.x - END - LEAD);
+    else if (box.x + box.width > right) scrollTo(box.x + box.width - width + END + LEAD);
+    // Only when the pick changes or the row is first measured, not as it scrolls.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked, width, contentWidth]);
   return (
     <View style={style}>
       <ScrollView
@@ -84,7 +113,11 @@ export default function PillRow({ style, contentContainerStyle, children, ...res
         scrollEventThrottle={16}
         {...rest}
       >
-        {children}
+        {pills.map((pill, i) => (
+          <View key={pill.key} onLayout={(e) => (boxes.current[i] = e.nativeEvent.layout)}>
+            {pill}
+          </View>
+        ))}
       </ScrollView>
       {x > EDGE ? <Arrow side="left" onPress={() => scrollBy(-step)} /> : null}
       {x + width < contentWidth - EDGE ? <Arrow side="right" onPress={() => scrollBy(step)} /> : null}
