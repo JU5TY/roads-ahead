@@ -73,7 +73,7 @@ function LegRow({ color, road, text, ferry, onPress, handlers, held }) {
         <View style={[styles.bar, { backgroundColor: color }]} />
       </View>
       <View style={styles.legText}>
-        {text && ferry ? <Icon name="directions_boat" size={16} color={c.textMuted} /> : null}
+        {text && ferry ? <Icon name="directions_boat" size={18} color={c.textMuted} /> : null}
         {text ? <Text style={[type.label, styles.muted, styles.regular]}>{text}</Text> : null}
         {road ? (
           <View style={styles.roadChip}>

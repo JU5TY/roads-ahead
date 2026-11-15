@@ -73,7 +73,8 @@ function EventRow({ item, color, onPress, hideTimes }) {
   );
 }
 
-const GAP_ICONS = { leg: 'directions_car', break: 'local_cafe', overnight: 'bedtime' };
+// A leg has no icon: its coloured line says driving, as on a plan.
+const GAP_ICONS = { break: 'local_cafe', overnight: 'bedtime' };
 // Ferries, tunnels and pauses (seaCrossing items): [icon, name].
 const SEA = {
   ferry: ['directions_boat', 'Ferry'],
@@ -117,7 +118,7 @@ function GapRow({ item, color, units, hideTimes, roads = [] }) {
         )}
       </View>
       <View style={styles.gapText}>
-        <Icon name={icon} size={18} color={c.textMuted} />
+        {icon ? <Icon name={icon} size={18} color={c.textMuted} /> : null}
         <Text style={[type.label, styles.muted, styles.regular]} numberOfLines={1}>
           {text}
         </Text>
