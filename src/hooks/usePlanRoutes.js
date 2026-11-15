@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { routeDrive } from '../services/routing';
 import { forgetOldLines, getSavedLineSync, routeKey, saveLine } from '../storage/routeStorage';
 import { driveRoute } from '../utils/plans';
+import { getReadyRoute } from '../utils/readyRoutes';
 
 // Routes asked for since the app opened, by their points. Miles and times may
 // not be kept, so they live only here and go when the app closes.
@@ -19,18 +20,26 @@ function lineFor(key) {
   return saved.get(key);
 }
 
+/**
+ * A copied Iconic Trip's own road lines (OpenStreetMap, ours to keep), one per
+ * drive, [{ latitude, longitude }]: drawn when Google's can't be had, as over
+ * a pass closed for the winter. [] for any other plan.
+ */
+function routeLines(plan) {
+  const route = plan?.routeId ? getReadyRoute(plan.routeId) : null;
+  return route ? route.drives.map((d) => d.line.map(([latitude, longitude]) => ({ latitude, longitude }))) : [];
+}
+
 /** A plan's saved road lines without asking for any (the Add stop map): lines[i] or null. */
 export function useSavedLines(plan) {
-  return useMemo(
-    () =>
-      plan
-        ? plan.drives.map((_, i) => {
-            const ask = driveRoute(plan, i);
-            return ask ? lineFor(routeKey(ask.points)) : null;
-          })
-        : [],
-    [plan]
-  );
+  return useMemo(() => {
+    if (!plan) return [];
+    const own = routeLines(plan);
+    return plan.drives.map((_, i) => {
+      const ask = driveRoute(plan, i);
+      return (ask ? lineFor(routeKey(ask.points)) : null) ?? own[i] ?? null;
+    });
+  }, [plan]);
 }
 
 /**
@@ -40,12 +49,14 @@ export function useSavedLines(plan) {
  * the last 30 days. Returns { drives, lines }: drives[i] = { status: 'none' |
  * 'loading' | 'done' | 'failed' | 'limited', route?: { metres, seconds, legs,
  * line }, legStops }, 'none' for a drive with nowhere to go or not asked for;
- * lines[i] is drive i's road line or null (draw it straight). Nothing is asked
+ * lines[i] is drive i's road line (a copied Iconic Trip's own without Google's)
+ * or null (draw it straight). Nothing is asked
  * until `ready` (useHere's): Drive 1 with no start runs from the phone, so
  * asking sooner would pay for a route from the first stop, then again from here.
  */
 export function usePlanRoutes(plan, picked, ready = true) {
   const asks = useMemo(() => (plan ? plan.drives.map((_, i) => driveRoute(plan, i)) : []), [plan]);
+  const own = useMemo(() => routeLines(plan), [plan]);
   const keys = asks.map((a) => (a ? routeKey(a.points) : null));
   const wanted = (picked == null ? keys : [keys[picked]]).filter(Boolean);
   const wantedId = wanted.join('|');
@@ -85,5 +96,5 @@ export function usePlanRoutes(plan, picked, ready = true) {
     if (status === 'done' && !route) status = 'failed';
     return { status, route, legStops: asks[i]?.legStops ?? [] };
   });
-  return { drives, lines: keys.map(lineFor) };
+  return { drives, lines: keys.map((key, i) => lineFor(key) ?? own[i] ?? null) };
 }
