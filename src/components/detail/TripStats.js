@@ -110,7 +110,6 @@ export function DetailsRows({
   units,
   timesHidden = false,
   hiddenNote,
-  subtitle,
   fuel,
 }) {
   const styles = useStyles(makeStyles);
@@ -143,7 +142,7 @@ export function DetailsRows({
   if (rows.length === 0 && !fuel) return null;
   return (
     <>
-      <DetailsCard subtitle={subtitle}>
+      <DetailsCard>
         {rows.map(([icon, title, value], i) => (
           <ListRow
             key={title}
@@ -164,12 +163,12 @@ export function DetailsRows({
   );
 }
 
-/** The "Details" heading ("Whole trip" under it) and the card its rows sit in. */
-export function DetailsCard({ subtitle, children }) {
+/** The "Details" heading and the card its rows sit in. */
+export function DetailsCard({ children }) {
   const styles = useStyles(makeStyles);
   return (
     <>
-      <SectionHeader title="Details" subtitle={subtitle} />
+      <SectionHeader title="Details" />
       <View style={styles.group}>{children}</View>
     </>
   );

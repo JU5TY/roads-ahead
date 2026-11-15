@@ -709,7 +709,6 @@ export default function TripScreen() {
         elapsedMs={selected ? driveElapsedMs(selected) : timeSummary.elapsedMs}
         units={units}
         timesHidden={hideTimes}
-        subtitle={dayNo ? 'This day' : selected ? 'This drive' : 'Whole trip'}
         fuel={
           <FuelCostRow
             pounds={fuelPounds}

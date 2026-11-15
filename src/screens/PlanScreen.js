@@ -604,7 +604,7 @@ export default function PlanScreen() {
       {/* As a trip's page: its countries, then Details, for All or the picked day. */}
       <CountriesSection rows={countryRows} units={units} scope={all ? 'trip' : 'day'} />
       {shownStops || (shownMetres != null && vehicles != null) ? (
-        <DetailsCard subtitle={all ? 'Whole trip' : 'This day'}>
+        <DetailsCard>
           {shownStops ? (
             <ListRow
               icon="local_cafe"
