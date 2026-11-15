@@ -103,7 +103,7 @@ export default function ReadyRouteScreen() {
     { key: 'finish', coordinate: finish, title: lastStop.name, color: c.finish },
   ];
   // Driving time once every day's road time is in; until then, just the miles.
-  // A day Google couldn't route (offline, or its daily cap) says Unavailable, as on a plan.
+  // A day Google couldn't route (offline, or its daily cap) shows —, as on a plan.
   const timed = routes.drives.every((d) => d.status === 'done');
   const unavailable = routes.drives.some((d) => d.status === 'failed' || d.status === 'limited');
   const seconds = timed ? routes.drives.reduce((sum, d) => sum + d.route.seconds, 0) : 0;
@@ -160,7 +160,7 @@ export default function ReadyRouteScreen() {
         stats={{ distanceM: route.metres, movingTimeMs: seconds * 1000 }}
         units={units}
         showTime={timed || unavailable}
-        timeNote={unavailable ? 'Unavailable' : null}
+        timeNote={unavailable ? '—' : null}
       />
       {longDays.map(({ i, seconds: s }) => (
         <LongDayNote key={i} day={i + 1} seconds={s} />

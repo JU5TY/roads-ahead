@@ -9,8 +9,8 @@ import Icon from './Icon';
  * Stats side by side in one card, split by a divider (as Home's Iconic card):
  * a small blue icon beside a grey label, the number under them (unit in grey).
  * `stats` is [{ icon, value, unit?, label, caution? }], kept to two so the
- * numbers never squash; one fills the card. A value can be a word in place of
- * a number ("Unavailable"), at the same size. `caution` (a plan's long day)
+ * numbers never squash; one fills the card. A value it can't show is "—"
+ * (read out as unavailable), as an unknown height is. `caution` (a plan's long day)
  * turns the icon and number amber and says so under the number.
  */
 export default function StatRow({ stats, style }) {
@@ -26,7 +26,7 @@ export default function StatRow({ stats, style }) {
             <View
               style={styles.half}
               accessible
-              accessibilityLabel={`${label}: ${value}${unit ? ` ${unit}` : ''}${caution ? ', a long day' : ''}`}
+              accessibilityLabel={`${label}: ${value === '—' ? 'unavailable' : `${value}${unit ? ` ${unit}` : ''}`}${caution ? ', a long day' : ''}`}
             >
               <View style={styles.labelRow}>
                 <Icon name={icon} size={16} color={caution ? c.onWarningContainer : c.accent} />

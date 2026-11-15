@@ -637,11 +637,11 @@ export default function PlanScreen() {
           longDay={(!all || plan.drives.length === 1) && summary.seconds > LONG_DAY_S}
           // Hidden for the second the times take; said plainly when they can't be had.
           showTime={summary.status === 'done' || summary.status === 'failed'}
-          timeNote={summary.status === 'failed' ? 'Unavailable' : null}
+          timeNote={summary.status === 'failed' ? '—' : null}
         />
       ) : summary.status === 'failed' ? (
         // No road times and no saved lines to measure: just say so, where the time goes.
-        <StatRow style={styles.aloneTime} stats={[{ icon: 'timer', label: 'Driving time', value: 'Unavailable' }]} />
+        <StatRow style={styles.aloneTime} stats={[{ icon: 'timer', label: 'Driving time', value: '—' }]} />
       ) : null}
       {all && plan.drives.length > 1
         ? longDays.map(({ i, seconds }) => (
