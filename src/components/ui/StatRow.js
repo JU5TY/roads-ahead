@@ -11,8 +11,11 @@ import Icon from './Icon';
  * `stats` is [{ icon, value, unit?, label, caution? }], kept to two so the
  * numbers never squash; one fills the card. A value it can't show is "—"
  * (read out as unavailable), as an unknown height is. `caution` (a plan's long day)
- * turns the icon and number amber and says so under the number.
+ * turns the icon and number amber and says so under the number. A duration's
+ * h and m ("12h 40m") are grey units too.
  */
+const DURATION = /^(\d+h)?( ?\d+m)?$/;
+
 export default function StatRow({ stats, style }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -35,7 +38,17 @@ export default function StatRow({ stats, style }) {
                 </Text>
               </View>
               <Text style={[type.stat, styles.value, { color: fg }]} numberOfLines={1} adjustsFontSizeToFit>
-                {value}
+                {typeof value === 'string' && value && DURATION.test(value)
+                  ? value.split(/([hm])/).map((part, j) =>
+                      j % 2 ? (
+                        <Text key={j} style={[type.statUnit, styles.muted]}>
+                          {part}
+                        </Text>
+                      ) : (
+                        part
+                      ),
+                    )
+                  : value}
                 {unit ? <Text style={[type.statUnit, styles.muted]}> {unit}</Text> : null}
               </Text>
               {caution ? <Text style={[type.small, { color: fg }]}>A long day</Text> : null}
