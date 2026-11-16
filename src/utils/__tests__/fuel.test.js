@@ -86,13 +86,13 @@ describe('drive cost', () => {
   it('matches the mockup: 112 mi at 40 mpg and £1.46 a litre is £19 fuel', () => {
     const cost = driveCost(112 * MILE, petrol(40), { fuel: 1.46, charge: null });
     expect(cost).toBeCloseTo(18.58, 1);
-    expect(formatDriveCost(cost, false)).toBe('£19 fuel');
+    expect(formatDriveCost(cost, false)).toBe('~£19 fuel');
   });
 
   it('costs an electric car by the kWh: 112 mi at 3.5 mi/kWh and 25p is £8 charging', () => {
     const cost = driveCost(112 * MILE, electric(3.5), { fuel: 1.46, charge: 0.25 });
     expect(cost).toBeCloseTo(8, 5);
-    expect(formatDriveCost(cost, true)).toBe('£8 charging');
+    expect(formatDriveCost(cost, true)).toBe('~£8 charging');
   });
 
   it("is null until the car's figure and its own price are both set", () => {
@@ -103,12 +103,12 @@ describe('drive cost', () => {
   });
 
   it('never shows £0', () => {
-    expect(formatDriveCost(0.2, false)).toBe('£1 fuel');
+    expect(formatDriveCost(0.2, false)).toBe('~£1 fuel');
   });
 
   it('shows just the pounds for a Details row', () => {
-    expect(formatPounds(131.6)).toBe('£132');
-    expect(formatPounds(0.2)).toBe('£1');
+    expect(formatPounds(131.6)).toBe('~£132');
+    expect(formatPounds(0.2)).toBe('~£1');
   });
 });
 

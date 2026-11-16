@@ -83,9 +83,9 @@ export function driveCost(metres, vehicle, { fuel, charge }) {
   return vehicle.mpg != null && fuel != null ? (miles / vehicle.mpg) * LITRES_PER_GALLON * fuel : null;
 }
 
-/** "£19", in whole pounds (never "£0"). */
-export const formatPounds = (pounds) => `£${Math.max(1, Math.round(pounds)).toLocaleString()}`;
+/** "~£19", in whole pounds (never "~£0"): the ~ as it's an estimate. */
+export const formatPounds = (pounds) => `~£${Math.max(1, Math.round(pounds)).toLocaleString()}`;
 
-/** "£19 fuel" or "£6 charging", in whole pounds (never "£0"). */
+/** "~£19 fuel" or "~£6 charging", in whole pounds (never "~£0"). */
 export const formatDriveCost = (pounds, electric) =>
   `${formatPounds(pounds)} ${electric ? 'charging' : 'fuel'}`;
