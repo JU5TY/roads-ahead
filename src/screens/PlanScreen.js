@@ -21,6 +21,7 @@ import FloatingButton from '../components/ui/FloatingButton';
 import Icon from '../components/ui/Icon';
 import ListRow from '../components/ui/ListRow';
 import PillRow from '../components/ui/PillRow';
+import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
 import { useHere } from '../hooks/useHere';
 import { usePlanRoutes } from '../hooks/usePlanRoutes';
@@ -593,7 +594,9 @@ export default function PlanScreen() {
           ))
         : null}
 
-      <View style={styles.timeline}>{timeline}</View>
+      {/* Route, as an Iconic Trip's day-by-day list is; a past trip's is its Timeline. */}
+      <SectionHeader title="Route" />
+      {timeline}
 
       {locked ? null : (
         <View style={styles.addRows}>
@@ -637,7 +640,6 @@ const makeStyles = (c) => ({
   tabsScroll: { flexGrow: 0, marginTop: spacing.md, marginHorizontal: -spacing.md },
   tabs: { gap: 8, paddingHorizontal: spacing.md },
   heading: { marginTop: 20, marginHorizontal: 4, gap: 2 },
-  timeline: { marginTop: 20 },
   aloneTime: { marginTop: 20 },
   // A gap, not a line, keeps them apart from the last stop; the icon sits in the timeline's rail.
   addRows: { marginTop: spacing.md },
