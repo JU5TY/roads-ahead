@@ -15,15 +15,14 @@ import ListRow from '../ui/ListRow';
 import SectionHeader from '../ui/SectionHeader';
 import StatRow from '../ui/StatRow';
 
-/** Green caps line, title, grey subtitle and optional notes. Edited from the menu, not by tapping. */
-export function TitleBlock({ kicker, title, subtitle, notes }) {
+/** Green caps line, title and grey subtitle. Edited from the menu, not by tapping. */
+export function TitleBlock({ kicker, title, subtitle }) {
   const styles = useStyles(makeStyles);
   return (
     <View>
       <Text style={[type.kicker, styles.kicker]}>{kicker}</Text>
       <Text style={[type.title, styles.title]}>{title}</Text>
       {subtitle ? <Text style={[type.body, styles.subtitle]}>{subtitle}</Text> : null}
-      {notes ? <Text style={[type.body, styles.notes]}>{notes}</Text> : null}
     </View>
   );
 }
@@ -178,7 +177,6 @@ const makeStyles = (c) => ({
   kicker: { color: c.accent, marginHorizontal: 4 },
   title: { color: c.text, marginTop: 4, marginHorizontal: 4 },
   subtitle: { color: c.textMuted, marginTop: 2, marginHorizontal: 4 },
-  notes: { color: c.text, marginTop: 10, marginHorizontal: 4 },
   stats: { marginTop: 18 },
   group: {
     paddingHorizontal: 12,

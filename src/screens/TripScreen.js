@@ -21,6 +21,7 @@ import MoveDriveSheet from '../components/MoveDriveSheet';
 import RouteMap from '../components/RouteMap';
 import FilterChip from '../components/ui/FilterChip';
 import PillRow from '../components/ui/PillRow';
+import SectionHeader from '../components/ui/SectionHeader';
 import { useSettings } from '../context/SettingsContext';
 import { usePhotos } from '../hooks/usePhotos';
 import { usePremium } from '../hooks/usePremium';
@@ -571,7 +572,6 @@ export default function TripScreen() {
         }
         title={title}
         subtitle={subtitle}
-        notes={trip.notes}
       />
       {days.length > 1 ? (
         // One page per trip: All, or one day at a time.
@@ -664,6 +664,13 @@ export default function TripScreen() {
         // Like the print banner: a picked day, else the trip.
         what={dayNo ? 'day' : 'trip'}
       />
+      {trip.notes && !dayNo ? (
+        // The trip in your words, after its story (timeline, photos) and before the facts. All only.
+        <>
+          <SectionHeader title="Notes" style={styles.notesHeader} />
+          <Text style={[type.lead, styles.muted, styles.notes]}>{trip.notes}</Text>
+        </>
+      ) : null}
       <CountriesSection rows={viewCountries} units={units} scope={selected ? 'drive' : 'trip'} />
       {pointsByDrive ? (
         <ChartsCard
@@ -746,4 +753,6 @@ const makeStyles = (c) => ({
   picked: { marginTop: 16, marginHorizontal: 4 },
   text: { color: c.text },
   muted: { color: c.textMuted },
+  notesHeader: { marginBottom: 8 },
+  notes: { marginHorizontal: 4 },
 });
