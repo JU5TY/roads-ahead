@@ -240,7 +240,7 @@ export default function PlanScreen() {
   // trip once every drive has come back, and each leg's.
   const miles = (metres) => formatDistance(metres, units);
   const time = (seconds) => formatDurationShort(seconds * 1000);
-  // '£19 fuel' (or '£8 charging') once the car's own figure and its price are
+  // '~£19 fuel' (or '~£8 charging') once the car's own figure and its price are
   // both set; until then, nothing.
   const electric = !!vehicle?.electric;
   const summaryOf = (results) => {
@@ -538,7 +538,8 @@ export default function PlanScreen() {
       />
 
       {/* As a trip's page: where it goes under its name. */}
-      <TitleBlock kicker={planKicker(plan)} title={plan.name} subtitle={tripName} />
+      {/* PLANNED, where a past trip's page says DRIVEN, so the two can't be mixed up. */}
+      <TitleBlock kicker={`PLANNED · ${planKicker(plan)}`} title={plan.name} subtitle={tripName} />
 
       {/* All, where the route is planned, then a tab per day, once there's more than one. */}
       {plan.drives.length > 1 ? (

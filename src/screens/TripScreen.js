@@ -565,11 +565,12 @@ export default function TripScreen() {
       />
 
       <TitleBlock
-        kicker={
+        // DRIVEN, where a plan's page says PLANNED, so the two can't be mixed up.
+        kicker={`DRIVEN · ${
           allHidden && days.length === 1
             ? formatDayDate(first.startedAt).toUpperCase()
             : tripKicker(first.startedAt, last.endedAt, days.length, { withYear: true })
-        }
+        }`}
         title={title}
         subtitle={subtitle}
       />
