@@ -30,9 +30,10 @@ const HALO = 14;
 const FADE_TOP = 200; // from here the map fades into the page
 const POINTS_PER_DRIVE = 80;
 
-// The last routes drawn, so coming back to Home doesn't reload every drive.
-// Replaced when a drive is saved or deleted (the key changes).
-let cached = { key: null, parts: [] };
+// The last few maps' routes (Home's, a vehicle's), by their drives, so coming
+// back to one doesn't reload every drive. A saved or deleted drive changes the key.
+const cache = new Map();
+const CACHED_MAPS = 4;
 
 /**
  * Every drive's route, thinned and split at its crossings and pauses:
@@ -43,9 +44,9 @@ let cached = { key: null, parts: [] };
 function useAllRoutes(trips) {
   const drives = useMemo(() => trips.flatMap((t) => t.drives), [trips]);
   const key = drives.map((d) => `${d.id}:${routeGaps(d).length}`).join(',');
-  const [loaded, setLoaded] = useState(cached);
+  const [loaded, setLoaded] = useState([]);
   useEffect(() => {
-    if (cached.key === key) return;
+    if (cache.has(key)) return;
     let cancelled = false;
     const latestDay = new Map(
       groupIntoDays(trips[0]?.drives ?? []).flatMap((day) =>
@@ -61,8 +62,9 @@ function useAllRoutes(trips) {
             day: latestDay.get(drives[i].id) ?? null,
           }))
         );
-        cached = { key, parts: next };
-        setLoaded(cached);
+        cache.set(key, next);
+        if (cache.size > CACHED_MAPS) cache.delete(cache.keys().next().value);
+        setLoaded(next);
       })
       .catch((err) => console.warn('[your map] load failed', err));
     return () => {
@@ -71,8 +73,8 @@ function useAllRoutes(trips) {
     // Only re-run when the drives change, not on every new array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  // The cache when it matches (another visit loaded it), else the last load.
-  return (cached.key === key ? cached : loaded).parts;
+  // The cache when it has these drives (another visit loaded them), else the last load.
+  return cache.get(key) ?? loaded;
 }
 
 /**
@@ -83,8 +85,10 @@ function useAllRoutes(trips) {
  * while the routes are too small to see on it. Its expand button opens the full map. `trips` newest first; `scrollY`
  * is the page's scroll position: the land and routes move at half speed (like the
  * Trip page's map, so they seem to stay behind) and the rest moves with the page.
+ * A vehicle's page passes its own `footer` (in place of the distance and logo)
+ * and `buttons` (in place of expand), laid over the map.
  */
-export default function YourMap({ trips, units, scrollY }) {
+export default function YourMap({ trips, units, scrollY, footer, buttons }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -188,30 +192,36 @@ export default function YourMap({ trips, units, scrollY }) {
           </Svg>
         </Animated.View>
       ) : null}
-      <Pressable
-        onPress={() => router.push('/your-map')}
-        hitSlop={4}
-        accessibilityRole="button"
-        accessibilityLabel="Open your map"
-        style={({ pressed }) => [
-          styles.expand,
-          { top: insets.top + spacing.md },
-          pressed && styles.pressed,
-        ]}
-      >
-        <Icon name="open_in_full" size={20} color={c.text} />
-      </Pressable>
+      {buttons ?? (
+        <Pressable
+          onPress={() => router.push('/your-map')}
+          hitSlop={4}
+          accessibilityRole="button"
+          accessibilityLabel="Open your map"
+          style={({ pressed }) => [
+            styles.expand,
+            { top: insets.top + spacing.md },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Icon name="open_in_full" size={20} color={c.text} />
+        </Pressable>
+      )}
       <View style={styles.footer}>
-        <View style={styles.flex}>
-          <Text style={styles.total}>
-            {distance.value}
-            <Text style={styles.totalUnit}> {distance.unit}</Text>
-          </Text>
-          <Text style={[type.bodyLarge, styles.since]}>driven since {firstDriveMonth(trips)}</Text>
-        </View>
-        <View style={styles.logo}>
-          <AppLogo size={36} />
-        </View>
+        {footer ?? (
+          <>
+            <View style={styles.flex}>
+              <Text style={styles.total}>
+                {distance.value}
+                <Text style={styles.totalUnit}> {distance.unit}</Text>
+              </Text>
+              <Text style={[type.bodyLarge, styles.since]}>driven since {firstDriveMonth(trips)}</Text>
+            </View>
+            <View style={styles.logo}>
+              <AppLogo size={36} />
+            </View>
+          </>
+        )}
       </View>
     </View>
   );

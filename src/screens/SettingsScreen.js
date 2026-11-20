@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +24,7 @@ import { countSavedPoints } from '../storage/driveStorage';
 import { getExampleTripId } from '../storage/exampleTrip';
 import { BREAK_REMINDER_OPTIONS, KM_UNITS } from '../storage/settingsStorage';
 import { listTrips } from '../storage/tripStorage';
-import { addVehicle, deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
+import { addVehicle } from '../storage/vehicleStorage';
 import { spacing, type } from '../theme';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
@@ -102,7 +103,7 @@ export default function SettingsScreen() {
   const [pickingNav, setPickingNav] = useState(false);
   const version = Constants.expoConfig?.version ?? '—';
   const [vehicles, reloadVehicles] = useVehicles();
-  const [editing, setEditing] = useState(null); // null | 'new' | vehicle
+  const [adding, setAdding] = useState(false); // a vehicle opens its own page to edit
   const premium = usePremium();
   // Charging price once there's an electric car; fuel price unless every car is electric.
   const hasElectricCar = !!vehicles?.some((v) => v.electric);
@@ -159,21 +160,11 @@ export default function SettingsScreen() {
 
   const saveVehicle = async (fields) => {
     try {
-      if (editing === 'new') await addVehicle(fields);
-      else await updateVehicle(editing.id, fields);
+      await addVehicle(fields);
     } catch (err) {
       console.warn('[garage] save failed', err);
     }
-    setEditing(null);
-    reloadVehicles();
-  };
-  const removeVehicle = async () => {
-    try {
-      await deleteVehicle(editing.id);
-    } catch (err) {
-      console.warn('[garage] delete failed', err);
-    }
-    setEditing(null);
+    setAdding(false);
     reloadVehicles();
   };
 
@@ -208,12 +199,10 @@ export default function SettingsScreen() {
         onClose={() => setPricing(null)}
       />
       <VehicleSheet
-        visible={editing !== null}
-        vehicle={editing === 'new' ? null : editing}
-        others={(vehicles ?? []).filter((v) => v !== editing)}
+        visible={adding}
+        others={vehicles ?? []}
         onSave={saveVehicle}
-        onDelete={removeVehicle}
-        onClose={() => setEditing(null)}
+        onClose={() => setAdding(false)}
       />
 
       <Text style={[type.headline, styles.h1]} role="heading">
@@ -233,7 +222,7 @@ export default function SettingsScreen() {
           // Just make and model here; the registration shows on drives.
           title={`${v.make} ${v.model}`.trim()}
           subtitle={vehicleSubtitle(v, vehicles, units)}
-          onPress={() => setEditing(v)}
+          onPress={() => router.push(`/vehicles/${v.id}`)}
           style={styles.vehicleRow}
           divider
         />
@@ -248,7 +237,7 @@ export default function SettingsScreen() {
           title={vehicles.length ? 'Add vehicle' : 'Add your vehicle'}
           titleStyle={styles.addTitle}
           right={vehicles.length ? <PremiumTag /> : null}
-          onPress={canAddVehicle ? () => setEditing('new') : openPremium}
+          onPress={canAddVehicle ? () => setAdding(true) : openPremium}
         />
       ) : null}
 

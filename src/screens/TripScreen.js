@@ -733,6 +733,7 @@ export default function TripScreen() {
       />
       <VehicleSection
         vehicle={viewVehicle}
+        vehicles={vehicles}
         count={selected ? 1 : usedVehicleIds.length}
         // A drive's vehicle can change to another, or to any when none is set.
         onChange={

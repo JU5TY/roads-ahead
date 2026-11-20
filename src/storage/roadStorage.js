@@ -122,3 +122,14 @@ export async function getRoadCountsByTrip() {
   );
   return new Map(rows.map((r) => [r.trip_id, r.roads]));
 }
+
+/** The ids of the Iconic Roads completed on a drive in one vehicle (a vehicle's page). */
+export async function getVehicleRoadIds(vehicleId) {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT DISTINCT c.road_id FROM road_completions c JOIN drives d ON d.id = c.drive_id
+     WHERE d.vehicle_id = ?`,
+    vehicleId
+  );
+  return new Set(rows.map((r) => r.road_id));
+}

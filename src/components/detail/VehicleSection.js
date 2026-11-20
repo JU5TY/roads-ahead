@@ -1,51 +1,64 @@
+import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
-import { vehicleLabel } from '../../utils/vehicles';
+import { hasTwin, vehicleLabel } from '../../utils/vehicles';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
 
 /**
- * The Trip page's "Vehicle" section: the vehicle's make and model with its
- * registration under it, and Change when `onChange` is
- * given (a drive). For a whole trip driven in `count` vehicles it says
- * "2 vehicles". Without a vehicle it offers Choose, or shows nothing when
- * there's nothing to choose from. The vehicle's totals live in the Garage.
+ * The Trip page's "Vehicle" section: the vehicle's make and model, opening
+ * its page, and Change vehicle beside the heading when `onChange` is given (a
+ * drive). The registration shows under the name only to tell it from another
+ * of `vehicles` with the same make and model. For a whole trip driven in
+ * `count` vehicles it says "2 vehicles". Without a vehicle it offers Choose,
+ * or shows nothing when there's nothing to choose from.
  */
-export default function VehicleSection({ vehicle, count = 1, onChange }) {
+export default function VehicleSection({ vehicle, vehicles = [], count = 1, onChange }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const several = count > 1;
   if (!vehicle && !several && !onChange) return null;
-  return (
+  const opens = !several && !!vehicle;
+  const registration =
+    opens && vehicle.registration && hasTwin(vehicle, vehicles) ? vehicle.registration : null;
+  const content = (
     <>
-      <SectionHeader title="Vehicle" />
-      <View style={styles.card}>
-        <View style={styles.well}>
-          <Icon name="directions_car" size={26} color={c.accent} />
-        </View>
-        <View style={styles.text}>
-          <Text style={[type.bodyStrong, styles.name]} numberOfLines={1}>
-            {several ? `${count} vehicles` : vehicle ? vehicleLabel(vehicle) : 'No vehicle'}
+      <View style={styles.well}>
+        <Icon name="directions_car" size={26} color={c.accent} />
+      </View>
+      <View style={styles.text}>
+        <Text style={[type.bodyStrong, styles.name]} numberOfLines={1}>
+          {several ? `${count} vehicles` : vehicle ? vehicleLabel(vehicle) : 'No vehicle'}
+        </Text>
+        {registration ? (
+          <Text style={[type.small, styles.registration]} numberOfLines={1}>
+            {registration}
           </Text>
-          {!several && vehicle?.registration ? (
-            <Text style={[type.small, styles.registration]} numberOfLines={1}>
-              {vehicle.registration}
-            </Text>
-          ) : null}
-        </View>
-        {onChange ? (
-          <Pressable
-            onPress={onChange}
-            accessibilityRole="button"
-            accessibilityLabel={vehicle ? 'Change vehicle for this drive' : 'Choose a vehicle'}
-            style={({ pressed }) => [styles.change, pressed && styles.pressed]}
-          >
-            <Text style={[type.button, styles.changeText]}>{vehicle ? 'Change' : 'Choose'}</Text>
-          </Pressable>
         ) : null}
       </View>
+      {opens ? <Icon name="chevron_right" size={24} color={c.textMuted} /> : null}
+    </>
+  );
+  return (
+    <>
+      <SectionHeader
+        title="Vehicle"
+        actionLabel={onChange ? (vehicle ? 'Change vehicle' : 'Choose') : undefined}
+        onAction={onChange ?? undefined}
+      />
+      {opens ? (
+        <Pressable
+          onPress={() => router.push(`/vehicles/${vehicle.id}`)}
+          accessibilityRole="link"
+          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        <View style={styles.card}>{content}</View>
+      )}
     </>
   );
 }
@@ -73,7 +86,5 @@ const makeStyles = (c) => ({
   text: { flex: 1, minWidth: 0 },
   name: { color: c.text },
   registration: { color: c.textMuted, marginTop: 2 },
-  change: { height: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 22 },
-  changeText: { color: c.accent },
   pressed: { opacity: pressedOpacity },
 });

@@ -1,13 +1,13 @@
-import { router, useFocusEffect, useIsFocused } from 'expo-router';
+import { useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import IconicCard from '../components/home/IconicCard';
 import UpNext, { upNextPlan } from '../components/home/UpNext';
 import WeekDistance from '../components/home/WeekDistance';
 import YourMap from '../components/home/YourMap';
 import NoTrips from '../components/NoTrips';
-import RoadsRing from '../components/roads/RoadsRing';
 import TripCard from '../components/TripCard';
 import SectionHeader from '../components/ui/SectionHeader';
 import CountriesCard from '../components/home/CountriesCard';
@@ -18,57 +18,17 @@ import { useRouteStatus } from '../hooks/useRouteStatus';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { drivenPlanDriveIds, listPlans } from '../storage/planStorage';
 import { listTrips } from '../storage/tripStorage';
-import { bottomSpace, pressedOpacity, radius, spacing, type } from '../theme';
+import { bottomSpace, spacing } from '../theme';
 import { ICONIC_ROADS } from '../utils/iconicRoads';
 import { READY_ROUTES } from '../utils/readyRoutes';
 
-/** One half of the Iconic card: a ring, its name and how far along you are; opens its list. */
-function IconicHalf({ completed, total, title, onPress }) {
-  const styles = useStyles(makeStyles);
-  const line = completed ? `${completed} of ${total} completed` : 'Not completed yet';
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="link"
-      accessibilityLabel={`${title}: ${line}`}
-      style={({ pressed }) => [styles.half, pressed && styles.pressed]}
-    >
-      <RoadsRing completed={completed} total={total} of={title} size="small" />
-      <View style={styles.halfText}>
-        <Text style={[type.bodyStrong, styles.text]}>{title}</Text>
-        <Text style={[type.small, styles.muted]}>{line}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
-/** Iconic Roads and Iconic Trips side by side, each half opening its list. */
-function IconicCard() {
-  const styles = useStyles(makeStyles);
+/** Home's Iconic card: every Iconic Road and Iconic Trip completed. */
+function HomeIconicCard() {
   const totals = useRoadTotals();
   const routes = useRouteStatus();
   const roadsDone = totals ? ICONIC_ROADS.filter((r) => totals.has(r.id)).length : 0;
   const tripsDone = routes ? READY_ROUTES.filter((r) => routes.get(r.id)?.completed).length : 0;
-  return (
-    <>
-      <SectionHeader title="Iconic" />
-      <View style={styles.iconic}>
-        <IconicHalf
-          completed={roadsDone}
-          total={ICONIC_ROADS.length}
-          title="Iconic Roads"
-          onPress={() => router.push('/roads')}
-        />
-        <View style={styles.iconicDivider} />
-        <IconicHalf
-          completed={tripsDone}
-          total={READY_ROUTES.length}
-          title="Iconic Trips"
-          onPress={() => router.push('/routes')}
-        />
-      </View>
-    </>
-  );
+  return <IconicCard roadsDone={roadsDone} tripsDone={tripsDone} />;
 }
 
 export default function HomeScreen() {
@@ -142,7 +102,7 @@ export default function HomeScreen() {
         showMap={focused}
         roadCount={roadCounts.get(latest.id) ?? 0}
       />
-      <IconicCard />
+      <HomeIconicCard />
       <CountriesCard trips={trips} />
     </Animated.ScrollView>
   );
@@ -153,13 +113,5 @@ const makeStyles = (c) => ({
   center: { alignItems: 'center', justifyContent: 'center' },
   // Bottom padding clears the floating Record pill above the nav bar.
   content: { paddingHorizontal: spacing.md, paddingBottom: bottomSpace.recordPill },
-  text: { color: c.text },
-  muted: { color: c.textMuted },
-  // As Home's other cards; a hairline between the halves.
-  iconic: { flexDirection: 'row', borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
-  iconicDivider: { width: 1, marginVertical: spacing.md, backgroundColor: c.divider },
-  half: { flex: 1, alignItems: 'center', gap: 10, paddingVertical: 18, paddingHorizontal: spacing.sm },
-  halfText: { alignItems: 'center', gap: 2 },
-  pressed: { opacity: pressedOpacity },
   empty: { paddingTop: 188 }, // the same height as on Trips, under its title
 });

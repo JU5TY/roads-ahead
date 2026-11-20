@@ -25,10 +25,11 @@ async function completedOf(route, trip) {
 }
 
 /**
- * Where each Iconic Trip stands: a Map of route id → { plan, completed },
+ * Where each Iconic Trip stands: a Map of route id → { plan, completed, tripId },
  * for the routes in your plans (the newest copy). `completed` is { from, to }
  * (when its trip was driven) once the trip the plan was driven as covers about
- * 90% of the route's line, in any order across its drives; else null. Null
+ * 90% of the route's line, in any order across its drives; else null. `tripId`
+ * is the trip the plan was driven as (null before it's driven). Null
  * while loading. Reloads on focus; each route's points are only read again
  * when its trip's drives change.
  */
@@ -46,7 +47,7 @@ export function useRouteStatus() {
           const tripId = await getPlanTripId(plan.id);
           const trip = tripId ? await getTrip(tripId) : null;
           const completed = trip?.drives.length ? await completedOf(route, trip) : null;
-          out.set(route.id, { plan, completed });
+          out.set(route.id, { plan, completed, tripId });
         }
         if (!cancelled) setStatus(out);
       })().catch((err) => console.warn('[routes] status failed', err));
