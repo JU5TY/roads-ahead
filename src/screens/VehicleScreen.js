@@ -46,7 +46,7 @@ function efficiencyValue(vehicle) {
 
 /**
  * A vehicle's page, opened from the Garage on You or a trip's Vehicle card:
- * its number plate and name (no map, so it can't be taken for Home), then its
+ * its name and number plate (no map, so it can't be taken for Home), then its
  * totals, Iconic Roads and Trips, countries, highlights, trips and details.
  * The pencil edits it (and removes it).
  */
@@ -159,6 +159,9 @@ export default function VehicleScreen() {
             onPress={() => setEditing('vehicle')}
           />
         </View>
+        <Text style={[type.title, styles.name]} numberOfLines={2} role="heading">
+          {vehicleLabel(vehicle)}
+        </Text>
         {vehicle.registration ? (
           <View style={styles.plate} accessibilityLabel={`Registration ${vehicle.registration}`}>
             <Text style={styles.plateText} numberOfLines={1}>
@@ -166,9 +169,6 @@ export default function VehicleScreen() {
             </Text>
           </View>
         ) : null}
-        <Text style={[type.title, styles.name]} numberOfLines={2} role="heading">
-          {vehicleLabel(vehicle)}
-        </Text>
 
         <StatRow
           style={styles.first}
@@ -280,14 +280,14 @@ const makeStyles = (c) => ({
   content: { paddingHorizontal: spacing.md },
   accent: { color: c.accent },
   bar: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: -4 },
-  // A number plate, white in both themes, centred above the name.
+  // A number plate, white in both themes, centred under the name.
   plate: {
     alignSelf: 'center',
     minWidth: 200,
     height: 44,
     justifyContent: 'center',
     paddingHorizontal: 16,
-    marginTop: 12,
+    marginTop: 16,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: c.plateEdge,
@@ -302,8 +302,8 @@ const makeStyles = (c) => ({
     textAlign: 'center',
     color: c.onPlate,
   },
-  name: { marginTop: 20, textAlign: 'center', color: c.text },
-  first: { marginTop: 20 }, // under the name
+  name: { marginTop: 12, textAlign: 'center', color: c.text },
+  first: { marginTop: 20 }, // under the plate, or the name without one
   under: { marginTop: 12 },
   group: { paddingHorizontal: 12, borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
   trips: { gap: spacing.sm },
