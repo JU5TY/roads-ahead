@@ -48,6 +48,10 @@ const light = {
   recordingPill: '#FCE8E6',
   onRecordingPill: '#A50E0E',
   floating: '#FFFFFF', // round buttons over the map, the Record pill
+  // The Vehicle page's number plate: white in both themes, as a real plate.
+  plate: '#FFFFFF',
+  onPlate: '#202124',
+  plateEdge: '#DADCE0',
   navBar: '#FFFFFF',
   navBorder: '#E8EAED',
   navPill: 'transparent',
@@ -125,6 +129,9 @@ const dark = {
   recordingPill: '#4A1C1A',
   onRecordingPill: '#F6AEA9',
   floating: '#35363A',
+  plate: '#FFFFFF',
+  onPlate: '#202124',
+  plateEdge: 'transparent', // white on the dark page needs no edge
   navBar: '#2C2D31',
   navBorder: '#2C2D31',
   navPill: 'transparent',

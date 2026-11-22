@@ -1,12 +1,11 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import FuelCostRow from '../components/detail/FuelCostRow';
 import CountriesCard from '../components/home/CountriesCard';
 import IconicCard from '../components/home/IconicCard';
-import YourMap from '../components/home/YourMap';
 import TripCard from '../components/TripCard';
 import VehicleSheet from '../components/VehicleSheet';
 import Icon from '../components/ui/Icon';
@@ -47,9 +46,9 @@ function efficiencyValue(vehicle) {
 
 /**
  * A vehicle's page, opened from the Garage on You or a trip's Vehicle card:
- * Home's map showing only the drives made in it, its registration and name,
- * then its totals, Iconic Roads and Trips, countries, highlights, trips and
- * details. The pencil edits it (and removes it).
+ * its number plate and name (no map, so it can't be taken for Home), then its
+ * totals, Iconic Roads and Trips, countries, highlights, trips and details.
+ * The pencil edits it (and removes it).
  */
 export default function VehicleScreen() {
   const { id } = useLocalSearchParams();
@@ -58,7 +57,6 @@ export default function VehicleScreen() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const [scrollY] = useState(() => new Animated.Value(0));
   const [vehicles, reloadVehicles] = useVehicles();
   const routes = useRouteStatus();
   const roadCounts = useRoadCounts();
@@ -140,53 +138,37 @@ export default function VehicleScreen() {
 
   return (
     <>
-      <Animated.ScrollView
+      <ScrollView
         style={styles.screen}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
-        scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
-        })}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + spacing.xl },
+        ]}
       >
-        <YourMap
-          trips={trips}
-          units={units}
-          scrollY={scrollY}
-          buttons={
-            <>
-              <IconButton
-                icon="arrow_back"
-                variant="floating"
-                size={40}
-                iconSize={20}
-                accessibilityLabel="Back"
-                onPress={() => router.back()}
-                style={[styles.corner, { top: insets.top + spacing.md, left: spacing.md }]}
-              />
-              <IconButton
-                icon="edit"
-                variant="floating"
-                size={40}
-                iconSize={20}
-                accessibilityLabel="Edit vehicle"
-                onPress={() => setEditing('vehicle')}
-                style={[styles.corner, { top: insets.top + spacing.md, right: spacing.md }]}
-              />
-            </>
-          }
-          footer={
-            <View style={styles.flex}>
-              {vehicle.registration ? (
-                <View style={styles.plate} accessibilityLabel={`Registration ${vehicle.registration}`}>
-                  <Text style={styles.plateText}>{vehicle.registration}</Text>
-                </View>
-              ) : null}
-              <Text style={[type.title, styles.text]} numberOfLines={2} role="heading">
-                {vehicleLabel(vehicle)}
-              </Text>
-            </View>
-          }
-        />
+        <View style={styles.bar}>
+          <IconButton
+            icon="arrow_back"
+            variant="floating"
+            accessibilityLabel="Back"
+            onPress={() => router.back()}
+          />
+          <IconButton
+            icon="edit"
+            variant="floating"
+            accessibilityLabel="Edit vehicle"
+            onPress={() => setEditing('vehicle')}
+          />
+        </View>
+        {vehicle.registration ? (
+          <View style={styles.plate} accessibilityLabel={`Registration ${vehicle.registration}`}>
+            <Text style={styles.plateText} numberOfLines={1}>
+              {vehicle.registration}
+            </Text>
+          </View>
+        ) : null}
+        <Text style={[type.title, styles.name]} numberOfLines={2} role="heading">
+          {vehicleLabel(vehicle)}
+        </Text>
 
         <StatRow
           style={styles.first}
@@ -277,7 +259,7 @@ export default function VehicleScreen() {
               : { chevron: false, right: <Text style={[type.bodyStrong, styles.accent]}>Add</Text> })}
           />
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
 
       <VehicleSheet
         visible={editing !== null}
@@ -296,23 +278,32 @@ const makeStyles = (c) => ({
   screen: { flex: 1, backgroundColor: c.background },
   center: { alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: spacing.md },
-  flex: { flex: 1, minWidth: 0 },
-  text: { color: c.text },
   accent: { color: c.accent },
-  corner: { position: 'absolute' },
-  // A number plate: white, bold and spaced, above the name.
+  bar: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: -4 },
+  // A number plate, white in both themes, centred above the name.
   plate: {
-    alignSelf: 'flex-start',
-    height: 36,
+    alignSelf: 'center',
+    minWidth: 200,
+    height: 44,
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    marginTop: 12,
     borderRadius: 8,
-    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.plateEdge,
+    backgroundColor: c.plate,
     ...c.cardShadow,
   },
-  plateText: { fontFamily: fonts.semibold, fontSize: 18, lineHeight: 24, letterSpacing: 1, color: c.text },
-  first: { marginTop: 28 }, // under the name, as on Home
+  plateText: {
+    fontFamily: fonts.semibold,
+    fontSize: 26,
+    lineHeight: 32,
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    color: c.onPlate,
+  },
+  name: { marginTop: 20, textAlign: 'center', color: c.text },
+  first: { marginTop: 20 }, // under the name
   under: { marginTop: 12 },
   group: { paddingHorizontal: 12, borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },
   trips: { gap: spacing.sm },
