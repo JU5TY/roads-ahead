@@ -183,7 +183,6 @@ export default function VehicleScreen() {
         />
         <View style={[styles.group, styles.under]}>
           <ListRow icon="route" title="Trips" value={String(trips.length)} strongValue dense divider />
-          <ListRow icon="directions_car" title="Drives" value={String(drives.length)} strongValue dense divider />
           <ListRow
             icon="trending_up"
             title="Climb"
