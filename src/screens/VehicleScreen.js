@@ -283,14 +283,12 @@ const makeStyles = (c) => ({
   // A number plate, white in both themes, centred under the name.
   plate: {
     alignSelf: 'center',
-    minWidth: 200,
+    minWidth: 120, // fits its reg, so a short private plate stays a plate
     height: 44,
     justifyContent: 'center',
     paddingHorizontal: 16,
     marginTop: 16,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: c.plateEdge,
     backgroundColor: c.plate,
     ...c.cardShadow,
   },

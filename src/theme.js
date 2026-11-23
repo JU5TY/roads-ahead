@@ -51,7 +51,6 @@ const light = {
   // The Vehicle page's number plate: white in both themes, as a real plate.
   plate: '#FFFFFF',
   onPlate: '#202124',
-  plateEdge: '#DADCE0',
   navBar: '#FFFFFF',
   navBorder: '#E8EAED',
   navPill: 'transparent',
@@ -131,7 +130,6 @@ const dark = {
   floating: '#35363A',
   plate: '#FFFFFF',
   onPlate: '#202124',
-  plateEdge: 'transparent', // white on the dark page needs no edge
   navBar: '#2C2D31',
   navBorder: '#2C2D31',
   navPill: 'transparent',
