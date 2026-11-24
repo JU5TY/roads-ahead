@@ -329,13 +329,16 @@ export function mapPlanOf(plan, here) {
  * the start through each stop; an Iconic Road is driven through (its start,
  * middle and end as `via` points), ending the drive at its far end if it's
  * last. `legStops` gives, for each leg the route comes back with, the index of
- * the stop it arrives at. Pass the map's plan (fromHere) for Drive 1 to start
- * where the phone is.
+ * the stop it arrives at. `roads` ([{ from, to, line }]) says which points are
+ * each Iconic Road's and its own line, in driving order, to follow when Google
+ * won't (routeDrive's `own`). Pass the map's plan (fromHere) for Drive 1 to
+ * start where the phone is.
  */
 export function driveRoute(plan, index) {
   const drive = plan.drives[index];
   const points = [];
   const owners = [];
+  const roads = [];
   const add = (latitude, longitude, via, owner) => {
     points.push({ latitude, longitude, via });
     owners.push(owner);
@@ -351,6 +354,7 @@ export function driveRoute(plan, index) {
     }
     const line = stop.reversed ? [...road.line].reverse() : road.line;
     const [middle] = roadGuidePoints(road, 1, { reversed: stop.reversed });
+    roads.push({ from: points.length, to: points.length + 2, line: line.map(([latitude, longitude]) => ({ latitude, longitude })) });
     add(line[0][0], line[0][1], true, null);
     add(middle.latitude, middle.longitude, true, null);
     const last = i === drive.stops.length - 1;
@@ -360,7 +364,7 @@ export function driveRoute(plan, index) {
   if (points.length < 2 || legStops.length === 0) return null;
   // The first point is where the route starts, whatever it is.
   points[0] = { ...points[0], via: false };
-  return { points, legStops };
+  return { points, legStops, roads };
 }
 
 /**

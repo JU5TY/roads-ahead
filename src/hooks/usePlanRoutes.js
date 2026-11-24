@@ -75,14 +75,19 @@ export function usePlanRoutes(plan, picked, ready = true) {
     for (const key of new Set(wanted)) {
       if (memory.has(key)) continue;
       const ask = asks[keys.indexOf(key)];
-      routeDrive(ask.points, { signal: controller.signal }).then((result) => {
-        if (result.cancelled) return;
-        if (result.line) {
-          memory.set(key, result);
-          saveLine(key, result.line).catch(() => {});
-        }
-        setAnswers((a) => ({ ...a, [key]: result.limited ? 'limited' : result.failed ? 'failed' : 'done' }));
-      });
+      routeDrive(ask.points, { signal: controller.signal })
+        // No way through (an Iconic Road closed for the winter): follow the roads' own lines.
+        .then((result) =>
+          result.noRoute && ask.roads.length ? routeDrive(ask.points, { signal: controller.signal, own: ask.roads }) : result
+        )
+        .then((result) => {
+          if (result.cancelled) return;
+          if (result.line) {
+            memory.set(key, result);
+            saveLine(key, result.line).catch(() => {});
+          }
+          setAnswers((a) => ({ ...a, [key]: result.limited ? 'limited' : result.failed ? 'failed' : 'done' }));
+        });
     }
     return () => controller.abort();
     // `asks` changes with the keys; the keys alone say when to ask again.

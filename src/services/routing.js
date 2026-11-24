@@ -12,8 +12,13 @@
 // Each step's distance and manoeuvre come back too (not a pricier tier: Google
 // bills by the features asked for, not the fields), so a ferry's crossing can
 // be left out of the miles: the miles are on the road, the time door to door.
+// Google won't route over a road it has closed (an Alpine pass in winter), so
+// a drive can instead follow an Iconic Road's own line (`own`), asking Google
+// only for the roads either side.
 import Constants from 'expo-constants';
 import Storage from 'expo-sqlite/kv-store';
+
+import { lineLength } from '../utils/geoMath';
 
 const ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 const FIELDS = [
@@ -31,6 +36,9 @@ const MAX_BETWEEN = 10; // more than this between origin and destination costs m
 const TIMEOUT_MS = 10000;
 const DAILY_LIMIT = 100; // requests a day from one phone
 const COUNT_KEY = 'routing.count';
+// An Iconic Road followed along its own line is timed at 45 km/h: hairpins and
+// views, slower than Google would have it on a main road.
+const OWN_ROAD_MPS = 45000 / 3600;
 
 const { routesApiKey, androidPackage, androidCert } = Constants.expoConfig?.extra ?? {};
 
@@ -62,18 +70,31 @@ export function decodePolyline(encoded) {
   return points;
 }
 
+/** points[from..to] as requests of at most 10 points in between, each starting where the one before ends. */
+function askedParts(points, from, to) {
+  const parts = [];
+  while (from < to) {
+    const end = Math.min(from + MAX_BETWEEN + 1, to);
+    parts.push({ points: points.slice(from, end + 1) });
+    from = end;
+  }
+  return parts;
+}
+
 /**
- * The drive split into requests of at most 10 points in between: [[point]],
- * each part starting where the one before ends.
+ * The drive split into parts, each starting where the one before ends:
+ * [{ points }] to ask Google for, at most 10 points in between, and for each
+ * of `own` ([{ from, to, line }], points[from..to] followed along `line`, in
+ * driving order) a part { points, line } asked of no one.
  */
-export function routeParts(points) {
+export function routeParts(points, own = []) {
   const parts = [];
   let from = 0;
-  while (from < points.length - 1) {
-    const to = Math.min(from + MAX_BETWEEN + 1, points.length - 1);
-    parts.push(points.slice(from, to + 1));
-    from = to;
+  for (const road of own) {
+    parts.push(...askedParts(points, from, road.from), { points: points.slice(road.from, road.to + 1), line: road.line });
+    from = road.to;
   }
+  parts.push(...askedParts(points, from, points.length - 1));
   return parts;
 }
 
@@ -146,8 +167,18 @@ async function askGoogle(part, signal) {
   if (res.status === 429) throw Object.assign(new Error('quota'), { limited: true });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const route = (await res.json()).routes?.[0];
-  if (!route) throw new Error('no route');
+  if (!route) throw Object.assign(new Error('no route'), { noRoute: true });
   return route;
+}
+
+/** A part from Google, or along its own line: { legs, line }. */
+async function partRoute(part, signal) {
+  if (part.line) {
+    const metres = lineLength(part.line);
+    return { legs: [{ metres, seconds: Math.round(metres / OWN_ROAD_MPS) }], line: part.line };
+  }
+  const route = await askGoogle(part.points, signal);
+  return { legs: (route.legs ?? []).map(legOf), line: decodePolyline(route.polyline?.encodedPolyline ?? '') };
 }
 
 /**
@@ -157,13 +188,15 @@ async function askGoogle(part, signal) {
  * ferry? }] (one per place after the first), line: [{ latitude, longitude }] }
  * with `metres` on the road (a ferry's crossing left out) and `seconds` door to
  * door, `ferry` when any leg takes one; or { failed: true }
- * (offline, an error, too slow), { limited: true } (Google's daily cap or the
- * phone's own), or { cancelled: true } when `signal` aborts it.
+ * (offline, an error, too slow; with `noRoute` when Google found no way, as
+ * over a closed road), { limited: true } (Google's daily cap or the phone's
+ * own), or { cancelled: true } when `signal` aborts it. `own` ([{ from, to,
+ * line }]) follows points[from..to] along `line` instead of asking Google.
  */
-export async function routeDrive(points, { signal } = {}) {
+export async function routeDrive(points, { signal, own = [] } = {}) {
   if (points.length < 2) return { failed: true };
   if (!routesApiKey) return { failed: true };
-  const parts = routeParts(points);
+  const parts = routeParts(points, own);
   const controller = new AbortController();
   const cancel = () => controller.abort();
   signal?.addEventListener('abort', cancel);
@@ -174,13 +207,12 @@ export async function routeDrive(points, { signal } = {}) {
     const legs = [];
     const line = [];
     for (const [i, part] of parts.entries()) {
-      if (!(await takeRequest())) return { limited: true };
+      if (!part.line && !(await takeRequest())) return { limited: true };
       clearTimeout(timer);
       timer = setTimeout(cancel, TIMEOUT_MS);
-      const route = await askGoogle(part, controller.signal);
-      const partLegs = (route.legs ?? []).map(legOf);
+      const { legs: partLegs, line: partLine } = await partRoute(part, controller.signal);
       // A part that starts at a point driven through carries on the leg before.
-      if (i > 0 && part[0].via && legs.length && partLegs.length) {
+      if (i > 0 && part.points[0].via && legs.length && partLegs.length) {
         const first = partLegs.shift();
         legs[legs.length - 1] = {
           metres: legs.at(-1).metres + first.metres,
@@ -189,7 +221,6 @@ export async function routeDrive(points, { signal } = {}) {
         };
       }
       legs.push(...partLegs);
-      const partLine = decodePolyline(route.polyline?.encodedPolyline ?? '');
       line.push(...(i > 0 ? partLine.slice(1) : partLine));
     }
     return {
@@ -203,7 +234,7 @@ export async function routeDrive(points, { signal } = {}) {
     if (signal?.aborted) return { cancelled: true };
     if (err.limited) return { limited: true };
     console.warn('[routing] failed', err.message);
-    return { failed: true };
+    return err.noRoute ? { failed: true, noRoute: true } : { failed: true };
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', cancel);

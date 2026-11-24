@@ -235,6 +235,17 @@ describe('driveRoute', () => {
     expect(legStops).toEqual([0, 1]);
   });
 
+  it("marks an Iconic Road's points and its own line, in driving order", () => {
+    const p = plan({ stops: [eileanDonan, road(true), applecross] });
+    const { points, roads } = driveRoute(p, 0);
+    expect(roads).toHaveLength(1);
+    const { from, to, line } = roads[0];
+    expect([from, to]).toEqual([1, 3]);
+    expect(line[0]).toEqual({ latitude: bealach.line.at(-1)[0], longitude: bealach.line.at(-1)[1] });
+    expect(points[from]).toMatchObject(line[0]);
+    expect(points[to]).toMatchObject(line.at(-1));
+  });
+
   it('drives a road in the middle through, the next place getting the leg', () => {
     const p = plan({ stops: [eileanDonan, road(), applecross] });
     const { points, legStops } = driveRoute(p, 0);

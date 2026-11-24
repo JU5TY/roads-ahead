@@ -96,6 +96,25 @@ describe('routeDrive', () => {
     expect(headers['X-Goog-FieldMask']).toContain('routes.legs.steps.navigationInstruction.maneuver');
   });
 
+  it('says when Google has no way through, as over a closed road', async () => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) }));
+    expect(await routeDrive([at(1), at(2, true), at(3)])).toEqual({ failed: true, noRoute: true });
+  });
+
+  it('follows a road along its own line, asking Google only either side', async () => {
+    global.fetch = jest.fn().mockReturnValueOnce(reply([[1000, 60]])).mockReturnValueOnce(reply([[2000, 120]]));
+    // 0.1° of latitude, about 11 km, along the road's own line.
+    const line = [{ latitude: 2, longitude: 0 }, { latitude: 2.1, longitude: 0 }];
+    const points = [at(1), at(2, true), at(2.05, true), at(2.1, true), at(3)];
+    const route = await routeDrive(points, { own: [{ from: 1, to: 3, line }] });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    // One leg, the road timed at 45 km/h.
+    expect(route.legs).toHaveLength(1);
+    expect(route.legs[0].metres).toBeCloseTo(3000 + 11120, -2);
+    expect(route.seconds).toBeCloseTo(180 + 11120 / 12.5, -1);
+    expect(route.line).toHaveLength(2 + 1 + 1); // each part's first point is the last one's end
+  });
+
   it("says it's limited when Google's daily cap is reached", async () => {
     global.fetch = jest.fn(() => reply([], 429));
     expect(await routeDrive([at(1), at(2)])).toEqual({ limited: true });
