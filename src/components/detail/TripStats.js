@@ -10,6 +10,7 @@ import {
   formatSpeed,
 } from '../../utils/format';
 import { averageMovingSpeed } from '../../utils/geoMath';
+import LongDayNote from '../plan/LongDayNote';
 import Icon from '../ui/Icon';
 import ListRow from '../ui/ListRow';
 import SectionHeader from '../ui/SectionHeader';
@@ -33,7 +34,7 @@ export function TitleBlock({ kicker, title, subtitle }) {
  * `timesHidden` (a drive that starts and ends at an Iconic Road) puts Highest
  * point in Driving time's place, as on an Iconic Road, with a note under the
  * card. `longDay` marks a plan's day with more driving than most people
- * manage (amber Driving time). `showTime={false}` leaves Driving time out
+ * manage (an amber note under the card). `showTime={false}` leaves Driving time out
  * while it's still being worked out (an Iconic Trip); `timeNote` takes the
  * time's place when it can't be had ("—").
  */
@@ -63,12 +64,12 @@ export function HeroStats({
                   icon: 'timer',
                   value: timeNote ?? formatDurationShort(stats.movingTimeMs),
                   label: 'Driving time',
-                  caution: longDay,
                 },
               ]
             : []),
         ]}
       />
+      {longDay && showTime && !timesHidden ? <LongDayNote /> : null}
       {timesHidden ? <TimesHiddenCard /> : null}
     </>
   );

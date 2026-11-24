@@ -124,8 +124,12 @@ export function legMetresAlong(line, points) {
   return legs;
 }
 
-/** More driving than this in a day (seconds) is flagged: most people keep a day to 6 hours. */
-export const LONG_DAY_S = 6 * 3600;
+/**
+ * More driving than this in a day (seconds) is flagged. Our own rule of thumb,
+ * not an official limit (cars have none; the Highway Code asks for breaks every
+ * two hours): 6 to 8 hours is the usual advice for a full day on a road trip.
+ */
+export const LONG_DAY_S = 8 * 3600;
 
 /** A 'YYYY-MM-DD' start date as a local Date. */
 export const dateOf = (startDate) => {
