@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, spacing, type } from '../../theme';
@@ -28,6 +28,8 @@ function PlanForm({ plan, onSave }) {
       <TextInput
         value={name}
         onChangeText={setName}
+        // The keyboard covers the calendar, so it closes while typing.
+        onFocus={() => setPicking(false)}
         style={styles.input}
         autoFocus={!plan}
         autoCapitalize="sentences"
@@ -38,7 +40,11 @@ function PlanForm({ plan, onSave }) {
       <Text style={styles.label}>Start date</Text>
       <View style={styles.dateRow}>
         <Pressable
-          onPress={() => setPicking((p) => !p)}
+          onPress={() => {
+            // The name's keyboard would cover the calendar.
+            Keyboard.dismiss();
+            setPicking((p) => !p);
+          }}
           accessibilityRole="button"
           style={({ pressed }) => [styles.input, styles.dateField, pressed && styles.pressed]}
         >
