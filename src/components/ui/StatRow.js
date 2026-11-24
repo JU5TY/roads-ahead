@@ -12,7 +12,8 @@ import Icon from './Icon';
  * numbers never squash; one fills the card. A value it can't show is "—"
  * (read out as unavailable), as an unknown height is. `caution` (a plan's long day)
  * turns the icon and number amber and says so under the number. A duration's
- * h and m ("12h 40m") are grey units too.
+ * h and m ("12h 40m") are grey units too, a space before each as before mi
+ * ("12 h 40 m").
  */
 const DURATION = /^(\d+h)?( ?\d+m)?$/;
 
@@ -42,7 +43,7 @@ export default function StatRow({ stats, style }) {
                   ? value.split(/([hm])/).map((part, j) =>
                       j % 2 ? (
                         <Text key={j} style={[type.statUnit, styles.muted]}>
-                          {part}
+                          {` ${part}`}
                         </Text>
                       ) : (
                         part
