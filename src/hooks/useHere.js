@@ -9,8 +9,10 @@ import { haversineDistance } from '../utils/geoMath';
 // even sitting still, so `here` snaps to a spot it was at before when it's
 // within SNAP_M of it: the points match, the saved line is found, and Google
 // isn't asked again. A few spots are kept (home, work, a holiday cottage).
+// The last known position can come from Wi-Fi or masts rather than GPS, so
+// sitting at home it can move several hundred metres from one day to the next.
 const KEY = 'here.spots';
-const SNAP_M = 300;
+const SNAP_M = 1000;
 const MAX_SPOTS = 5;
 
 function readSpots() {
