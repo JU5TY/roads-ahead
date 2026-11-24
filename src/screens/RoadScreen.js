@@ -9,7 +9,6 @@ import DetailLayout from '../components/detail/DetailLayout';
 import FloatingButton from '../components/ui/FloatingButton';
 import RouteMap from '../components/RouteMap';
 import Icon from '../components/ui/Icon';
-import InfoNote from '../components/ui/InfoNote';
 import ListRow from '../components/ui/ListRow';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatRow from '../components/ui/StatRow';
@@ -25,8 +24,6 @@ import { distanceParts, elevationParts, formatLongDate, formatShortDate } from '
 import { bendsLabel, completedLabel, getRoad } from '../utils/iconicRoads';
 import { addPosition, dateOf, groupPlans, mapPlanOf, roadStop } from '../utils/plans';
 import { driveNumberFor, tripTitle } from '../utils/tripSummary';
-
-const NOTE = 'Iconic Roads are never timed. Drive them at your own pace.';
 
 /** One drive that completed the road, with its trip and day. */
 function DriveRow({ item, isLast }) {
@@ -286,8 +283,6 @@ export default function RoadScreen() {
           </View>
         </>
       ) : null}
-
-      <InfoNote text={NOTE} />
     </DetailLayout>
   );
 }
