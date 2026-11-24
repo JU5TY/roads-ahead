@@ -4,10 +4,15 @@
 // another service, rewrite searchPlaces() and keep what it returns; nothing
 // else knows which service answered. Saved stops keep their own name and
 // coordinates, so a switch leaves plans as they are.
+import Constants from 'expo-constants';
 
 const PHOTON_URL = 'https://photon.komoot.io/api/';
 const TIMEOUT_MS = 5000;
 const LIMIT = 8;
+// Photon turns away Android's default "okhttp" user agent (403 Forbidden, seen
+// 2026-11-24), so the app names itself, as its usage policy asks.
+const { version, extra } = Constants.expoConfig ?? {};
+const USER_AGENT = `RoadTrip/${version ?? '1'} (${extra?.androidPackage ?? 'com.justinwoodford.roadtrip'})`;
 
 /** Fewer letters than this match too much to be worth asking. */
 export const MIN_SEARCH_LENGTH = 3;
@@ -63,7 +68,10 @@ export async function searchPlaces(text, { near, signal } = {}) {
       params.set('lat', near.latitude.toFixed(4));
       params.set('lon', near.longitude.toFixed(4));
     }
-    const res = await fetch(`${PHOTON_URL}?${params}`, { signal: controller.signal });
+    const res = await fetch(`${PHOTON_URL}?${params}`, {
+      signal: controller.signal,
+      headers: { 'User-Agent': USER_AGENT },
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return { places: photonPlaces(await res.json()) };
   } catch (err) {
