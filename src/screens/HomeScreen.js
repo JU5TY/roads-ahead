@@ -95,10 +95,12 @@ export default function HomeScreen() {
       <WeekDistance trips={trips} units={units} now={now} />
       {plan ? <UpNext plan={plan} active={focused} /> : null}
       <SectionHeader title="Latest trip" />
+      {/* Under Up next it's a row: its route is already the bold line on Your map,
+          and two map cards in a row looked the same. */}
       <TripCard
         trip={latest}
         units={units}
-        variant="large"
+        variant={plan ? 'row' : 'large'}
         showMap={focused}
         roadCount={roadCounts.get(latest.id) ?? 0}
       />
