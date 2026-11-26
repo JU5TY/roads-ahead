@@ -9,7 +9,7 @@ import Icon from '../components/ui/Icon';
 import IconButton from '../components/ui/IconButton';
 import { PREMIUM_PRICE, PREMIUM_TAGLINE } from '../hooks/usePremium';
 import { useStyles, useTheme } from '../hooks/useTheme';
-import { dayColorFor, radius, spacing, type } from '../theme';
+import { radius, spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
 import { READY_ROUTES } from '../utils/readyRoutes';
 
@@ -23,7 +23,7 @@ const FEATURES = [
   ['download', 'GPX export', 'Your routes in other map apps'],
 ];
 
-/** The headline, above the pairs: Iconic Trips, with the first trip drawn in its day colours. */
+/** The headline, above the pairs: Iconic Trips, with the first trip drawn in blue, as on Trips. */
 function TripsTile() {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
@@ -32,7 +32,7 @@ function TripsTile() {
       READY_ROUTES[0].drives.map((d, i) => ({
         key: `drive-${i}`,
         coordinates: d.line.map(([latitude, longitude]) => ({ latitude, longitude })),
-        color: dayColorFor(c, i + 1),
+        color: c.accent,
       })),
     [c]
   );
