@@ -118,6 +118,12 @@ export async function keepDvsaKeyAlive(env, fetcher = fetch) {
 }
 
 export async function postVehicleLookup(request, env) {
+  // A handful a minute from each connection, so the address can't be used as a
+  // free DVLA lookup (wrangler.toml's LOOKUP_LIMIT; none when run locally).
+  const caller = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  if (env.LOOKUP_LIMIT && !(await env.LOOKUP_LIMIT.limit({ key: caller })).success) {
+    return problem('Too many lookups. Please wait a minute and try again.', 429);
+  }
   let registration;
   try {
     ({ registration } = await request.json());

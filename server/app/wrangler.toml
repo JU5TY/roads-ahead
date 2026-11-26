@@ -20,6 +20,12 @@ PRODIGI_SHIPPING = "Express"
 binding = "POSTERS"
 bucket_name = "poster-pipeline-production"
 
+# Registration lookups: 10 a minute from each connection (counted per Cloudflare location).
+[[ratelimits]]
+name = "LOOKUP_LIMIT"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+
 # Mondays at 06:00 UTC: one MOT history lookup, as DVSA revokes a key unused for 90 days.
 [triggers]
 crons = ["0 6 * * 1"]
