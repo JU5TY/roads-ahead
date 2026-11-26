@@ -342,8 +342,10 @@ const makeStyles = (c) => ({
     borderRightWidth: 1,
     borderRightColor: 'rgba(0,0,0,0.12)',
   },
+  // Grows from its own width (not flex: 1's zero), so the plate fits the whole reg.
   plateText: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
     paddingHorizontal: 16,
     fontFamily: fonts.semibold,
     fontSize: 26,
