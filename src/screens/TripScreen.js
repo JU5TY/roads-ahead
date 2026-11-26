@@ -406,6 +406,27 @@ export default function TripScreen() {
       )
     : [];
 
+  // On All, a red dot where each night was spent: the end of every day's last
+  // drive but the trip's (drawn under start and finish).
+  const nightMarkers =
+    !selected && !dayNo && pointsByDrive
+      ? days.slice(0, -1).flatMap((day) => {
+          const drive = day.drives.at(-1);
+          const end = pointsByDrive.get(drive.id)?.at(-1);
+          return end
+            ? [
+                {
+                  key: `night-${day.number}`,
+                  kind: 'finish',
+                  coordinate: { latitude: end.latitude, longitude: end.longitude },
+                  title: drive.places.end || 'Finish',
+                  color: c.finish,
+                },
+              ]
+            : [];
+        })
+      : [];
+
   // Until the points are read, the map's blank background where it will be.
   const map = !pointsByDrive ? (
     <View style={styles.mapWaiting} />
@@ -419,6 +440,7 @@ export default function TripScreen() {
       onSelect={(key) => key === null && setFocusedStop(null)}
       markers={[
         ...focusedStopMarkers,
+        ...nightMarkers,
         ...routeMarkers(
           selected
             ? {

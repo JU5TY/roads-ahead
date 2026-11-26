@@ -222,14 +222,20 @@ export default function PlanScreen() {
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
   const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
 
-  // The picked drive's start, stops and finish; on All, just where the trip starts and ends.
+  // The picked drive's start, stops and finish; on All, where the trip starts,
+  // each night's stay (red, as each drive's finish) and where the trip ends.
   // Green start and red finish, as on a driven trip's map; stops in the drive's colour.
   const markerColor = { start: c.start, finish: c.finish, stop: colorOf(picked) };
   let markers = driveMarkers(mapPlan, picked).map((m) => ({ ...m, color: markerColor[m.kind] }));
   if (all) {
     const first = driveMarkers(mapPlan, 0).filter((m) => m.kind === 'start');
+    const nights = mapPlan.drives
+      .slice(0, lastIndex)
+      .flatMap((_, i) => driveMarkers(mapPlan, i).filter((m) => m.kind === 'finish'))
+      .map((m, i) => ({ ...m, key: `night-${i}`, color: c.finish }));
     const end = driveMarkers(mapPlan, lastIndex).filter((m) => m.kind === 'finish');
     markers = [
+      ...nights,
       ...first.map((m) => ({ ...m, key: 'trip-start', color: c.start })),
       ...end.map((m) => ({ ...m, key: 'trip-finish', color: c.finish })),
     ];
