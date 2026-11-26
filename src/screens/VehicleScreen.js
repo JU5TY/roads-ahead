@@ -325,6 +325,7 @@ const makeStyles = (c) => ({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     minWidth: 120, // fits its reg, so a short private plate stays a plate
     height: 44,
     marginTop: 16,
@@ -342,10 +343,11 @@ const makeStyles = (c) => ({
     borderRightWidth: 1,
     borderRightColor: 'rgba(0,0,0,0.12)',
   },
-  // Grows from its own width (not flex: 1's zero), so the plate fits the whole reg.
+  // Its own width, so the plate fits the whole reg (flex: 1 cut it short, flexGrow
+  // filled the screen). 102 is the plate's 120 less the band, so the band stays left.
   plateText: {
-    flexGrow: 1,
     flexShrink: 1,
+    minWidth: 102,
     paddingHorizontal: 16,
     fontFamily: fonts.semibold,
     fontSize: 26,
