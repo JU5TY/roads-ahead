@@ -22,11 +22,17 @@ import { getVehicleRoadIds } from '../storage/roadStorage';
 import { listTrips } from '../storage/tripStorage';
 import { deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { fonts, pressedOpacity, radius, spacing, type } from '../theme';
-import { distanceParts, formatDistance, formatDurationShort, formatElevation } from '../utils/format';
+import {
+  distanceParts,
+  formatDistance,
+  formatDurationShort,
+  formatElevation,
+  formatShortDate,
+} from '../utils/format';
 import { driveCost, pricesForDrive } from '../utils/fuel';
 import { READY_ROUTES } from '../utils/readyRoutes';
 import { groupIntoDays, summarizeDrives } from '../utils/tripSummary';
-import { vehicleLabel } from '../utils/vehicles';
+import { paintColour, vehicleLabel, vehicleSubtitle } from '../utils/vehicles';
 
 const EVEREST_M = 8849;
 const TRIPS_SHOWN = 3; // then "All trips" shows the rest
@@ -43,6 +49,9 @@ function efficiencyValue(vehicle) {
   const figure = vehicle.electric ? vehicle.milesPerKwh : vehicle.mpg;
   return figure != null ? String(Number(figure.toFixed(1))) : null;
 }
+
+/** "1 Dec 2026", from a lookup's "2026-12-01". */
+const lookupDate = (date) => formatShortDate(Date.parse(`${date}T12:00:00Z`));
 
 /**
  * A vehicle's page, opened from the Garage on You or a trip's Vehicle card:
@@ -116,6 +125,11 @@ export default function VehicleScreen() {
     ...trips.flatMap((t) => groupIntoDays(t.drives).map((day) => day.summary.distanceM))
   );
   const efficiency = efficiencyValue(vehicle);
+  // What a registration lookup found: the year line, the plate's colour, Details' dates.
+  const details = vehicle.details;
+  const subtitle = vehicleSubtitle(vehicle);
+  const paint = paintColour(details?.colour);
+  const mileage = details?.lastMotMileage;
   const shownTrips = allTrips ? trips : trips.slice(0, TRIPS_SHOWN);
 
   const save = async (fields) => {
@@ -162,8 +176,14 @@ export default function VehicleScreen() {
         <Text style={[type.title, styles.name]} numberOfLines={2} role="heading">
           {vehicleLabel(vehicle)}
         </Text>
+        {subtitle ? <Text style={[type.body, styles.subtitle]}>{subtitle}</Text> : null}
         {vehicle.registration ? (
-          <View style={styles.plate} accessibilityLabel={`Registration ${vehicle.registration}`}>
+          <View
+            style={styles.plate}
+            accessibilityLabel={`Registration ${vehicle.registration}${paint ? `, ${details.colour.toLowerCase()}` : ''}`}
+          >
+            {/* The paint colour where a real plate has its blue strip; none when it isn't known. */}
+            {paint ? <View style={[styles.band, { backgroundColor: paint }]} /> : null}
             <Text style={styles.plateText} numberOfLines={1}>
               {vehicle.registration}
             </Text>
@@ -248,15 +268,36 @@ export default function VehicleScreen() {
 
         <SectionHeader title="Details" />
         <View style={styles.group}>
+          {details?.taxDueDate ? (
+            <ListRow icon="receipt_long" title="Tax due" value={lookupDate(details.taxDueDate)} strongValue dense divider />
+          ) : null}
+          {details?.motDueDate ? (
+            <ListRow icon="fact_check" title="MOT due" value={lookupDate(details.motDueDate)} strongValue dense divider />
+          ) : null}
+          {mileage ? (
+            <ListRow
+              icon="conversion_path"
+              title="Mileage at last MOT"
+              // As DVSA has it, not added to the miles driven since.
+              value={`${mileage.value.toLocaleString()} ${mileage.unit}`}
+              strongValue
+              dense
+              divider
+            />
+          ) : null}
           <ListRow
             icon={vehicle.electric ? 'ev_station' : 'local_gas_station'}
             title={vehicle.electric ? 'Miles per kWh' : 'Mpg'}
             dense
+            divider={!!details?.co2}
             onPress={() => setEditing('efficiency')}
             {...(efficiency
               ? { value: efficiency, strongValue: true }
               : { chevron: false, right: <Text style={[type.bodyStrong, styles.accent]}>Add</Text> })}
           />
+          {details?.co2 ? (
+            <ListRow icon="co2" title="CO₂" value={`${details.co2} g/km`} strongValue dense />
+          ) : null}
         </View>
       </ScrollView>
 
@@ -282,16 +323,28 @@ const makeStyles = (c) => ({
   // A number plate, white in both themes, centred under the name.
   plate: {
     alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     minWidth: 120, // fits its reg, so a short private plate stays a plate
     height: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
     marginTop: 16,
     borderRadius: 8,
     backgroundColor: c.plate,
     ...c.cardShadow,
   },
+  // 18 wide down the left, with a hairline so white and silver paint still show.
+  // Rounded itself rather than clipped by the plate, which would clip its shadow on iOS.
+  band: {
+    alignSelf: 'stretch',
+    width: 18,
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(0,0,0,0.12)',
+  },
   plateText: {
+    flex: 1,
+    paddingHorizontal: 16,
     fontFamily: fonts.semibold,
     fontSize: 26,
     lineHeight: 32,
@@ -300,6 +353,7 @@ const makeStyles = (c) => ({
     color: c.onPlate,
   },
   name: { marginTop: 12, textAlign: 'center', color: c.text },
+  subtitle: { marginTop: 2, textAlign: 'center', color: c.textMuted },
   first: { marginTop: 20 }, // under the plate, or the name without one
   under: { marginTop: 12 },
   group: { paddingHorizontal: 12, borderRadius: radius.card, backgroundColor: c.card, ...c.cardShadow },

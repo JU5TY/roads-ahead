@@ -3,15 +3,16 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, radius, type } from '../../theme';
-import { hasTwin, vehicleLabel } from '../../utils/vehicles';
+import { hasTwin, vehicleLabel, vehicleSubtitle } from '../../utils/vehicles';
 import Icon from '../ui/Icon';
 import SectionHeader from '../ui/SectionHeader';
 
 /**
  * The Trip page's "Vehicle" section: the vehicle's make and model, opening
  * its page, and Change vehicle beside the heading when `onChange` is given (a
- * drive). The registration shows under the name only to tell it from another
- * of `vehicles` with the same make and model. For a whole trip driven in
+ * drive). Under the name, what a lookup found ("2011 · 3.0 litre petrol"),
+ * and the registration only to tell it from another of `vehicles` with the
+ * same make and model. For a whole trip driven in
  * `count` vehicles it says "2 vehicles". Without a vehicle it offers Choose,
  * or shows nothing when there's nothing to choose from.
  */
@@ -23,6 +24,7 @@ export default function VehicleSection({ vehicle, vehicles = [], count = 1, onCh
   const opens = !several && !!vehicle;
   const registration =
     opens && vehicle.registration && hasTwin(vehicle, vehicles) ? vehicle.registration : null;
+  const line = opens ? [vehicleSubtitle(vehicle), registration].filter(Boolean).join(' · ') : '';
   const content = (
     <>
       <View style={styles.well}>
@@ -32,9 +34,9 @@ export default function VehicleSection({ vehicle, vehicles = [], count = 1, onCh
         <Text style={[type.bodyStrong, styles.name]} numberOfLines={1}>
           {several ? `${count} vehicles` : vehicle ? vehicleLabel(vehicle) : 'No vehicle'}
         </Text>
-        {registration ? (
-          <Text style={[type.small, styles.registration]} numberOfLines={1}>
-            {registration}
+        {line ? (
+          <Text style={[type.small, styles.line]} numberOfLines={1}>
+            {line}
           </Text>
         ) : null}
       </View>
@@ -85,6 +87,6 @@ const makeStyles = (c) => ({
   },
   text: { flex: 1, minWidth: 0 },
   name: { color: c.text },
-  registration: { color: c.textMuted, marginTop: 2 },
+  line: { color: c.textMuted, marginTop: 2 },
   pressed: { opacity: pressedOpacity },
 });

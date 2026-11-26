@@ -167,6 +167,12 @@ const MIGRATIONS = [
   `
     ALTER TABLE plans ADD COLUMN shared_key TEXT;
   `,
+  // 12: what a registration lookup found (JSON, see utils/vehicles.js
+  // lookupDetails): fuel, year, engine, colour, CO₂, tax and MOT dates,
+  // mileage at the last MOT. Null for a vehicle entered by hand.
+  `
+    ALTER TABLE vehicles ADD COLUMN details TEXT;
+  `,
 ];
 
 /** The schema this build writes (PRAGMA user_version once migrated); a newer backup can't be restored. */
