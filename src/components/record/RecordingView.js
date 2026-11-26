@@ -7,7 +7,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettings } from '../../context/SettingsContext';
 import { useStyles, useTheme } from '../../hooks/useTheme';
 import { pressedOpacity, type } from '../../theme';
-import { formatDistance, formatDurationShort, speedUnit, toSpeed } from '../../utils/format';
+import {
+  distanceParts,
+  formatDistance,
+  formatDurationShort,
+  speedUnit,
+  toSpeed,
+} from '../../utils/format';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import Icon from '../ui/Icon';
 import IconButton from '../ui/IconButton';
@@ -20,6 +26,27 @@ const BREAK_BAR_ANIMATION = LayoutAnimation.create(350, 'easeInEaseOut', 'opacit
 function KeepScreenOn() {
   useKeepAwake('record');
   return null;
+}
+
+/**
+ * One of the big numbers, its units small and grey with a space before each, as
+ * in the stat cards: "48.7 mi", "1 h 42 m". `parts` alternates number, unit.
+ */
+function LiveValue({ parts }) {
+  const styles = useStyles(makeStyles);
+  return (
+    <Text style={styles.liveValue} numberOfLines={1} adjustsFontSizeToFit>
+      {parts.map((part, i) =>
+        i % 2 ? (
+          <Text key={i} style={styles.liveUnit}>
+            {` ${part}`}
+          </Text>
+        ) : (
+          part
+        )
+      )}
+    </Text>
+  );
 }
 
 /** One of Record's wide controls: a pill with an icon and a word. */
@@ -85,6 +112,9 @@ export default function RecordingView({
   const speed = paused ? 0 : Math.round(toSpeed(live.currentSpeedMps, units));
   const distance = formatDistance(live.distanceM, units);
   const driving = formatDurationShort(live.drivingMs);
+  const distanceSplit = distanceParts(live.distanceM, units);
+  // "1h 42m" -> ['1', 'h', ' 42', 'm']
+  const drivingSplit = driving.split(/([hm])/).filter(Boolean);
   // Break bar: hidden until the last BREAK_SOON_MS before a break is due, then
   // counts down in blue; once due it fills orange and counts up.
   const breakDueMs = breakReminderMinutes * 60000;
@@ -169,16 +199,12 @@ export default function RecordingView({
 
         <View style={styles.liveStats}>
           <View style={styles.liveStat} accessible accessibilityLabel={`Distance ${distance}`}>
-            <Text style={styles.liveValue} numberOfLines={1} adjustsFontSizeToFit>
-              {distance}
-            </Text>
+            <LiveValue parts={[distanceSplit.value, distanceSplit.unit]} />
             <Text style={styles.liveLabel}>Distance</Text>
           </View>
           <View style={styles.liveDivider} />
           <View style={styles.liveStat} accessible accessibilityLabel={`Driving time ${driving}`}>
-            <Text style={styles.liveValue} numberOfLines={1} adjustsFontSizeToFit>
-              {driving}
-            </Text>
+            <LiveValue parts={drivingSplit} />
             <Text style={styles.liveLabel}>Driving time</Text>
           </View>
         </View>
@@ -309,6 +335,7 @@ const makeStyles = (c) => ({
     letterSpacing: -1,
     color: c.textStrong,
   },
+  liveUnit: { fontFamily: type.statUnit.fontFamily, fontSize: 22, letterSpacing: 0, color: c.textMuted },
   liveLabel: { ...type.body, color: c.textMuted },
   liveDivider: { width: 1, height: 56, backgroundColor: c.outline },
   speed: {
