@@ -1,22 +1,19 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, LayoutAnimation, Text, View } from 'react-native';
+import { ActivityIndicator, LayoutAnimation, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSettings } from '../../context/SettingsContext';
 import { useStyles, useTheme } from '../../hooks/useTheme';
-import { getRecordMapHidden, setRecordMapHidden } from '../../storage/settingsStorage';
-import { type } from '../../theme';
-import { routeGaps, routeSegments } from '../../utils/crossings';
+import { pressedOpacity, type } from '../../theme';
 import { formatDistance, formatDurationShort, speedUnit, toSpeed } from '../../utils/format';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import Icon from '../ui/Icon';
 import IconButton from '../ui/IconButton';
-import LiveMap from './LiveMap';
 
 const BREAK_SOON_MS = 30 * 60 * 1000; // the break bar shows this long before a break is due
-// The map eases shorter as the break bar fades in (and back when a stop resets it).
+// The break bar fades in (and out when a stop resets it).
 const BREAK_BAR_ANIMATION = LayoutAnimation.create(350, 'easeInEaseOut', 'opacity');
 
 /** Keeps the screen on while mounted (only while a drive is live and Record is showing). */
@@ -25,18 +22,39 @@ function KeepScreenOn() {
   return null;
 }
 
+/** One of Record's wide controls: a pill with an icon and a word. */
+function Control({ icon, label, bg, fg, tall = false, onPress, accessibilityLabel, style }) {
+  const styles = useStyles(makeStyles);
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      style={({ pressed }) => [
+        styles.control,
+        tall && styles.controlTall,
+        { backgroundColor: bg },
+        pressed && styles.pressed,
+        style,
+      ]}
+    >
+      <Icon name={icon} filled={tall} size={tall ? 32 : 24} color={fg} />
+      <Text style={[tall ? styles.controlLabelTall : type.bodyStrong, { color: fg }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 /**
- * Record while a drive is live: the map (which can be hidden), status, speed,
- * distance and driving time, the break bar, and Navigate / Pause or Resume / Stop.
- * `live` is liveMetrics(drive), `route` the points drawn so far and `tripLabel`
- * "Scotland 2026 · Drive 2". Stop asks first: Save, or Discard when nothing moved.
+ * Record while a drive is live, kept simple as the sat nav is usually on screen:
+ * status, distance and driving time, speed, the break bar, and Navigate over
+ * Pause or Resume / Stop. No map: the route shows on Drive saved and the trip.
+ * `live` is liveMetrics(drive) and `tripLabel` "Scotland 2026 · Drive 2". Stop
+ * asks first: Save, or Discard when nothing moved.
  * Navigate (onNavigate) opens the sat nav app. `planCard` (a planned drive's
- * PlanCard) sits under the distance and driving time.
+ * PlanCard) sits under the speed.
  */
 export default function RecordingView({
-  drive,
   live,
-  route,
   tripLabel,
   busy,
   focused,
@@ -52,17 +70,8 @@ export default function RecordingView({
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  // Remembered between drives.
-  const [mapHidden, setMapHiddenState] = useState(getRecordMapHidden);
-  const setMapHidden = (hidden) => {
-    setMapHiddenState(hidden);
-    setRecordMapHidden(hidden).catch((err) => console.warn('[record] save failed', err));
-  };
   const [confirmingStop, setConfirmingStop] = useState(false);
-  const [centreKey, setCentreKey] = useState(0);
 
-  const lastFix = drive.stats.lastFix;
-  const position = lastFix ? { latitude: lastFix.latitude, longitude: lastFix.longitude } : null;
   const paused = live.isPaused;
   const status = paused
     ? 'Paused'
@@ -82,7 +91,7 @@ export default function RecordingView({
   const breakSoon = breakReminderMinutes > 0 && live.stintMs >= breakDueMs - BREAK_SOON_MS;
   const breakDue = breakSoon && live.stintMs >= breakDueMs;
   const overdueMs = live.stintMs - breakDueMs;
-  // When the bar comes or goes, animate the next layout so the map doesn't jump.
+  // When the bar comes or goes, animate the next layout so it doesn't jump.
   const [breakShown, setBreakShown] = useState(breakSoon);
   if (breakShown !== breakSoon) {
     LayoutAnimation.configureNext(BREAK_BAR_ANIMATION);
@@ -120,47 +129,9 @@ export default function RecordingView({
       )}
       {/* Mid-drive the phone is usually in a mount: don't let the screen sleep. */}
       {focused ? <KeepScreenOn /> : null}
-      {!mapHidden ? (
-        <View style={[styles.map, { flexBasis: 320 + insets.top }]}>
-          <LiveMap
-            segments={routeSegments('live', route, routeGaps(drive), c.accent)}
-            position={position}
-            centreKey={centreKey}
-            follow
-          />
-          <IconButton
-            icon="expand_more"
-            iconSize={26}
-            variant="floating"
-            accessibilityLabel="Minimise, keep recording"
-            onPress={minimise}
-            style={[styles.mapButtonLeft, { top: insets.top + 12 }]}
-          />
-          <IconButton
-            icon="my_location"
-            variant="floating"
-            accessibilityLabel="Centre on my position"
-            onPress={() => setCentreKey((k) => k + 1)}
-            style={[styles.mapButtonRight, { top: insets.top + 12 }]}
-          />
-          <IconButton
-            icon="visibility_off"
-            variant="floating"
-            accessibilityLabel="Hide map"
-            onPress={() => setMapHidden(true)}
-            style={[styles.mapButtonRight, styles.mapButtonBottom]}
-          />
-        </View>
-      ) : null}
-
-      <View
-        style={[
-          styles.body,
-          {
-            paddingTop: mapHidden ? insets.top + 20 : 20,
-            paddingBottom: insets.bottom + 28,
-          },
-        ]}
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={[styles.body, { paddingTop: insets.top + 20 }]}
       >
         <View style={styles.statusRow}>
           {paused ? (
@@ -179,25 +150,14 @@ export default function RecordingView({
           <Text style={[type.body, styles.muted, styles.statusTrip]} numberOfLines={1}>
             {tripLabel ?? ''}
           </Text>
-          {mapHidden ? (
-            <>
-              <IconButton
-                icon="map"
-                variant="record"
-                accessibilityLabel="Show map"
-                onPress={() => setMapHidden(false)}
-                style={styles.rowButton}
-              />
-              <IconButton
-                icon="expand_more"
-                variant="record"
-                iconSize={26}
-                accessibilityLabel="Minimise, keep recording"
-                onPress={minimise}
-                style={[styles.rowButton, styles.rowButtonLast]}
-              />
-            </>
-          ) : null}
+          <IconButton
+            icon="expand_more"
+            variant="record"
+            iconSize={26}
+            accessibilityLabel="Minimise, keep recording"
+            onPress={minimise}
+            style={styles.rowButton}
+          />
         </View>
 
         {foregroundOnly ? (
@@ -207,31 +167,29 @@ export default function RecordingView({
           </Text>
         ) : null}
 
-        <View
-          style={[styles.hero, mapHidden && styles.heroHidden]}
-          accessible
-          accessibilityLabel={`Speed ${speed} ${speedUnit(units)}`}
-        >
-          <Text style={mapHidden ? styles.heroBig : styles.heroValue} numberOfLines={1}>
-            {speed}
-          </Text>
-          <Text style={mapHidden ? styles.heroBigUnit : styles.heroUnit}>{speedUnit(units)}</Text>
-        </View>
-
         <View style={styles.liveStats}>
           <View style={styles.liveStat} accessible accessibilityLabel={`Distance ${distance}`}>
-            <Text style={[type.stat, styles.liveValue]} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={styles.liveValue} numberOfLines={1} adjustsFontSizeToFit>
               {distance}
             </Text>
             <Text style={styles.liveLabel}>Distance</Text>
           </View>
           <View style={styles.liveDivider} />
           <View style={styles.liveStat} accessible accessibilityLabel={`Driving time ${driving}`}>
-            <Text style={[type.stat, styles.liveValue]} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={styles.liveValue} numberOfLines={1} adjustsFontSizeToFit>
               {driving}
             </Text>
             <Text style={styles.liveLabel}>Driving time</Text>
           </View>
+        </View>
+
+        <View
+          style={styles.speed}
+          accessible
+          accessibilityLabel={`Speed ${speed} ${speedUnit(units)}`}
+        >
+          <Text style={styles.speedValue}>{speed}</Text>
+          <Text style={[type.body, styles.muted]}>{speedUnit(units)}</Text>
         </View>
 
         {planCard}
@@ -264,57 +222,49 @@ export default function RecordingView({
             </View>
           </View>
         ) : null}
+      </ScrollView>
 
-        <View style={styles.flex} />
-        <View style={styles.controls}>
-          <IconButton
-            icon="near_me"
-            variant="record"
-            size={64}
-            iconSize={28}
-            label="Navigate"
-            labelStyle={styles.controlLabel}
-            onPress={onNavigate}
-            style={styles.sideControl}
-          />
+      <View style={[styles.controls, { paddingBottom: insets.bottom + 28 }]}>
+        <Control
+          icon="near_me"
+          label="Navigate"
+          bg={c.recordControl}
+          fg={c.onRecordControl}
+          onPress={onNavigate}
+        />
+        <View style={styles.controlRow}>
           {busy ? (
-            <ActivityIndicator color={c.accent} style={styles.centreBusy} />
+            <ActivityIndicator color={c.accent} style={styles.busy} />
           ) : paused ? (
-            <IconButton
+            <Control
               icon="play_arrow"
-              filled
-              variant="filled"
-              size={80}
-              iconSize={44}
               label="Resume"
-              labelStyle={styles.controlLabel}
-              style={styles.flex}
+              bg={c.accent}
+              fg={c.onAccent}
+              tall
               onPress={onResume}
+              style={styles.flex}
             />
           ) : (
-            <IconButton
+            <Control
               icon="pause"
-              filled
-              variant="pause"
-              size={80}
-              iconSize={40}
               label="Pause"
-              labelStyle={styles.controlLabel}
-              style={styles.flex}
+              bg={c.textStrong}
+              fg={c.screen}
+              tall
               onPress={onPause}
+              style={styles.flex}
             />
           )}
-          <IconButton
+          <Control
             icon="stop"
-            filled
-            variant="stop"
-            size={64}
-            iconSize={32}
             label="Stop"
-            labelStyle={styles.controlLabel}
+            bg={c.stop}
+            fg={c.onStop}
+            tall
             accessibilityLabel="Stop recording"
             onPress={() => setConfirmingStop(true)}
-            style={styles.sideControl}
+            style={styles.flex}
           />
         </View>
       </View>
@@ -323,26 +273,10 @@ export default function RecordingView({
 }
 
 const makeStyles = (c) => ({
-  // Design height, but the map gives way on shorter screens so the controls keep their spacing.
-  map: {
-    flexGrow: 0,
-    flexShrink: 1,
-    minHeight: 180,
-    borderBottomWidth: 1,
-    borderBottomColor: c.outline,
-    backgroundColor: c.card,
-  },
-  mapButtonLeft: { position: 'absolute', left: 12 },
-  mapButtonRight: { position: 'absolute', right: 12 },
-  mapButtonBottom: { bottom: 12 },
   flex: { flex: 1, minWidth: 0 },
   text: { color: c.text },
   muted: { color: c.textMuted },
-  body: {
-    flexGrow: 1,
-    flexShrink: 0,
-    paddingHorizontal: 20,
-  },
+  body: { paddingHorizontal: 20, paddingBottom: 24 },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -365,41 +299,46 @@ const makeStyles = (c) => ({
   statusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.stop },
   statusDotIdle: { backgroundColor: c.textMuted },
   statusTrip: { flex: 1 },
-  expoGo: { marginHorizontal: 4 },
-  hero: { alignItems: 'center', marginTop: 28 },
-  heroHidden: { marginTop: 64 },
-  heroValue: {
-    fontFamily: type.stat.fontFamily,
-    fontSize: 72,
-    lineHeight: 72,
-    letterSpacing: -2,
-    color: c.textStrong,
-  },
-  heroUnit: { ...type.bodyStrong, color: c.textMuted },
-  heroBig: {
-    fontFamily: type.stat.fontFamily,
-    fontSize: 120,
-    lineHeight: 120,
-    letterSpacing: -2,
-    color: c.textStrong,
-  },
-  heroBigUnit: { ...type.statUnit, fontSize: 20, color: c.textMuted },
-  liveStats: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
+  expoGo: { marginTop: 12, marginHorizontal: 4 },
+  liveStats: { flexDirection: 'row', alignItems: 'center', marginTop: 56 },
   liveStat: { flex: 1, alignItems: 'center' },
-  liveValue: { color: c.textStrong },
-  liveLabel: { ...type.bodySmall, color: c.textMuted },
-  liveDivider: { width: 1, height: 40, backgroundColor: c.outline },
-  breakBox: { gap: 10, marginTop: 32 },
+  liveValue: {
+    fontFamily: type.stat.fontFamily,
+    fontSize: 44,
+    lineHeight: 52,
+    letterSpacing: -1,
+    color: c.textStrong,
+  },
+  liveLabel: { ...type.body, color: c.textMuted },
+  liveDivider: { width: 1, height: 56, backgroundColor: c.outline },
+  speed: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: 20,
+  },
+  speedValue: { fontFamily: type.stat.fontFamily, fontSize: 20, lineHeight: 26, color: c.textStrong },
+  breakBox: { gap: 10, marginTop: 36, paddingHorizontal: 4 },
   breakTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   onWarning: { color: c.onWarningContainer },
   breakTrack: { height: 8, borderRadius: 4, backgroundColor: c.recordControl, overflow: 'hidden' },
   breakFill: { height: 8, borderRadius: 4, backgroundColor: c.accent },
   breakFillDue: { backgroundColor: c.breakDue },
-  controls: { flexDirection: 'row', alignItems: 'flex-start' },
-  // Centres the 64 circles on the 80 one.
-  sideControl: { flex: 1, paddingTop: 8 },
-  controlLabel: { fontSize: 15, lineHeight: 20 },
-  rowButton: { marginVertical: -8 },
-  rowButtonLast: { marginRight: -8 },
-  centreBusy: { flex: 1, height: 108 },
+  controls: { gap: 12, paddingHorizontal: 20, paddingTop: 12 },
+  controlRow: { flexDirection: 'row', gap: 12 },
+  // Navigate 56 tall; Pause, Resume and Stop 72, sharing the row.
+  control: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 56,
+    borderRadius: 28,
+  },
+  controlTall: { height: 72, borderRadius: 36 },
+  controlLabelTall: { ...type.button, fontSize: 18, lineHeight: 24 },
+  pressed: { opacity: pressedOpacity },
+  rowButton: { marginVertical: -8, marginRight: -8 },
+  busy: { flex: 1, height: 72 },
 });

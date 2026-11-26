@@ -43,7 +43,7 @@ const light = {
   mapRoad: '#FFFFFF',
   progressTrack: '#E8EAED',
   screen: '#FFFFFF', // full-screen pages without cards (Record, Drive saved)
-  recordControl: '#E8EAED', // Record's round Maps / Hide map buttons and break track
+  recordControl: '#E8EAED', // Record's Navigate and round buttons, and the break track
   onRecordControl: '#202124',
   recordingPill: '#FCE8E6',
   onRecordingPill: '#A50E0E',

@@ -20,12 +20,7 @@ import {
   startDrive,
   stopDrive,
 } from '../services/locationService';
-import {
-  getActiveDrive,
-  getDrivePoints,
-  getDrivePointsAfter,
-  getDriveRoutePreview,
-} from '../storage/driveStorage';
+import { getActiveDrive, getDrivePoints, getDrivePointsAfter } from '../storage/driveStorage';
 import { getPlanOfDrive, getPlanTripId } from '../storage/planStorage';
 import { getContinuableTrip, getTrip } from '../storage/tripStorage';
 import { liveMetrics } from '../utils/geoMath';
@@ -34,8 +29,7 @@ import { planHandover, planProgress, stopsPassed, withWayBack } from '../utils/p
 import { CONTINUE_WINDOW_MS, driveNumberFor, tripTitle } from '../utils/tripSummary';
 
 const REFRESH_MS = 1000;
-const ROUTE_REFRESH_MS = 10 * 1000;
-const ROUTE_POINTS = 400;
+const PLAN_REFRESH_MS = 10 * 1000;
 
 /** Open a sat nav link, saying so when the app isn't there. */
 const openNav = (url, appName) =>
@@ -56,8 +50,6 @@ export default function RecordScreen() {
   const [drive, setDrive] = useState(null); // the active drive, if recording
   // { driveId, text }, e.g. "Scotland 2026 · Day 2" for the active drive.
   const [tripLabelFor, setTripLabelFor] = useState(null);
-  // { driveId, points }: the live route so far, thinned.
-  const [routeFor, setRouteFor] = useState(null);
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
   const [foregroundOnly, setForegroundOnly] = useState(false);
@@ -137,24 +129,8 @@ export default function RecordScreen() {
     };
   }, [activeId, activePlanDriveId]);
 
-  // The route drawn so far; refreshed less often than the numbers.
-  useEffect(() => {
-    if (!activeId) return;
-    let cancelled = false;
-    const load = () =>
-      getDriveRoutePreview(activeId, ROUTE_POINTS)
-        .then((points) => !cancelled && setRouteFor({ driveId: activeId, points }))
-        .catch((err) => console.warn('[record] route failed', err));
-    load();
-    const id = setInterval(load, ROUTE_REFRESH_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [activeId]);
-
-  // A planned drive's card, from every point (the thinned route can skip a
-  // stop): { driveId, plan, progress }. Points are read as they come in.
+  // A planned drive's card, from every point, so no stop is skipped:
+  // { driveId, plan, progress }. Points are read as they come in, less often than the numbers.
   const [planCardFor, setPlanCardFor] = useState(null);
   useEffect(() => {
     if (!planOf || planOf.driveId !== activeId) return;
@@ -179,7 +155,7 @@ export default function RecordScreen() {
     };
     const loadSafely = () => load().catch((err) => console.warn('[record] plan card failed', err));
     loadSafely();
-    const id = setInterval(loadSafely, ROUTE_REFRESH_MS);
+    const id = setInterval(loadSafely, PLAN_REFRESH_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -317,7 +293,6 @@ export default function RecordScreen() {
   // Next leg shows where the sat nav needs the next part handed over: Waze
   // (one stop at a time), or a drive too long for one Google Maps link.
   let planCard = null;
-  const routePoints = routeFor && routeFor.driveId === activeId ? routeFor.points : [];
   if (planOf && planCardFor && planCardFor.driveId === activeId) {
     const { plan, progress } = planCardFor;
     const whole = planHandover(plan, planOf.index, { here: null, app: navApp });
@@ -348,9 +323,7 @@ export default function RecordScreen() {
     <View style={styles.screen}>
       {permissionSheet}
       <RecordingView
-        drive={drive}
         live={liveMetrics(drive, now)}
-        route={routePoints}
         planCard={planCard}
         tripLabel={tripLabelFor && tripLabelFor.driveId === activeId ? tripLabelFor.text : null}
         busy={busy}

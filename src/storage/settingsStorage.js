@@ -109,17 +109,6 @@ export function setNavApp(app) {
   return Storage.setItemAsync(NAV_APP_KEY, app);
 }
 
-const RECORD_MAP_HIDDEN_KEY = 'recordMapHidden';
-
-/** Whether Record's map was hidden last time, so the next drive starts the same way. */
-export function getRecordMapHidden() {
-  return Storage.getItemSync(RECORD_MAP_HIDDEN_KEY) === 'true';
-}
-
-export function setRecordMapHidden(hidden) {
-  return Storage.setItemAsync(RECORD_MAP_HIDDEN_KEY, String(hidden));
-}
-
 const SHARE_CARD_KEY = 'shareCardFile';
 
 /** The share image still on the phone, if any, so it's found again after the app is killed. */
