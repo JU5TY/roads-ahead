@@ -1,6 +1,11 @@
-# Roads Ahead print server
+# The app's server
 
-A Cloudflare Worker on the free plan. It costs nothing a month; Stripe and Prodigi only charge per order.
+A Cloudflare Worker on the free plan. It costs nothing a month; Stripe and Prodigi only charge per order. Each job has its own file, and `src/index.js` sends each request to it:
+
+- **Printed posters** (`src/poster.js`), below.
+- **UK fuel prices** (`src/fuelPrice.js`): `GET /fuel-prices` returns the UK's average petrol and diesel pump price for every week since 2003, from GOV.UK's [Weekly road fuel prices](https://www.gov.uk/government/statistics/weekly-road-fuel-prices) (free, no key, Open Government Licence). Its files move with each weekly update, so the Worker finds them through GOV.UK's content API, and Cloudflare's cache keeps the answer for a day.
+
+## Printed posters
 
 1. The phone draws the print-ready PDF (`src/utils/posterPdf.js`) and sends it with its size: `POST /orders?size=A3&title=…`.
 2. The Worker stores the PDF in R2 and returns a Stripe Checkout page. The price is set here, from the size. Stripe takes the UK delivery address and payment, and emails the customer a receipt.
@@ -35,6 +40,6 @@ npx wrangler dev                                               # with a .dev.var
    - `STRIPE_WEBHOOK_SECRET`
    - `PRODIGI_API_KEY`
    - `ASSET_SECRET`: any long random string.
-5. **The app:** set `EXPO_PUBLIC_POSTER_API=<PUBLIC_URL>` for the build or update. Until it's set, the print page shows but Order says "coming soon".
+5. **The app:** set `EXPO_PUBLIC_SERVER_URL=<PUBLIC_URL>` for the build or update. Until it's set, the print page shows but Order says "coming soon".
 
 Test with Stripe's test keys and Prodigi's `sandbox_` key, which never prints, ships or charges, before switching both to live.

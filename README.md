@@ -103,7 +103,7 @@ Jest with jest-expo (development only, nothing added to the app). The tests cove
 
 ## Outside services and costs
 
-Everything the app (and its print server) relies on outside the phone, what's free, and what stops a bill. Checked 11 Nov 2026; providers change their prices, so check the linked pages now and then. **Rule: nothing may cost money while nobody's using it.**
+Everything the app (and its server) relies on outside the phone, what's free, and what stops a bill. Checked 11 Nov 2026; providers change their prices, so check the linked pages now and then. **Rule: nothing may cost money while nobody's using it.**
 
 | Service | What it does | Free allowance | After that | Status |
 |---|---|---|---|---|
@@ -114,7 +114,8 @@ Everything the app (and its print server) relies on outside the phone, what's fr
 | Photon (Komoot) | Planner: place search | Free public server, fair use | Free (no paid tier) | Live |
 | Google Maps, Waze, Apple Maps links | Handing a drive to the sat nav | Free, just links | Free | Live |
 | Expo EAS | App builds and over-the-air updates | 15 Android + 15 iOS builds a month; updates for 1,000 users a month | Free plan stops; paid plans from $19 a month | Live |
-| Cloudflare Workers + R2 | Print server and its PDFs | 100,000 requests a day; R2 10 GB and 1M writes a month | Workers free plan stops; R2 bills overage | Built, not deployed |
+| Cloudflare Workers + R2 | The app's server (posters, fuel prices) and the print PDFs | 100,000 requests a day; R2 10 GB and 1M writes a month | Workers free plan stops; R2 bills overage | Built, not deployed |
+| GOV.UK Weekly road fuel prices | UK average petrol and diesel price for each week, to cost drives | Free, no key (Open Government Licence: credit it in the app) | Free | Server route built, not deployed |
 | Stripe | Print payments | No monthly fee | 1.5% + 20p per UK card payment | Built, not live |
 | Prodigi | Printing and posting | No monthly fee | The print and postage, per order | Built, not live |
 | Google Play / App Store | Selling Premium | | Planned: 15% of sales | Not built |
@@ -146,7 +147,7 @@ Everything the app (and its print server) relies on outside the phone, what's fr
 
 ### Print server (Cloudflare, Stripe, Prodigi)
 
-- Setup and running are in `server/poster/README.md`. Not deployed yet: until `EXPO_PUBLIC_POSTER_API` is set, Order says "coming soon".
+- Setup and running are in `server/app/README.md`. Not deployed yet: until `EXPO_PUBLIC_SERVER_URL` is set, Order says "coming soon".
 - **Cloudflare:** the Workers free plan (100,000 requests a day) has no bill to run up. **R2 does bill** past its free 10 GB a month, so its PDFs are deleted after 14 days; a few orders a day stay far under it.
 - **Stripe and Prodigi** charge only per order (Stripe 1.5% + 20p a UK card; Prodigi the print and postage), and the price set on the server covers both. Test with Stripe's test keys and Prodigi's `sandbox_` key, which never charge.
 

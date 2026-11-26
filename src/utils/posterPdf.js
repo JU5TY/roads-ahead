@@ -1,7 +1,7 @@
 // Draws a poster spec (from posterSpec()) as a print-ready PDF at the paper's exact
 // size: shapes and text as vectors, the photo at its own resolution. Laid out from
 // the same file as the preview, so the two match. Imports name their files in full
-// so server/poster/scripts/render-sample.mjs can run this in Node too.
+// so server/app/scripts/render-sample.mjs can run this in Node too.
 import fontkit from '@pdf-lib/fontkit';
 import {
   LineCapStyle,

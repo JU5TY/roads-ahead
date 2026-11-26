@@ -1,5 +1,5 @@
 // The printed poster's layout, shared by the app's preview and the print server
-// (server/poster), so both draw the same thing. It's laid out on A3 at 2 units a
+// (server/app), so both draw the same thing. It's laid out on A3 at 2 units a
 // millimetre, 594 x 840; A2 has the same shape, so it's the same layout scaled up.
 // Plain data and maths only: the server imports this file as it is.
 

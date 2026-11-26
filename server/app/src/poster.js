@@ -1,10 +1,11 @@
-// The Roads Ahead print server, a Cloudflare Worker on the free plan. The app sends
-// the poster's PDF and gets back a Stripe page for the address and payment. When
-// Stripe says it's paid, the order goes straight to Prodigi to print and post.
-// Stripe and Prodigi keep the records, R2 keeps the PDFs for 14 days, and Stripe
-// retries its webhook (and emails us) if Prodigi can't be reached.
+// Printed posters, on the app's server. The app sends the poster's PDF and gets
+// back a Stripe page for the address and payment. When Stripe says it's paid,
+// the order goes straight to Prodigi to print and post. Stripe and Prodigi keep
+// the records, R2 keeps the PDFs for 14 days, and Stripe retries its webhook
+// (and emails us) if Prodigi can't be reached.
 import { SIZES } from '../../../src/utils/posterLayout.js';
 import { submitPrint } from './prodigi.js';
+import { json, problem } from './respond.js';
 import { createCheckout, verifiedEvent } from './stripe.js';
 
 const MAX_PDF_BYTES = 30 * 1024 * 1024; // an A2 photo poster is about the photo's size
@@ -14,13 +15,6 @@ const ORDER_ID = /^[0-9a-f]{32}$/;
 const REF_LETTERS = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 const pdfFile = (id) => `orders/${id}/poster.pdf`;
-
-const json = (body, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-const problem = (message, status = 400) => json({ error: message, message }, status);
 
 const random = (n) => crypto.getRandomValues(new Uint8Array(n));
 const newOrder = () => ({
@@ -185,31 +179,22 @@ const cancelledPage = () =>
     '<h1>No payment taken</h1><p>You can close this page and go back to Roads Ahead.</p>'
   );
 
-// --- The Worker --------------------------------------------------------------
+// --- Routes -----------------------------------------------------------------
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const parts = url.pathname.split('/').filter(Boolean);
-    const route = `${request.method} /${parts.join('/')}`;
-    try {
-      switch (route) {
-        case 'POST /orders':
-          return await postOrder(request, env, url);
-        case 'POST /stripe/webhook':
-          return await stripeWebhook(request, env);
-        case 'GET /done':
-          return donePage(env, url);
-        case 'GET /cancelled':
-          return cancelledPage();
-      }
-      if (request.method === 'GET' && parts[0] === 'assets' && parts.length === 3) {
-        return await getAsset(env, parts[1], parts[2].replace(/\.pdf$/, ''));
-      }
-      return new Response('Not found', { status: 404 });
-    } catch (err) {
-      console.error('[poster]', route, err);
-      return problem('Something went wrong. Please try again.', 500);
-    }
-  },
-};
+/** The print routes' answer to `route` ("POST /orders"), or null if it isn't one. */
+export async function posterRoute(request, env, url, route, parts) {
+  switch (route) {
+    case 'POST /orders':
+      return postOrder(request, env, url);
+    case 'POST /stripe/webhook':
+      return stripeWebhook(request, env);
+    case 'GET /done':
+      return donePage(env, url);
+    case 'GET /cancelled':
+      return cancelledPage();
+  }
+  if (request.method === 'GET' && parts[0] === 'assets' && parts.length === 3) {
+    return getAsset(env, parts[1], parts[2].replace(/\.pdf$/, ''));
+  }
+  return null;
+}

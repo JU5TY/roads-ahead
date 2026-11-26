@@ -1,5 +1,5 @@
 // Ordering a printed poster. The phone draws the print-ready PDF and sends it to the
-// print server (server/poster), which hands back a Stripe page for the address and
+// app's server (server/app), which hands back a Stripe page for the address and
 // payment. Nothing else about the trip is sent.
 import { Asset as BundledAsset } from 'expo-asset';
 import { File, Paths } from 'expo-file-system';
@@ -10,7 +10,7 @@ import { fontFiles, fonts } from '../theme';
 import { renderPoster } from '../utils/posterPdf';
 
 // Set per build or update; without it the print page shows but can't take orders.
-const API = process.env.EXPO_PUBLIC_POSTER_API;
+const API = process.env.EXPO_PUBLIC_SERVER_URL;
 export const printingOpen = !!API;
 
 // Formats that can go into the PDF as they are.

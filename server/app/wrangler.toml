@@ -1,12 +1,12 @@
-# The Roads Ahead print server, on Cloudflare's free plan. Setup steps are in README.md.
-name = "roads-ahead-poster"
+# The app's server (posters, fuel prices), on Cloudflare's free plan. Setup steps are in README.md.
+name = "road-trip-server"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 
 [vars]
 # Where this Worker is reached (its workers.dev address is fine): Stripe sends the
 # browser back here, and Prodigi fetches the PDFs from here.
-PUBLIC_URL = "https://roads-ahead-poster.example.workers.dev"
+PUBLIC_URL = "https://road-trip-server.example.workers.dev"
 APP_SCHEME = "roadtrip"
 # Fine-art prints. Check them in Prodigi's sandbox catalogue before going live.
 PRODIGI_SKU_A3 = "GLOBAL-FAP-A3"
