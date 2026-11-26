@@ -9,6 +9,8 @@ import {
   parseFuelPrice,
   parseMilesPerKwh,
   parseMpg,
+  pricesForDrive,
+  pricesForPlan,
 } from '../fuel';
 
 const MILE = 1609.344;
@@ -127,5 +129,33 @@ describe('formatting', () => {
   it('shows a kWh price in pence', () => {
     expect(formatChargePrice(0.245)).toBe('24.5p');
     expect(formatChargePrice(0.79)).toBe('79p');
+  });
+});
+
+describe('pricesForDrive and pricesForPlan', () => {
+  const weeks = [
+    ['2026-11-16', 167.07, 196.77],
+    ['2026-11-23', 161.96, 193.29],
+  ];
+  const typed = { fuel: { price: 1.5 }, charge: { price: 0.25 } };
+  const none = { fuel: null, charge: null };
+  const nov18 = Date.parse('2026-11-18T12:00:00Z');
+
+  it("costs a drive at the UK's price for its week, whatever was typed on You", () => {
+    expect(pricesForDrive(typed, weeks, nov18, {})).toEqual({ fuel: 1.6707, charge: 0.25 });
+    expect(pricesForDrive(none, weeks, nov18, { fuel: 'diesel' }).fuel).toBe(1.9677);
+  });
+
+  it('falls back to the typed price with no UK figures, or before them', () => {
+    expect(pricesForDrive(typed, null, nov18, {}).fuel).toBe(1.5);
+    expect(pricesForDrive(typed, weeks, Date.parse('2020-01-01'), {}).fuel).toBe(1.5);
+    expect(pricesForDrive(none, null, nov18, {})).toEqual({ fuel: null, charge: null });
+  });
+
+  it("costs a plan at the typed price, else the UK's latest", () => {
+    expect(pricesForPlan(typed, weeks, {}).fuel).toBe(1.5);
+    expect(pricesForPlan(none, weeks, {}).fuel).toBe(1.6196);
+    expect(pricesForPlan(none, weeks, { fuel: 'diesel' }).fuel).toBe(1.9329);
+    expect(pricesForPlan(none, null, {})).toEqual({ fuel: null, charge: null });
   });
 });

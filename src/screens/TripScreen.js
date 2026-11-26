@@ -44,7 +44,7 @@ import { routeGaps, routeSegments, withoutCrossings } from '../utils/crossings';
 import { averageMovingSpeed, downsample } from '../utils/geoMath';
 import { getRoad } from '../utils/iconicRoads';
 import { exportTrip } from '../services/exportService';
-import { driveCost } from '../utils/fuel';
+import { driveCost, pricesForDrive } from '../utils/fuel';
 import { countryRows } from '../utils/countries';
 import { buildDriveTimeline, buildTripTimeline } from '../utils/timeline';
 import { vehicleLabel } from '../utils/vehicles';
@@ -65,7 +65,7 @@ const MAX_MAP_POINTS = 3000;
 export default function TripScreen() {
   // `drive` opens on the day of one of the trip's drives (e.g. from an Iconic Road).
   const { id, drive: driveParam } = useLocalSearchParams();
-  const { units, prices } = useSettings();
+  const { units, prices, ukFuelWeeks } = useSettings();
   const premium = usePremium();
   const roadTotals = useRoadTotals();
   const { c } = useTheme();
@@ -341,12 +341,12 @@ export default function TripScreen() {
       ? (vehicles.find((v) => v.id === usedVehicleIds[0]) ?? null)
       : null;
   // Fuel for what's shown: each drive in its own vehicle (the default when it has
-  // none), at today's price; null until every one can be worked out.
+  // none), at the UK's price that week; null until every one can be worked out.
   const vehicleOf = (d) => vehicles.find((v) => v.id === d.vehicleId) ?? vehicles.find((v) => v.isDefault) ?? null;
   const costDrives = selected ? [selected] : viewDrives;
   const driveCosts = costDrives.map((d) => {
     const v = vehicleOf(d);
-    return v ? driveCost(d.stats.distanceM, v, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
+    return v ? driveCost(d.stats.distanceM, v, pricesForDrive(prices, ukFuelWeeks, d.startedAt, v)) : null;
   });
   const fuelPounds = driveCosts.every((p) => p != null) ? driveCosts.reduce((sum, p) => sum + p, 0) : null;
   // Add asks for the first one missing: its vehicle's figure (or a vehicle), then the price.

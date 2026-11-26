@@ -21,7 +21,7 @@ const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
  */
 export default function FuelCostRow({ pounds, vehicle, vehicles, onVehiclesChanged, divider = false }) {
   const styles = useStyles(makeStyles);
-  const { prices, setPrice } = useSettings();
+  const { prices, ukFuelWeeks, setPrice } = useSettings();
   const [sheet, setSheet] = useState(null); // null | 'vehicle' | 'price'
   const priceNext = useRef(false); // the price sheet opens once the vehicle sheet has gone
   const electric = !!vehicle?.electric;
@@ -36,8 +36,10 @@ export default function FuelCostRow({ pounds, vehicle, vehicles, onVehiclesChang
     }
     // Reloaded first, so the price sheet opens for the car's fuel as saved.
     await onVehiclesChanged?.();
-    // Then the price, if that's still missing, once the vehicle sheet has gone.
-    priceNext.current = hasFigure(fields) && !prices[fields.electric ? 'charge' : 'fuel'];
+    // Then the price, if that's still missing (fuel has the UK's weekly price
+    // once it's in), once the vehicle sheet has gone.
+    const hasPrice = fields.electric ? prices.charge : prices.fuel || ukFuelWeeks;
+    priceNext.current = hasFigure(fields) && !hasPrice;
     setSheet(null);
   };
 

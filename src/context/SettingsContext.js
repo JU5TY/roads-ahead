@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Appearance } from 'react-native';
 
+import { getSavedUkFuelPrices, refreshUkFuelPrices } from '../services/fuelPriceService';
 import { hasAnyDrive } from '../storage/driveStorage';
 import * as settingsStorage from '../storage/settingsStorage';
 
@@ -23,6 +24,14 @@ export function SettingsProvider({ children }) {
     fuel: settingsStorage.getPrice('fuel'),
     charge: settingsStorage.getPrice('charge'),
   }));
+  // The UK's weekly average pump prices, for costing drives (utils/fuel.js).
+  const [ukFuelWeeks, setUkFuelWeeks] = useState(() => getSavedUkFuelPrices()?.weeks ?? null);
+
+  useEffect(() => {
+    refreshUkFuelPrices()
+      .then((next) => next && setUkFuelWeeks(next.weeks))
+      .catch((err) => console.warn('[fuel] UK prices failed', err));
+  }, []);
 
   // Pin the app (and the maps and system bars) to light or dark, or follow the phone.
   useEffect(() => {
@@ -74,6 +83,8 @@ export function SettingsProvider({ children }) {
         setPrices((prev) => ({ ...prev, [kind]: next }));
         save(settingsStorage.setPrice(kind, next));
       },
+      // [[week, petrol pence, diesel pence]], oldest first, or null until fetched.
+      ukFuelWeeks,
       onboarded,
       finishOnboarding: () => {
         setOnboarded(true);
@@ -85,7 +96,7 @@ export function SettingsProvider({ children }) {
         save(settingsStorage.setOnboarded(false));
       },
     }),
-    [units, breakReminderMinutes, theme, mapView, navApp, prices, onboarded]
+    [units, breakReminderMinutes, theme, mapView, navApp, prices, ukFuelWeeks, onboarded]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

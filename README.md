@@ -147,7 +147,7 @@ Everything the app (and its server) relies on outside the phone, what's free, an
 
 ### Print server (Cloudflare, Stripe, Prodigi)
 
-- Setup and running are in `server/app/README.md`. Not deployed yet: until `EXPO_PUBLIC_SERVER_URL` is set, Order says "coming soon".
+- Setup and running are in `server/app/README.md`. Not deployed yet: until `EXPO_PUBLIC_SERVER_URL` and `EXPO_PUBLIC_PRINTING=on` are set, Order says "coming soon".
 - **Cloudflare:** the Workers free plan (100,000 requests a day) has no bill to run up. **R2 does bill** past its free 10 GB a month, so its PDFs are deleted after 14 days; a few orders a day stay far under it.
 - **Stripe and Prodigi** charge only per order (Stripe 1.5% + 20p a UK card; Prodigi the print and postage), and the price set on the server covers both. Test with Stripe's test keys and Prodigi's `sandbox_` key, which never charge.
 

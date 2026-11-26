@@ -1,7 +1,11 @@
-// Fuel or charging cost for a planned drive, from the car's own figure
-// (average mpg in UK gallons, or miles per kWh for an electric car) and the
-// price set on You (a litre, or a kWh). Shown only when both are set: no
-// defaults, no national-average guesses.
+// Fuel or charging cost for a drive, from the car's own figure (average mpg in
+// UK gallons, or miles per kWh for an electric car) and a price (a litre, or a
+// kWh). A drive already driven is costed at the UK's average pump price for its
+// week (utils/fuelPrices.js), so a price typed today doesn't change what an old
+// trip cost; a plan at the price typed on You, else the UK's latest. Charging
+// has no UK figure, so it's always the price typed on You. No cost is shown
+// until the car's figure and a price are both there.
+import { ukPriceAt } from './fuelPrices';
 
 const METERS_PER_MILE = 1609.344;
 const LITRES_PER_GALLON = 4.54609;
@@ -82,6 +86,25 @@ export function driveCost(metres, vehicle, { fuel, charge }) {
   }
   return vehicle.mpg != null && fuel != null ? (miles / vehicle.mpg) * LITRES_PER_GALLON * fuel : null;
 }
+
+const isDiesel = (vehicle) => vehicle?.fuel === 'diesel';
+
+/**
+ * The { fuel, charge } prices (pounds, or null) for a drive driven at `time`
+ * in `vehicle`: fuel at the UK's average for that week, else (no figures yet,
+ * or a drive before them) the price typed on You. `prices` and `weeks` are
+ * SettingsContext's `prices` and `ukFuelWeeks`.
+ */
+export const pricesForDrive = (prices, weeks, time, vehicle) => ({
+  fuel: ukPriceAt(weeks, time, isDiesel(vehicle)) ?? prices.fuel?.price ?? null,
+  charge: prices.charge?.price ?? null,
+});
+
+/** The { fuel, charge } prices for a plan: the ones typed on You, else the UK's latest fuel price. */
+export const pricesForPlan = (prices, weeks, vehicle) => ({
+  fuel: prices.fuel?.price ?? ukPriceAt(weeks, Date.now(), isDiesel(vehicle)),
+  charge: prices.charge?.price ?? null,
+});
 
 /** "~£19", in whole pounds (never "~£0"): the ~ as it's an estimate. */
 export const formatPounds = (pounds) => `~£${Math.max(1, Math.round(pounds)).toLocaleString()}`;

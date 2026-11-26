@@ -9,9 +9,11 @@ import { Linking } from 'react-native';
 import { fontFiles, fonts } from '../theme';
 import { renderPoster } from '../utils/posterPdf';
 
-// Set per build or update; without it the print page shows but can't take orders.
+// Set per build or update. The server's address is shared with fuel prices, so
+// orders open only once printing is switched on too; until then the print page
+// shows but can't take orders.
 const API = process.env.EXPO_PUBLIC_SERVER_URL;
-export const printingOpen = !!API;
+export const printingOpen = !!API && process.env.EXPO_PUBLIC_PRINTING === 'on';
 
 // Formats that can go into the PDF as they are.
 const PHOTO_TYPES = { jpg: 'jpg', jpeg: 'jpg', png: 'png' };

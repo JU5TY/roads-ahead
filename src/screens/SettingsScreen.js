@@ -29,6 +29,7 @@ import { spacing, type } from '../theme';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
 import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/fuel';
+import { FUEL_PRICES_ATTRIBUTION } from '../utils/fuelPrices';
 import { ROADS_ATTRIBUTION } from '../utils/iconicRoads';
 import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
 import { NAV_APPS } from '../utils/navLinks';
@@ -351,7 +352,7 @@ export default function SettingsScreen() {
         onPress={() =>
           showMessage(
             `Roads Ahead ${version}`,
-            `${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}\n${READY_ROUTES_ATTRIBUTION}`
+            `${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}\n${READY_ROUTES_ATTRIBUTION}\n${FUEL_PRICES_ATTRIBUTION}`
           )
         }
         divider={__DEV__}

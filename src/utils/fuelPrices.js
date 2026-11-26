@@ -3,6 +3,10 @@
 // (server/app/src/fuelPrice.js) and the phone keeps the table it hands back.
 // Shared by both, so they read the figures the same way.
 
+/** For You's Version message, as the Open Government Licence asks. */
+export const FUEL_PRICES_ATTRIBUTION =
+  'UK fuel prices: GOV.UK Weekly road fuel prices. Contains public sector information licensed under the Open Government Licence v3.0';
+
 const PETROL = /ULSP.*pump price/i;
 const DIESEL = /ULSD.*pump price/i;
 const DAY_MS = 24 * 60 * 60 * 1000;

@@ -40,6 +40,6 @@ npx wrangler dev                                               # with a .dev.var
    - `STRIPE_WEBHOOK_SECRET`
    - `PRODIGI_API_KEY`
    - `ASSET_SECRET`: any long random string.
-5. **The app:** set `EXPO_PUBLIC_SERVER_URL=<PUBLIC_URL>` for the build or update. Until it's set, the print page shows but Order says "coming soon".
+5. **The app:** set `EXPO_PUBLIC_SERVER_URL=<PUBLIC_URL>` (fuel prices use it too) and `EXPO_PUBLIC_PRINTING=on` for the build or update. Until both are set, the print page shows but Order says "coming soon".
 
 Test with Stripe's test keys and Prodigi's `sandbox_` key, which never prints, ships or charges, before switching both to live.

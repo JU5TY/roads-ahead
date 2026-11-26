@@ -23,7 +23,7 @@ import { listTrips } from '../storage/tripStorage';
 import { deleteVehicle, updateVehicle } from '../storage/vehicleStorage';
 import { fonts, pressedOpacity, radius, spacing, type } from '../theme';
 import { distanceParts, formatDistance, formatDurationShort, formatElevation } from '../utils/format';
-import { driveCost } from '../utils/fuel';
+import { driveCost, pricesForDrive } from '../utils/fuel';
 import { READY_ROUTES } from '../utils/readyRoutes';
 import { groupIntoDays, summarizeDrives } from '../utils/tripSummary';
 import { vehicleLabel } from '../utils/vehicles';
@@ -53,7 +53,7 @@ function efficiencyValue(vehicle) {
 export default function VehicleScreen() {
   const { id } = useLocalSearchParams();
   const vehicleId = Number(id);
-  const { units, prices } = useSettings();
+  const { units, prices, ukFuelWeeks } = useSettings();
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -99,9 +99,9 @@ export default function VehicleScreen() {
   // Drives whose times are hidden (just an Iconic Road) are left out of the time.
   const timed = drives.filter((d) => !d.stats.timesHidden);
   const movingMs = timed.reduce((sum, d) => sum + (d.stats.movingTimeMs ?? 0), 0);
-  // Each drive at today's price; null until the car's figure and the price are set.
+  // Each drive at the UK's price that week; null until the car's figure and a price are there.
   const costs = drives.map((d) =>
-    driveCost(d.stats.distanceM, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price })
+    driveCost(d.stats.distanceM, vehicle, pricesForDrive(prices, ukFuelWeeks, d.startedAt, vehicle))
   );
   const fuelPounds = costs.every((p) => p != null) ? costs.reduce((sum, p) => sum + p, 0) : null;
   const tripIds = new Set(trips.map((t) => t.id));

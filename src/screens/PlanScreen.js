@@ -48,7 +48,7 @@ import { lineCountryRows } from '../utils/countries';
 import { formatDistance, formatDurationShort } from '../utils/format';
 import { lineLength } from '../utils/geoMath';
 import { planLink } from '../utils/planLink';
-import { driveCost, formatDriveCost } from '../utils/fuel';
+import { driveCost, formatDriveCost, pricesForPlan } from '../utils/fuel';
 import { ICONIC_ROADS, getRoad, roadPlace } from '../utils/iconicRoads';
 import {
   addPosition,
@@ -140,7 +140,7 @@ export default function PlanScreen() {
   const mapPlan = useMemo(() => (plan ? mapPlanOf(plan, here) : null), [plan, here]);
   const outline = useMemo(() => (mapPlan ? planOutline(mapPlan) : []), [mapPlan]);
   const routes = usePlanRoutes(mapPlan, tab, hereReady);
-  const { units, prices, navApp } = useSettings();
+  const { units, prices, ukFuelWeeks, navApp } = useSettings();
   const [vehicles, reloadVehicles] = useVehicles();
   // Plans aren't tied to a car: the fuel is worked out for the default one.
   const vehicle = vehicles?.find((v) => v.isDefault) ?? null;
@@ -260,7 +260,7 @@ export default function PlanScreen() {
     // A ferry is marked on its leg in the timeline (a boat), not here, so the line stays short.
     const metres = asked.reduce((sum, r) => sum + r.route.metres, 0);
     const seconds = asked.reduce((sum, r) => sum + r.route.seconds, 0);
-    const pounds = vehicle ? driveCost(metres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price }) : null;
+    const pounds = vehicle ? driveCost(metres, vehicle, pricesForPlan(prices, ukFuelWeeks, vehicle)) : null;
     const cost = pounds != null ? formatDriveCost(pounds, electric) : null;
     return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${cost ? ` · ${cost}` : ''}`, metres, seconds, cost };
   };
@@ -282,10 +282,10 @@ export default function PlanScreen() {
   const goSummary = daySummary;
   // The Distance shown: Google's road miles, else the saved lines' (null until either is in).
   const shownMetres = summary.status === 'done' ? summary.metres : lineMetres;
-  // Fuel from those miles, so it shows either way; null until the car's figure and price are set.
+  // Fuel from those miles, so it shows either way; null until the car's figure and a price are there.
   const shownPounds =
     vehicle && shownMetres != null
-      ? driveCost(shownMetres, vehicle, { fuel: prices.fuel?.price, charge: prices.charge?.price })
+      ? driveCost(shownMetres, vehicle, pricesForPlan(prices, ukFuelWeeks, vehicle))
       : null;
   const shownStops = stopCounts(plan, all ? null : picked).stops;
   // Countries from the road lines, once every day going somewhere has one.
