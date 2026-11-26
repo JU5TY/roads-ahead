@@ -339,7 +339,7 @@ export default function SettingsScreen() {
         onPress={() =>
           showMessage(
             'Privacy',
-            "Your trips stay on this phone and in your phone's own backup. Only if you order a print is it sent to us: its route, words and photo, which go to our printer and are deleted 14 days later. Maps and place names come from Apple or Google."
+            "Your trips stay on this phone and in your phone's own backup. If you look up a registration, it's sent to us and on to the DVLA and DVSA to find the vehicle's details, and nothing is kept. If you order a print, its route, words and photo go to our printer and are deleted 14 days later. Maps and place names come from Apple or Google."
           )
         }
         divider
