@@ -29,7 +29,7 @@ function IconicHalf({ completed, total, title, onPress }) {
 }
 
 /**
- * Iconic Roads and Iconic Trips side by side, each half opening its list:
+ * Iconic Trips and Iconic Roads side by side, each half opening its list:
  * `roadsDone` and `tripsDone` of them completed (Home: all of them; a
  * vehicle's page: those driven in it).
  */
@@ -40,17 +40,17 @@ export default function IconicCard({ roadsDone, tripsDone }) {
       <SectionHeader title="Iconic" />
       <View style={styles.iconic}>
         <IconicHalf
-          completed={roadsDone}
-          total={ICONIC_ROADS.length}
-          title="Iconic Roads"
-          onPress={() => router.push('/roads')}
-        />
-        <View style={styles.iconicDivider} />
-        <IconicHalf
           completed={tripsDone}
           total={READY_ROUTES.length}
           title="Iconic Trips"
           onPress={() => router.push('/routes')}
+        />
+        <View style={styles.iconicDivider} />
+        <IconicHalf
+          completed={roadsDone}
+          total={ICONIC_ROADS.length}
+          title="Iconic Roads"
+          onPress={() => router.push('/roads')}
         />
       </View>
     </>
