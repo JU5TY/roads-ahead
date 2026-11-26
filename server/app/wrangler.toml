@@ -20,5 +20,9 @@ PRODIGI_SHIPPING = "Express"
 binding = "POSTERS"
 bucket_name = "poster-pipeline-production"
 
+# Mondays at 06:00 UTC: one MOT history lookup, as DVSA revokes a key unused for 90 days.
+[triggers]
+crons = ["0 6 * * 1"]
+
 [observability]
 enabled = true

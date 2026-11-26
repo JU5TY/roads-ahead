@@ -116,6 +116,8 @@ Everything the app (and its server) relies on outside the phone, what's free, an
 | Expo EAS | App builds and over-the-air updates | 15 Android + 15 iOS builds a month; updates for 1,000 users a month | Free plan stops; paid plans from $19 a month | Live |
 | Cloudflare Workers + R2 | The app's server (posters, fuel prices) and the print PDFs | 100,000 requests a day; R2 10 GB and 1M writes a month | Workers free plan stops; R2 bills overage | Built, not deployed |
 | GOV.UK Weekly road fuel prices | UK average petrol and diesel price for each week, to cost drives | Free, no key (Open Government Licence: credit it in the app) | Free | Server route built, not deployed |
+| DVLA Vehicle Enquiry Service | Registration lookup: make, colour, fuel, engine, year, CO₂, tax and MOT dates | Free; 2 requests a second | Free | Server route built; key applied for 26 Nov 2026 |
+| DVSA MOT history | Registration lookup: model, mileage at each MOT | Free; 500,000 a day | Free | Server route built; applied for 26 Nov 2026 (ref S24XL5N9). **The API key is revoked after 90 days unused, and the client secret expires every 2 years** (DVSA emails 30 and 14 days before) |
 | Stripe | Print payments | No monthly fee | 1.5% + 20p per UK card payment | Built, not live |
 | Prodigi | Printing and posting | No monthly fee | The print and postage, per order | Built, not live |
 | Google Play / App Store | Selling Premium | | Planned: 15% of sales | Not built |

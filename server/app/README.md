@@ -4,6 +4,7 @@ A Cloudflare Worker on the free plan. It costs nothing a month; Stripe and Prodi
 
 - **Printed posters** (`src/poster.js`), below.
 - **UK fuel prices** (`src/fuelPrice.js`): `GET /fuel-prices` returns the UK's average petrol and diesel pump price for every week since 2003, from GOV.UK's [Weekly road fuel prices](https://www.gov.uk/government/statistics/weekly-road-fuel-prices) (free, no key, Open Government Licence). Its files move with each weekly update, so the Worker finds them through GOV.UK's content API, and Cloudflare's cache keeps the answer for a day.
+- **Registration lookups** (`src/vehicle.js`): `POST /vehicle-lookup` with `{ "registration": "AB12 CDE" }` asks DVLA's Vehicle Enquiry Service and DVSA's MOT history together and returns one vehicle (`src/utils/vehicleLookup.js`), with `sources` saying how each one answered. Each is asked only once its secrets are set, and either can fail alone. Nothing is kept, and the registration travels in the body so it stays out of Cloudflare's logs. Secrets: `DVLA_API_KEY`; `DVSA_CLIENT_ID`, `DVSA_CLIENT_SECRET`, `DVSA_API_KEY` and `DVSA_TOKEN_URL` (the access token URL in DVSA's email). DVSA revokes an API key unused for 90 days, so a weekly cron (`wrangler.toml`, Mondays 06:00 UTC) makes one lookup: of `KEEPALIVE_REGISTRATION` if that secret is set (your own vehicle's), else a registration that can't be issued. Its result is in the Worker's logs.
 
 ## Printed posters
 
