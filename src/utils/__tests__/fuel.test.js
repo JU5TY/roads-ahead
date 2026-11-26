@@ -143,7 +143,7 @@ describe('pricesForDrive and pricesForPlan', () => {
 
   it("costs a drive at the UK's price for its week, whatever was typed on You", () => {
     expect(pricesForDrive(typed, weeks, nov18, {})).toEqual({ fuel: 1.6707, charge: 0.25 });
-    expect(pricesForDrive(none, weeks, nov18, { details: { fuel: 'diesel' } }).fuel).toBe(1.9677);
+    expect(pricesForDrive(none, weeks, nov18, { fuel: 'diesel' }).fuel).toBe(1.9677);
   });
 
   it('falls back to the typed price with no UK figures, or before them', () => {
@@ -155,7 +155,7 @@ describe('pricesForDrive and pricesForPlan', () => {
   it("costs a plan at the typed price, else the UK's latest", () => {
     expect(pricesForPlan(typed, weeks, {}).fuel).toBe(1.5);
     expect(pricesForPlan(none, weeks, {}).fuel).toBe(1.6196);
-    expect(pricesForPlan(none, weeks, { details: { fuel: 'diesel' } }).fuel).toBe(1.9329);
+    expect(pricesForPlan(none, weeks, { fuel: 'diesel' }).fuel).toBe(1.9329);
     expect(pricesForPlan(none, null, {})).toEqual({ fuel: null, charge: null });
   });
 });

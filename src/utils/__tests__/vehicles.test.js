@@ -50,7 +50,7 @@ describe('detailsFor', () => {
 
 describe('formFromLookup', () => {
   it('gives the form its make, model, fuel and mpg', () => {
-    expect(formFromLookup(FOUND)).toEqual({ make: 'BMW', model: '1M', electric: false, mpg: 29 });
+    expect(formFromLookup(FOUND)).toEqual({ make: 'BMW', model: '1M', fuel: 'petrol', electric: false, mpg: 29 });
     expect(formFromLookup({ ...FOUND, model: null }).model).toBe('');
   });
 });
@@ -59,6 +59,10 @@ describe('vehicleSubtitle', () => {
   it('reads year, engine and fuel', () => {
     expect(vehicleSubtitle({ details: lookupDetails(FOUND) })).toBe('2011 · 3.0 litre petrol');
     expect(vehicleSubtitle({ details: { year: 2022, engineCc: 1968, fuel: 'diesel' } })).toBe('2022 · 2.0 litre diesel');
+  });
+
+  it("follows the form's fuel where it puts a lookup right", () => {
+    expect(vehicleSubtitle({ fuel: 'diesel', details: lookupDetails(FOUND) })).toBe('2011 · 3.0 litre diesel');
   });
 
   it('leaves out the engine for an electric vehicle', () => {

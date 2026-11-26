@@ -87,8 +87,7 @@ export function driveCost(metres, vehicle, { fuel, charge }) {
   return vehicle.mpg != null && fuel != null ? (miles / vehicle.mpg) * LITRES_PER_GALLON * fuel : null;
 }
 
-// Diesel only once a registration lookup says so (utils/vehicles.js lookupDetails).
-const isDiesel = (vehicle) => vehicle?.details?.fuel === 'diesel';
+const isDiesel = (vehicle) => vehicle?.fuel === 'diesel';
 
 /**
  * The { fuel, charge } prices (pounds, or null) for a drive driven at `time`

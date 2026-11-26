@@ -173,6 +173,16 @@ const MIGRATIONS = [
   `
     ALTER TABLE vehicles ADD COLUMN details TEXT;
   `,
+  // 13: a vehicle's fuel, 'petrol' | 'diesel' | 'electric', so each is costed
+  // at its own UK price; `electric` stays, kept in step. Diesel where a
+  // lookup said so, else petrol.
+  `
+    ALTER TABLE vehicles ADD COLUMN fuel TEXT NOT NULL DEFAULT 'petrol';
+    UPDATE vehicles SET fuel = CASE
+      WHEN electric = 1 THEN 'electric'
+      WHEN json_extract(details, '$.fuel') = 'diesel' THEN 'diesel'
+      ELSE 'petrol' END;
+  `,
 ];
 
 /** The schema this build writes (PRAGMA user_version once migrated); a newer backup can't be restored. */

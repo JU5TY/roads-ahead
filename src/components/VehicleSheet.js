@@ -66,7 +66,7 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
     make: start?.make ?? '',
     model: start?.model ?? '',
     registration: start?.registration ?? '',
-    electric: start?.electric ?? false,
+    fuel: start?.fuel ?? (start?.electric ? 'electric' : 'petrol'),
     mpg: start?.mpg != null ? String(start.mpg) : '',
     milesPerKwh: start?.milesPerKwh != null ? String(start.milesPerKwh) : '',
   });
@@ -90,7 +90,7 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
         ...prev,
         make: found.make || prev.make,
         model: found.model || prev.model,
-        electric: found.electric,
+        fuel: found.fuel,
         mpg: found.mpg != null ? String(found.mpg) : prev.mpg,
       }));
       setDetails(lookupDetails(result.vehicle));
@@ -110,7 +110,8 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
   // under that field and puts the cursor in the first one to fix.
   const [tried, setTried] = useState(false);
   // Only the figure for the chosen fuel is checked; the other keeps what was saved.
-  const efficiency = fields.electric ? parseMilesPerKwh(fields.milesPerKwh) : parseMpg(fields.mpg);
+  const electric = fields.fuel === 'electric';
+  const efficiency = electric ? parseMilesPerKwh(fields.milesPerKwh) : parseMpg(fields.mpg);
   const missingMake = tried && !fields.make.trim() ? 'Enter a make' : null;
   const missingModel = tried && !fields.model.trim() ? 'Enter a model' : null;
   const save = () => {
@@ -126,8 +127,9 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
     if (!fix) {
       return onSave({
         ...fields,
-        mpg: fields.electric ? (vehicle?.mpg ?? null) : efficiency.mpg,
-        milesPerKwh: fields.electric ? efficiency.milesPerKwh : (vehicle?.milesPerKwh ?? null),
+        electric,
+        mpg: electric ? (vehicle?.mpg ?? null) : efficiency.mpg,
+        milesPerKwh: electric ? efficiency.milesPerKwh : (vehicle?.milesPerKwh ?? null),
         details: detailsFor(details, fields.registration),
       });
     }
@@ -185,26 +187,27 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
           returnKeyType="next"
           onSubmitEditing={() => efficiencyRef.current?.focus()}
         />
-        {/* For plans' fuel or charging cost, with the price on You. Optional. */}
+        {/* For fuel or charging cost: each fuel at its own UK price, charging at You's. */}
         <Text style={styles.label}>Fuel</Text>
         <SegmentedSwitch
           options={[
-            ['fuel', 'Petrol or diesel'],
+            ['petrol', 'Petrol'],
+            ['diesel', 'Diesel'],
             ['electric', 'Electric'],
           ]}
-          value={fields.electric ? 'electric' : 'fuel'}
-          onChange={(v) => setFields((prev) => ({ ...prev, electric: v === 'electric' }))}
+          value={fields.fuel}
+          onChange={(fuel) => setFields((prev) => ({ ...prev, fuel }))}
           stretch
         />
         <Field
           // A new input for the other fuel, so its own text and keyboard come up.
-          key={fields.electric ? 'kwh' : 'mpg'}
+          key={electric ? 'kwh' : 'mpg'}
           ref={efficiencyRef}
-          label={fields.electric ? 'Average miles per kWh' : 'Average mpg'}
+          label={electric ? 'Average miles per kWh' : 'Average mpg'}
           error={tried ? efficiency.error : null}
-          suffix={fields.electric ? 'mi/kWh' : 'mpg'}
-          value={fields.electric ? fields.milesPerKwh : fields.mpg}
-          onChangeText={set(fields.electric ? 'milesPerKwh' : 'mpg')}
+          suffix={electric ? 'mi/kWh' : 'mpg'}
+          value={electric ? fields.milesPerKwh : fields.mpg}
+          onChangeText={set(electric ? 'milesPerKwh' : 'mpg')}
           keyboardType="decimal-pad"
           maxLength={5}
           autoFocus={!!vehicle && focusEfficiency}
@@ -339,7 +342,8 @@ function AddVehicle({ others, onSave }) {
  * or edit / remove one. `others` are the Garage's other
  * vehicles, to tell when a registration is needed. On UK phones the
  * registration has Look up, which fills in the rest. onSave gets
- * { make, model, registration } as typed, `electric`, mpg and milesPerKwh as
+ * { make, model, registration } as typed, `fuel` ('petrol' | 'diesel' |
+ * 'electric') with `electric` to match, mpg and milesPerKwh as
  * numbers or null, and `details` (what a lookup found, or null). Without
  * onDelete there's no Remove; `focusEfficiency` starts a saved vehicle's sheet
  * in its mpg (or miles per kWh) field, for a Details card's Fuel cost row.

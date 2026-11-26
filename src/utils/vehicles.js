@@ -66,6 +66,7 @@ export const detailsFor = (details, registration) =>
 export const formFromLookup = (found) => ({
   make: found.make ?? '',
   model: found.model ?? '',
+  fuel: found.fuel ?? 'petrol',
   electric: found.electric,
   mpg: found.mpg,
 });
@@ -80,7 +81,8 @@ const litres = (cc) => `${(Math.round(cc / 100) / 10).toFixed(1)} litre`;
 export function vehicleSubtitle(vehicle) {
   const d = vehicle?.details;
   if (!d) return null;
-  const fuel = d.fuel ?? (vehicle.electric ? 'electric' : null);
+  // The fuel as set on the form (it can put a lookup right), else as looked up.
+  const fuel = vehicle.fuel ?? d.fuel ?? (vehicle.electric ? 'electric' : null);
   const engine = d.engineCc && fuel !== 'electric' ? litres(d.engineCc) : null;
   const power = [engine, fuel].filter(Boolean).join(' ');
   const line = [d.year, power].filter(Boolean).join(' · ');
