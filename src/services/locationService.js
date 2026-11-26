@@ -4,7 +4,7 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import { Platform } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 
 import {
   appendFixes,
@@ -153,11 +153,26 @@ export async function requestLocationAccess() {
   return toAccess(await Location.requestForegroundPermissionsAsync());
 }
 
+/**
+ * Android 13+ hides a foreground service's notification (and its status-bar
+ * icon) unless the app may post notifications, so ask before recording starts.
+ * Recording works either way; once answered, this asks nothing.
+ */
+async function askNotificationAccess() {
+  if (Platform.OS !== 'android' || Platform.Version < 33) return;
+  try {
+    await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+  } catch (err) {
+    console.warn('[location] notification access failed', err);
+  }
+}
+
 async function startUpdates() {
   if (!(await getLocationAccess()).granted) {
     throw new Error('Location access is needed to record a trip.');
   }
   if (await canTrackInBackground()) {
+    await askNotificationAccess();
     // Started again even when it says it's running: after the app was killed
     // mid-drive the task is still registered, but Android won't restart its
     // service from the background, so nothing would be recorded until it is.
