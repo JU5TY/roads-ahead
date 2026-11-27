@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { routeDrive } from '../services/routing';
 import { forgetOldLines, getSavedLineSync, routeKey, saveLine } from '../storage/routeStorage';
-import { driveRoute } from '../utils/plans';
+import { driveRoute, driveStart } from '../utils/plans';
 import { getReadyRoute } from '../utils/readyRoutes';
 
 // Routes asked for since the app opened, by their points. Miles and times may
@@ -46,6 +46,19 @@ function lineFor(key) {
 }
 
 /**
+ * A drive's line is also saved under its points without the phone's (a Drive 1
+ * from where the phone is, a way back to it), so Home's Up next draws the line
+ * from when the plan was last open wherever the phone is now. Null for a
+ * drive with nowhere to go.
+ */
+function anyStartKey(plan, index, ask) {
+  let points = ask.points;
+  if (driveStart(plan, index)?.fromPhone) points = points.slice(1);
+  if (plan.drives[index].stops.at(-1)?.fromPhone) points = points.slice(0, -1);
+  return points.length < 2 ? null : `any.${routeKey(points)}`;
+}
+
+/**
  * A copied Iconic Trip's own road lines (OpenStreetMap, ours to keep), one per
  * drive, [{ latitude, longitude }]: drawn when Google's can't be had, as over
  * a pass closed for the winter. [] for any other plan.
@@ -62,7 +75,7 @@ export function useSavedLines(plan) {
     const own = routeLines(plan);
     return plan.drives.map((_, i) => {
       const ask = driveRoute(plan, i);
-      return (ask ? lineFor(routeKey(ask.points)) : null) ?? own[i] ?? null;
+      return (ask ? (lineFor(routeKey(ask.points)) ?? lineFor(anyStartKey(plan, i, ask))) : null) ?? own[i] ?? null;
     });
   }, [plan]);
 }
@@ -113,6 +126,11 @@ export function usePlanRoutes(plan, picked, ready = true) {
           if (result.line) {
             memory.set(key, result);
             saveLine(key, result.line).catch(() => {});
+            const any = anyStartKey(plan, keys.indexOf(key), ask);
+            if (any) {
+              saved.set(any, result.line);
+              saveLine(any, result.line).catch(() => {});
+            }
           }
           setAnswers((a) => ({ ...a, [key]: result.limited ? 'limited' : result.failed ? 'failed' : 'done' }));
         });

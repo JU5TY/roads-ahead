@@ -288,12 +288,13 @@ export function driveMarkers(plan, index) {
 /**
  * The plan for its map: a Drive 1 with no start set starts at `here` (where the
  * phone is, { latitude, longitude }), so its line runs from there. Unchanged
- * without `here`. The timeline keeps "Your location".
+ * without `here`. The timeline keeps "Your location". The start is marked
+ * `fromPhone`, as is a way back to `here` (withWayBack).
  */
 export function fromHere(plan, here) {
   const [first, ...rest] = plan.drives;
   if (!here || !first || first.start) return plan;
-  return { ...plan, drives: [{ ...first, start: { name: 'Your location', ...here } }, ...rest] };
+  return { ...plan, drives: [{ ...first, start: { name: 'Your location', ...here, fromPhone: true } }, ...rest] };
 }
 
 /**
@@ -318,6 +319,7 @@ export function withWayBack(plan, here) {
     source: 'pin', // sent to the sat nav as a point, not a name
     roadId: null,
     reversed: false,
+    ...(first.start || plan.setOff ? {} : { fromPhone: true }),
   };
   return { ...plan, drives: [...plan.drives.slice(0, -1), { ...last, stops: [...last.stops, home] }] };
 }
