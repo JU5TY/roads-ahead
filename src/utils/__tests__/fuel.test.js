@@ -1,10 +1,12 @@
 import {
+  currencySymbol,
   driveCost,
   formatChargePrice,
   formatDriveCost,
   formatEfficiency,
+  formatFuelPrice,
   formatMpg,
-  formatPounds,
+  formatCost,
   parseChargePrice,
   parseFuelPrice,
   parseMilesPerKwh,
@@ -109,8 +111,8 @@ describe('drive cost', () => {
   });
 
   it('shows just the pounds for a Details row', () => {
-    expect(formatPounds(131.6)).toBe('~£132');
-    expect(formatPounds(0.2)).toBe('~£1');
+    expect(formatCost(131.6)).toBe('~£132');
+    expect(formatCost(0.2)).toBe('~£1');
   });
 });
 
@@ -157,5 +159,40 @@ describe('pricesForDrive and pricesForPlan', () => {
     expect(pricesForPlan(none, weeks, {}).fuel).toBe(1.6196);
     expect(pricesForPlan(none, weeks, { fuel: 'diesel' }).fuel).toBe(1.9329);
     expect(pricesForPlan(none, null, {})).toEqual({ fuel: null, charge: null });
+  });
+});
+
+describe('in km, L/100 km and euros', () => {
+  it('reads L/100 km and kWh/100 km, kept as mpg and mi/kWh', () => {
+    expect(parseMpg('5.9', 'metric').mpg).toBeCloseTo(47.88, 2);
+    expect(parseMilesPerKwh('16.5', 'metric').milesPerKwh).toBeCloseTo(3.77, 2);
+    expect(parseMpg('', 'metric')).toEqual({ mpg: null });
+  });
+
+  it('turns down an mpg typed as L/100 km', () => {
+    expect(parseMpg('400', 'metric').error).toMatch('L/100 km');
+    expect(parseMilesPerKwh('0.2', 'metric').error).toMatch('kWh/100 km');
+  });
+
+  it('shows the same car either way', () => {
+    expect(formatMpg(40, 'metric')).toBe('7.1 L/100 km');
+    expect(formatEfficiency(petrol(parseMpg('5.9', 'metric').mpg), 'metric')).toBe('5.9 L/100 km');
+    expect(formatEfficiency(electric(3.5), 'metric')).toBe('17.8 kWh/100 km');
+  });
+
+  it('reads and shows prices in euros, as the pump does', () => {
+    expect(parseFuelPrice('€1,79', 'metric')).toEqual({ price: 1.79 });
+    expect(parseChargePrice('0.35', 'metric')).toEqual({ price: 0.35 });
+    expect(formatFuelPrice(1.79, 'metric')).toBe('€1.79');
+    expect(formatChargePrice(0.35, 'metric')).toBe('€0.35');
+    expect(currencySymbol('metric')).toBe('€');
+  });
+
+  it('costs the drive in euros', () => {
+    // 200 km at 5.9 L/100 km and €1.79 a litre: 11.8 L, €21.12.
+    const cost = driveCost(200000, petrol(parseMpg('5.9', 'metric').mpg), { fuel: 1.79, charge: null });
+    expect(cost).toBeCloseTo(21.12, 1);
+    expect(formatDriveCost(cost, false, 'metric')).toBe('~€21 fuel');
+    expect(formatCost(0.2, 'metric')).toBe('~€1');
   });
 });

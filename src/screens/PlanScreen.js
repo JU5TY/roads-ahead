@@ -261,7 +261,7 @@ export default function PlanScreen() {
     const metres = asked.reduce((sum, r) => sum + r.route.metres, 0);
     const seconds = asked.reduce((sum, r) => sum + r.route.seconds, 0);
     const pounds = vehicle ? driveCost(metres, vehicle, pricesForPlan(prices, ukFuelWeeks, vehicle)) : null;
-    const cost = pounds != null ? formatDriveCost(pounds, electric) : null;
+    const cost = pounds != null ? formatDriveCost(pounds, electric, units) : null;
     return { status: 'done', text: `${miles(metres)} · ${time(seconds)}${cost ? ` · ${cost}` : ''}`, metres, seconds, cost };
   };
   // Miles before (or without) Google's road times: measured along the saved road

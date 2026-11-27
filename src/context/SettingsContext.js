@@ -4,6 +4,7 @@ import { Appearance } from 'react-native';
 import { getSavedUkFuelPrices, refreshUkFuelPrices } from '../services/fuelPriceService';
 import { hasAnyDrive } from '../storage/driveStorage';
 import * as settingsStorage from '../storage/settingsStorage';
+import { onUkPhone } from '../utils/region';
 
 const SettingsContext = createContext(null);
 
@@ -24,10 +25,14 @@ export function SettingsProvider({ children }) {
     fuel: settingsStorage.getPrice('fuel'),
     charge: settingsStorage.getPrice('charge'),
   }));
-  // The UK's weekly average pump prices, for costing drives (utils/fuel.js).
-  const [ukFuelWeeks, setUkFuelWeeks] = useState(() => getSavedUkFuelPrices()?.weeks ?? null);
+  // The UK's weekly average pump prices, for costing drives (utils/fuel.js):
+  // UK phones only, and only in pounds.
+  const [ukFuelWeeks, setUkFuelWeeks] = useState(() =>
+    onUkPhone ? (getSavedUkFuelPrices()?.weeks ?? null) : null
+  );
 
   useEffect(() => {
+    if (!onUkPhone) return;
     refreshUkFuelPrices()
       .then((next) => next && setUkFuelWeeks(next.weeks))
       .catch((err) => console.warn('[fuel] UK prices failed', err));
@@ -52,8 +57,13 @@ export function SettingsProvider({ children }) {
     () => ({
       units,
       setUnits: (next) => {
+        if (next === units) return;
         setUnits(next);
         save(settingsStorage.setUnits(next));
+        // A price typed in pounds isn't one in euros: it's typed again.
+        setPrices({ fuel: null, charge: null });
+        save(settingsStorage.setPrice('fuel', null));
+        save(settingsStorage.setPrice('charge', null));
       },
       breakReminderMinutes,
       setBreakReminderMinutes: (next) => {
@@ -75,7 +85,7 @@ export function SettingsProvider({ children }) {
         setNavApp(next);
         save(settingsStorage.setNavApp(next));
       },
-      // { fuel, charge }: each { price, setAt } (pounds a litre / a kWh) or null.
+      // { fuel, charge }: each { price, setAt } (pounds or euros a litre / a kWh) or null.
       prices,
       // Remembers when, so an old price is noticed on You.
       setPrice: (kind, price) => {
@@ -83,8 +93,9 @@ export function SettingsProvider({ children }) {
         setPrices((prev) => ({ ...prev, [kind]: next }));
         save(settingsStorage.setPrice(kind, next));
       },
-      // [[week, petrol pence, diesel pence]], oldest first, or null until fetched.
-      ukFuelWeeks,
+      // [[week, petrol pence, diesel pence]], oldest first, or null until fetched
+      // (and always off UK phones, or in euros).
+      ukFuelWeeks: units === 'imperial' ? ukFuelWeeks : null,
       onboarded,
       finishOnboarding: () => {
         setOnboarded(true);

@@ -22,7 +22,7 @@ import { restoreBackup, saveBackup } from '../services/backupService';
 import { exportAllTrips, showExportFailed } from '../services/exportService';
 import { countSavedPoints } from '../storage/driveStorage';
 import { getExampleTripId } from '../storage/exampleTrip';
-import { BREAK_REMINDER_OPTIONS, KM_UNITS } from '../storage/settingsStorage';
+import { BREAK_REMINDER_OPTIONS } from '../storage/settingsStorage';
 import { listTrips } from '../storage/tripStorage';
 import { addVehicle } from '../storage/vehicleStorage';
 import { spacing, type } from '../theme';
@@ -36,7 +36,8 @@ import { NAV_APPS } from '../utils/navLinks';
 import { READY_ROUTES_ATTRIBUTION } from '../utils/readyRoutes';
 import { hasTwin } from '../utils/vehicles';
 
-const UNIT_LABELS = { metric: 'Kilometres', imperial: 'Miles' };
+// One choice for distances, fuel use and money.
+const UNIT_LABELS = { imperial: 'Miles, mpg, £', metric: 'Km, L/100 km, €' };
 const THEMES = [
   ['system', 'System default'],
   ['light', 'Light'],
@@ -60,7 +61,7 @@ function PremiumRow() {
 }
 
 /**
- * "Default · 40 mpg · 1,020 mi · 6 trips" (or "3.5 mi/kWh"), led by the registration
+ * "Default · 40 mpg · 1,020 mi · 6 trips" (or "3.5 mi/kWh", "5.9 L/100 km · 1,640 km"), led by the registration
  * ("AB12 CDE · …") when another vehicle has the same make and model, to tell
  * them apart.
  */
@@ -69,17 +70,17 @@ function vehicleSubtitle(v, vehicles, units) {
   return [
     ...(v.registration && hasTwin(v, vehicles) ? [v.registration] : []),
     ...(v.isDefault ? ['Default'] : []),
-    ...(formatEfficiency(v) ? [formatEfficiency(v)] : []),
+    ...(formatEfficiency(v, units) ? [formatEfficiency(v, units)] : []),
     `${d.value} ${d.unit}`,
     `${v.tripCount} ${v.tripCount === 1 ? 'trip' : 'trips'}`,
   ].join(' · ');
 }
 
-/** "£1.46 · set 14 Oct" or "24.5p · set 14 Oct"; "Not set" until then. */
-function priceValue(saved, format) {
+/** "£1.46 · set 14 Oct" or "24.5p · set 14 Oct" ("€1.79 · …"); "Not set" until then. */
+function priceValue(saved, format, units) {
   if (!saved) return 'Not set';
   const day = new Date(saved.setAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  return `${format(saved.price)} · set ${day}`;
+  return `${format(saved.price, units)} · set ${day}`;
 }
 
 /** The "You" tab: preferences and about. Every setting is the same row style. */
@@ -100,6 +101,7 @@ export default function SettingsScreen() {
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const [picking, setPicking] = useState(false);
+  const [pickingUnits, setPickingUnits] = useState(false);
   const [pricing, setPricing] = useState(null); // null | 'fuel' | 'charge'
   const [pickingNav, setPickingNav] = useState(false);
   const version = Constants.expoConfig?.version ?? '—';
@@ -188,6 +190,19 @@ export default function SettingsScreen() {
         }))}
         onClose={() => setPicking(false)}
       />
+      <ActionSheet
+        visible={pickingUnits}
+        actions={Object.entries(UNIT_LABELS).map(([key, label]) => ({
+          key,
+          label,
+          selected: key === units,
+          onPress: () => {
+            setUnits(key);
+            setPickingUnits(false);
+          },
+        }))}
+        onClose={() => setPickingUnits(false)}
+      />
       <NavAppSheet visible={pickingNav} onClose={() => setPickingNav(false)} />
       <PriceSheet
         visible={pricing !== null}
@@ -257,7 +272,7 @@ export default function SettingsScreen() {
         <ListRow
           icon="local_gas_station"
           title="Fuel price"
-          value={priceValue(prices.fuel, formatFuelPrice)}
+          value={priceValue(prices.fuel, formatFuelPrice, units)}
           onPress={() => setPricing('fuel')}
           divider
         />
@@ -266,7 +281,7 @@ export default function SettingsScreen() {
         <ListRow
           icon="ev_station"
           title="Charging price"
-          value={priceValue(prices.charge, formatChargePrice)}
+          value={priceValue(prices.charge, formatChargePrice, units)}
           onPress={() => setPricing('charge')}
           divider
         />
@@ -279,15 +294,14 @@ export default function SettingsScreen() {
       />
 
       <SectionHeader variant="label" title="App" />
-      {KM_UNITS ? (
-        <ListRow
-          icon="conversion_path"
-          title="Units"
-          value={UNIT_LABELS[units]}
-          onPress={() => setUnits(units === 'imperial' ? 'metric' : 'imperial')}
-          divider
-        />
-      ) : null}
+      {/* Changing it clears the prices typed above: they were in the other currency. */}
+      <ListRow
+        icon="conversion_path"
+        title="Units"
+        value={UNIT_LABELS[units]}
+        onPress={() => setPickingUnits(true)}
+        divider
+      />
       <ListRow
         icon="contrast"
         title="Theme"

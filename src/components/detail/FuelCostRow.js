@@ -5,7 +5,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useStyles } from '../../hooks/useTheme';
 import { addVehicle, updateVehicle } from '../../storage/vehicleStorage';
 import { type } from '../../theme';
-import { formatPounds } from '../../utils/fuel';
+import { formatCost } from '../../utils/fuel';
 import PriceSheet from '../PriceSheet';
 import VehicleSheet from '../VehicleSheet';
 import ListRow from '../ui/ListRow';
@@ -14,14 +14,14 @@ const hasFigure = (v) => (v.electric ? v.milesPerKwh : v.mpg) != null;
 
 /**
  * A Details card's "Fuel cost" row ("Charging cost" for an electric car):
- * `pounds` once the car's own figure and its price are both set. Until then
+ * `pounds` (or euros) once the car's own figure and its price are both set. Until then
  * the row says Add, and a tap asks for what's missing: `vehicle`'s figure
  * (adding a car when it's null), then the price. `vehicles` is the Garage,
  * and `onVehiclesChanged` reloads it once a car is saved.
  */
 export default function FuelCostRow({ pounds, vehicle, vehicles, onVehiclesChanged, divider = false }) {
   const styles = useStyles(makeStyles);
-  const { prices, ukFuelWeeks, setPrice } = useSettings();
+  const { units, prices, ukFuelWeeks, setPrice } = useSettings();
   const [sheet, setSheet] = useState(null); // null | 'vehicle' | 'price'
   const priceNext = useRef(false); // the price sheet opens once the vehicle sheet has gone
   const electric = !!vehicle?.electric;
@@ -51,7 +51,7 @@ export default function FuelCostRow({ pounds, vehicle, vehicles, onVehiclesChang
         dense
         divider={divider}
         {...(pounds != null
-          ? { value: formatPounds(pounds), strongValue: true }
+          ? { value: formatCost(pounds, units), strongValue: true }
           : {
               // The car's figure first (adding the car if there's none), then the price.
               onPress: () => setSheet(vehicle && hasFigure(vehicle) ? 'price' : 'vehicle'),

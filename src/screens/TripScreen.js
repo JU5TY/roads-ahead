@@ -46,6 +46,7 @@ import { getRoad } from '../utils/iconicRoads';
 import { exportTrip } from '../services/exportService';
 import { driveCost, pricesForDrive } from '../utils/fuel';
 import { countryRows } from '../utils/countries';
+import { onUkPhone } from '../utils/region';
 import { buildDriveTimeline, buildTripTimeline } from '../utils/timeline';
 import { vehicleLabel } from '../utils/vehicles';
 import {
@@ -762,8 +763,8 @@ export default function TripScreen() {
           selected && vehicles.some((v) => v !== viewVehicle) ? () => setMenu('vehicle') : null
         }
       />
-      {/* Last: the trip's story reads through unbroken, then the offer to print it. */}
-      <PrintBanner trip={trip} drive={single ? null : selected} />
+      {/* Last: the trip's story reads through unbroken, then the offer to print it (UK only for now). */}
+      {onUkPhone ? <PrintBanner trip={trip} drive={single ? null : selected} /> : null}
     </DetailLayout>
   );
 }

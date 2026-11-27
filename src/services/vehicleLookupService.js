@@ -3,25 +3,13 @@
 // Offered on UK phones only: a lookup can only find UK vehicles, so everyone
 // else goes straight to entering the details by hand.
 
+import { onUkPhone } from '../utils/region';
+
 // Set per build or update, as for fuel prices (services/fuelPriceService.js).
 const API = process.env.EXPO_PUBLIC_SERVER_URL;
 
-/**
- * Whether the phone is set up for the UK: its language's region (en-GB, cy-GB)
- * or its time zone. Either will do, so a UK phone in English (US), or one
- * abroad on a road trip, still counts.
- */
-function onUkPhone() {
-  try {
-    const { locale, timeZone } = Intl.DateTimeFormat().resolvedOptions();
-    return /[-_]GB\b/i.test(locale ?? '') || timeZone === 'Europe/London';
-  } catch {
-    return false;
-  }
-}
-
 /** Whether Add vehicle starts with the registration and Edit offers Look up. */
-export const lookupOffered = !!API && onUkPhone();
+export const lookupOffered = !!API && onUkPhone;
 
 /**
  * What the registration finds: { vehicle } (utils/vehicleLookup.js

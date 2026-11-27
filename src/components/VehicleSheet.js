@@ -2,10 +2,11 @@ import { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { showDialog } from './ui/DialogHost';
+import { useSettings } from '../context/SettingsContext';
 import { useStyles, useTheme } from '../hooks/useTheme';
 import { lookUpRegistration, lookupOffered } from '../services/vehicleLookupService';
 import { pressedOpacity, radius, spacing, type } from '../theme';
-import { parseMilesPerKwh, parseMpg } from '../utils/fuel';
+import { efficiencyUnit, parseMilesPerKwh, parseMpg, toEfficiency } from '../utils/fuel';
 import {
   detailsFor,
   formFromLookup,
@@ -61,15 +62,21 @@ function Field({ label, error, suffix, action, ...input }) {
 function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onSave, onDelete }) {
   const { c } = useTheme();
   const styles = useStyles(makeStyles);
+  const { units } = useSettings();
   const start = vehicle ?? initial;
+  // The car's figure in the units' own: "40" mpg, or "7.1" L/100 km.
+  const shown = (figure, isElectric) =>
+    figure != null ? String(Number(toEfficiency(figure, isElectric, units).toFixed(1))) : '';
   const [fields, setFields] = useState({
     make: start?.make ?? '',
     model: start?.model ?? '',
     registration: start?.registration ?? '',
     fuel: start?.fuel ?? (start?.electric ? 'electric' : 'petrol'),
-    mpg: start?.mpg != null ? String(start.mpg) : '',
-    milesPerKwh: start?.milesPerKwh != null ? String(start.milesPerKwh) : '',
+    mpg: shown(start?.mpg, false),
+    milesPerKwh: shown(start?.milesPerKwh, true),
   });
+  // As first shown, so a figure left alone keeps its saved value, not the rounded one.
+  const [shownAtStart] = useState(fields);
   // What a lookup found (the vehicle's own, until Look up finds anew); saved
   // only while it's for the registration in the box.
   const [details, setDetails] = useState(start?.details ?? null);
@@ -91,7 +98,7 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
         make: found.make || prev.make,
         model: found.model || prev.model,
         fuel: found.fuel,
-        mpg: found.mpg != null ? String(found.mpg) : prev.mpg,
+        mpg: found.mpg != null ? shown(found.mpg, false) : prev.mpg,
       }));
       setDetails(lookupDetails(result.vehicle));
       setLookup(null);
@@ -111,7 +118,13 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
   const [tried, setTried] = useState(false);
   // Only the figure for the chosen fuel is checked; the other keeps what was saved.
   const electric = fields.fuel === 'electric';
-  const efficiency = electric ? parseMilesPerKwh(fields.milesPerKwh) : parseMpg(fields.mpg);
+  const figureKey = electric ? 'milesPerKwh' : 'mpg';
+  const efficiency =
+    fields[figureKey] === shownAtStart[figureKey] && start?.[figureKey] != null
+      ? { [figureKey]: start[figureKey] }
+      : electric
+        ? parseMilesPerKwh(fields.milesPerKwh, units)
+        : parseMpg(fields.mpg, units);
   const missingMake = tried && !fields.make.trim() ? 'Enter a make' : null;
   const missingModel = tried && !fields.model.trim() ? 'Enter a model' : null;
   const save = () => {
@@ -203,9 +216,15 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
           // A new input for the other fuel, so its own text and keyboard come up.
           key={electric ? 'kwh' : 'mpg'}
           ref={efficiencyRef}
-          label={electric ? 'Average miles per kWh' : 'Average mpg'}
+          label={
+            units === 'metric'
+              ? `Average ${efficiencyUnit(electric, units)}`
+              : electric
+                ? 'Average miles per kWh'
+                : 'Average mpg'
+          }
           error={tried ? efficiency.error : null}
-          suffix={electric ? 'mi/kWh' : 'mpg'}
+          suffix={efficiencyUnit(electric, units)}
           value={electric ? fields.milesPerKwh : fields.mpg}
           onChangeText={set(electric ? 'milesPerKwh' : 'mpg')}
           keyboardType="decimal-pad"

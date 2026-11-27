@@ -12,11 +12,14 @@ import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
 import { comingSoon } from '../utils/comingSoon';
 import { READY_ROUTES } from '../utils/readyRoutes';
+import { onUkPhone } from '../utils/region';
 
-// In pairs, as the grid shows them: photos first, the trip's data last.
+// In pairs, as the grid shows them: photos first, the trip's data last. Wall
+// art is printed in the UK only for now, so it's left out elsewhere (and the
+// last tile takes the whole row).
 const FEATURES = [
   ['share', 'Photo sharing', 'Your route and stats on your own photos'],
-  ['wall_art', 'Photo wall art', 'Your own trip photo on your gallery print'],
+  ...(onUkPhone ? [['wall_art', 'Photo wall art', 'Your own trip photo on your gallery print']] : []),
   ['map', 'Satellite maps', 'See every trip from above, hills and all'],
   ['garage', 'More vehicles', 'Every car, each with its own stats'],
   ['save', 'Backup file', 'Keep a copy, or move to any phone'],

@@ -3,19 +3,18 @@
 import Storage from 'expo-sqlite/kv-store';
 import { Platform } from 'react-native';
 
+import { onUkPhone } from '../utils/region';
+
 const UNITS_KEY = 'settings.units';
 
 /**
- * Whether You offers Kilometres. Off until fuel and money follow it (L/100 km
- * and euros): km with mpg and £ would be half done. Until then it's miles for
- * everyone, though a stored choice is kept for when it's back.
+ * 'metric' | 'imperial': km, L/100 km and euros, or miles, mpg and pounds.
+ * Until one is picked on You, UK phones start on miles and the rest on km.
  */
-export const KM_UNITS = false;
-
-/** 'metric' | 'imperial'; miles until km are chosen on You. */
 export function getUnits() {
-  if (!KM_UNITS) return 'imperial';
-  return Storage.getItemSync(UNITS_KEY) === 'metric' ? 'metric' : 'imperial';
+  const saved = Storage.getItemSync(UNITS_KEY);
+  if (saved === 'metric' || saved === 'imperial') return saved;
+  return onUkPhone ? 'imperial' : 'metric';
 }
 
 export function setUnits(units) {
@@ -77,7 +76,8 @@ export function setMapView(view) {
 }
 
 // Prices for plans' fuel cost (utils/fuel.js), each saved as { price, setAt }:
-// pounds a litre or a kWh, and when it was set. Null until set: no defaults.
+// pounds or euros (as the units) a litre or a kWh, and when it was set. Null
+// until set: no defaults.
 const PRICE_KEYS = { fuel: 'settings.fuelPrice', charge: 'settings.chargePrice' };
 
 /** The 'fuel' (a litre) or 'charge' (a kWh) price, or null. */
@@ -90,6 +90,7 @@ export function getPrice(kind) {
   }
 }
 
+/** `saved` null clears it. */
 export function setPrice(kind, saved) {
   return Storage.setItemAsync(PRICE_KEYS[kind], JSON.stringify(saved));
 }

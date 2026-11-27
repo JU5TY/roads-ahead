@@ -29,7 +29,7 @@ import {
   formatElevation,
   formatShortDate,
 } from '../utils/format';
-import { driveCost, pricesForDrive } from '../utils/fuel';
+import { driveCost, efficiencyUnit, pricesForDrive, toEfficiency } from '../utils/fuel';
 import { READY_ROUTES } from '../utils/readyRoutes';
 import { groupIntoDays, summarizeDrives } from '../utils/tripSummary';
 import { paintColour, vehicleLabel, vehicleSubtitle } from '../utils/vehicles';
@@ -44,10 +44,10 @@ function climbValue(m, units) {
   return `${everests} ${everests === 1 ? 'Everest' : 'Everests'}`;
 }
 
-/** "29" or "3.5": the car's own figure, null when it isn't set. */
-function efficiencyValue(vehicle) {
+/** "29" or "3.5" (or "9.7" L/100 km): the car's own figure, null when it isn't set. */
+function efficiencyValue(vehicle, units) {
   const figure = vehicle.electric ? vehicle.milesPerKwh : vehicle.mpg;
-  return figure != null ? String(Number(figure.toFixed(1))) : null;
+  return figure != null ? String(Number(toEfficiency(figure, vehicle.electric, units).toFixed(1))) : null;
 }
 
 /** "1 Dec 2026", from a lookup's "2026-12-01". */
@@ -124,7 +124,7 @@ export default function VehicleScreen() {
     0,
     ...trips.flatMap((t) => groupIntoDays(t.drives).map((day) => day.summary.distanceM))
   );
-  const efficiency = efficiencyValue(vehicle);
+  const efficiency = efficiencyValue(vehicle, units);
   // What a registration lookup found: the year line, the plate's colour, Details' dates.
   const details = vehicle.details;
   const subtitle = vehicleSubtitle(vehicle);
@@ -287,7 +287,7 @@ export default function VehicleScreen() {
           ) : null}
           <ListRow
             icon={vehicle.electric ? 'ev_station' : 'local_gas_station'}
-            title={vehicle.electric ? 'Miles per kWh' : 'Mpg'}
+            title={units === 'metric' ? efficiencyUnit(vehicle.electric, units) : vehicle.electric ? 'Miles per kWh' : 'Mpg'}
             dense
             divider={!!details?.co2}
             onPress={() => setEditing('efficiency')}

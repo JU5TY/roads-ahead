@@ -1,32 +1,43 @@
 import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 
+import { useSettings } from '../context/SettingsContext';
 import { useStyles } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
-import { parseChargePrice, parseFuelPrice } from '../utils/fuel';
+import { currencySymbol, parseChargePrice, parseFuelPrice } from '../utils/fuel';
 import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
 
-// Fuel is priced as the pump shows it, £1.46 a litre; charging as tariffs are, 24.5p a kWh.
+// Fuel is priced as the pump shows it, £1.46 a litre; charging as UK tariffs
+// are, 24.5p a kWh. In euros both are as the pump shows them: €1.79, €0.35.
 const KINDS = {
-  fuel: {
+  fuel: (units) => ({
     label: 'Price per litre',
-    prefix: '£',
+    prefix: currencySymbol(units),
     shown: (price) => price.toFixed(2),
-    parse: parseFuelPrice,
-  },
-  charge: {
-    label: 'Price per kWh',
-    suffix: 'p',
-    shown: (price) => String(Number((price * 100).toFixed(1))),
-    parse: parseChargePrice,
-  },
+    parse: (text) => parseFuelPrice(text, units),
+  }),
+  charge: (units) =>
+    units === 'metric'
+      ? {
+          label: 'Price per kWh',
+          prefix: '€',
+          shown: (price) => price.toFixed(2),
+          parse: (text) => parseChargePrice(text, units),
+        }
+      : {
+          label: 'Price per kWh',
+          suffix: 'p',
+          shown: (price) => String(Number((price * 100).toFixed(1))),
+          parse: (text) => parseChargePrice(text, units),
+        },
 };
 
 // Mounted only while open, so it starts from the saved price each time.
 function PriceForm({ kind, price, onSave }) {
   const styles = useStyles(makeStyles);
-  const { label, prefix, suffix, shown, parse } = KINDS[kind];
+  const { units } = useSettings();
+  const { label, prefix, suffix, shown, parse } = KINDS[kind](units);
   const [text, setText] = useState(price != null ? shown(price) : '');
   const [tried, setTried] = useState(false);
   const parsed = parse(text);
@@ -59,7 +70,7 @@ function PriceForm({ kind, price, onSave }) {
 /**
  * A price on You for plans' cost: `kind` 'fuel' (pounds a litre; "146.9" at
  * the pump reads as pence) or 'charge' (typed in pence a kWh). onSave gets
- * the price in pounds.
+ * the price in pounds, or in euros (typed as euros) when the units are km.
  */
 export default function PriceSheet({ visible, kind, price, onSave, onClose }) {
   return (
