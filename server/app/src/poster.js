@@ -3,6 +3,7 @@
 // the order goes straight to Prodigi to print and post. Stripe and Prodigi keep
 // the records, R2 keeps the PDFs for 14 days, and Stripe retries its webhook
 // (and emails us) if Prodigi can't be reached.
+import { APP_NAME } from '../../../src/utils/appName.js';
 import { SIZES } from '../../../src/utils/posterLayout.js';
 import { submitPrint } from './prodigi.js';
 import { json, problem } from './respond.js';
@@ -163,12 +164,12 @@ a{display:inline-block;padding:16px 32px;border-radius:28px;background:#1A73E8;c
 
 function donePage(env, url) {
   const id = url.searchParams.get('order') ?? '';
-  if (!ORDER_ID.test(id)) return page('Roads Ahead', '<h1>Thank you</h1>');
+  if (!ORDER_ID.test(id)) return page(APP_NAME, '<h1>Thank you</h1>');
   const back = `${env.APP_SCHEME}://poster/done?order=${id}`;
   return page(
     'Order placed',
     `<h1>Order placed</h1><p>Your gallery print is being made.</p>
-<a href="${back}">Back to Roads Ahead</a>
+<a href="${back}">Back to ${APP_NAME}</a>
 <script>location.href=${JSON.stringify(back)}</script>`
   );
 }
@@ -176,7 +177,7 @@ function donePage(env, url) {
 const cancelledPage = () =>
   page(
     'Order cancelled',
-    '<h1>No payment taken</h1><p>You can close this page and go back to Roads Ahead.</p>'
+    `<h1>No payment taken</h1><p>You can close this page and go back to ${APP_NAME}.</p>`
   );
 
 // --- Routes -----------------------------------------------------------------

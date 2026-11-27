@@ -4,7 +4,7 @@ export const PREMIUM_PRICE = '£19.99';
 export const PREMIUM_TAGLINE = 'Drive great trips, show them off, and take them anywhere';
 
 /**
- * Whether Roads Ahead Premium is active. Payments aren't connected yet (they need
+ * Whether Premium is active. Payments aren't connected yet (they need
  * Google Play Billing / StoreKit in a new build), so everyone is on the free plan.
  */
 export function usePremium() {

@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Polyline, Rect, Stop } from 'react-native-svg';
 
 import { fonts } from '../../theme';
+import { APP_NAME } from '../../utils/appName';
 import { distanceParts, formatDurationShort } from '../../utils/format';
 import { CENTRED } from '../../utils/photoCrop';
 import { fitMap, pinPoint } from '../../utils/routeOutline';
@@ -217,7 +218,7 @@ export default function ShareCard({
               <AppLogo size={26 * u} />
             </View>
             <Text allowFontScaling={false} style={line(fonts.medium, 14, 20, WHITE)}>
-              Roads Ahead
+              {APP_NAME}
             </Text>
           </View>
           <FlagStack countries={content.countries} size={36 * u} colors={FLAG_COLORS} />

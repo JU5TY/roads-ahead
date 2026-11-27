@@ -1,5 +1,6 @@
 // GPX 1.1 text, in pieces so a long export can be written to its file bit by bit
 // (services/exportService.js). A trip is one track, each of its drives a segment.
+import { APP_NAME } from './appName.js';
 
 // Roughly how many bytes a track point takes once zipped (measured on a simulated drive), for estimating an export's size.
 export const GPX_ZIPPED_BYTES_PER_POINT = 16;
@@ -18,7 +19,7 @@ const escapeXml = (text) =>
 
 export const gpxStart = () =>
   '<?xml version="1.0" encoding="UTF-8"?>\n' +
-  '<gpx version="1.1" creator="Roads Ahead" xmlns="http://www.topografix.com/GPX/1/1">\n';
+  `<gpx version="1.1" creator="${APP_NAME}" xmlns="http://www.topografix.com/GPX/1/1">\n`;
 
 export const gpxEnd = () => '</gpx>\n';
 

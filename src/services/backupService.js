@@ -1,4 +1,4 @@
-// Backup file: everything in Roads Ahead (trips, drives, routes, vehicles, Iconic
+// Backup file: everything in the app (trips, drives, routes, vehicles, Iconic
 // Roads and settings) as one file the person keeps wherever they like, to restore
 // on this phone or another, Android or iPhone. It's a copy of the database plus a
 // backup_info table, so restoring is a database copy too. Separate from the
@@ -15,10 +15,14 @@ import { DevSettings } from 'react-native';
 import { showDialog, showMessage } from '../components/ui/DialogHost';
 import { SCHEMA_VERSION, getDb, restoreDatabase } from '../storage/db';
 import { getActiveDrive } from '../storage/driveStorage';
+import { APP_NAME, APP_SLUG, APP_WORD } from '../utils/appName';
 import { formatDate } from '../utils/format';
 
+// What marks a file as a backup: it stays as it is through a rename, so old backups still restore.
 const FORMAT = 'roads-ahead-backup';
-export const BACKUP_EXTENSION = '.roadsahead';
+// Named after the app; restoring doesn't go by the ending, so a file made
+// before a rename still opens.
+export const BACKUP_EXTENSION = `.${APP_WORD}`;
 
 // Key-value entries that travel with the database: preferences, and what the
 // database's own state depends on (the example trip's id, which versions of the
@@ -58,7 +62,7 @@ function removeWorkingCopy(name) {
 function backupFileName(now = new Date()) {
   const pad = (n) => String(n).padStart(2, '0');
   const day = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  return `roads-ahead-${day}${BACKUP_EXTENSION}`;
+  return `${APP_SLUG}-${day}${BACKUP_EXTENSION}`;
 }
 
 /** Copy the database into a backup file, then share it. Errors end in a message rather than a throw. */
@@ -164,14 +168,14 @@ export async function restoreBackup() {
     busy = false;
     if (err.message === 'TooNew') {
       showMessage(
-        'Update Roads Ahead first',
-        'This backup was made by a newer version of Roads Ahead. Update the app, then try again.'
+        `Update ${APP_NAME} first`,
+        `This backup was made by a newer version of ${APP_NAME}. Update the app, then try again.`
       );
     } else {
       if (err.message !== 'NotABackup') console.warn('Opening the backup failed', err);
       showMessage(
         "That isn't a backup file",
-        `Choose a Roads Ahead backup file, ending in ${BACKUP_EXTENSION}.`
+        `Choose a ${APP_NAME} backup file, ending in ${BACKUP_EXTENSION}.`
       );
     }
     return;
@@ -184,7 +188,7 @@ export async function restoreBackup() {
   showDialog({
     title: 'Restore this backup?',
     message:
-      `It replaces everything in Roads Ahead on this phone with the backup from ` +
+      `It replaces everything in ${APP_NAME} on this phone with the backup from ` +
       `${formatDate(saved)}: ${trips === 1 ? '1 trip' : `${trips} trips`}, ` +
       `with their vehicles and settings. This can't be undone.`,
     confirmLabel: 'Restore',

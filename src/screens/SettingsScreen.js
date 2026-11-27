@@ -31,6 +31,7 @@ import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
 import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/fuel';
 import { FUEL_PRICES_ATTRIBUTION } from '../utils/fuelPrices';
 import { ROADS_ATTRIBUTION } from '../utils/iconicRoads';
+import { APP_NAME } from '../utils/appName';
 import { GPX_ZIPPED_BYTES_PER_POINT } from '../utils/gpx';
 import { NAV_APPS } from '../utils/navLinks';
 import { READY_ROUTES_ATTRIBUTION } from '../utils/readyRoutes';
@@ -151,7 +152,7 @@ export default function SettingsScreen() {
     showDialog({
       title: 'Save a backup file?',
       message:
-        'This saves everything in Roads Ahead to one file: your trips, routes, vehicles and settings. Keep it somewhere safe, like Google Drive or email.',
+        `This saves everything in ${APP_NAME} to one file: your trips, routes, vehicles and settings. Keep it somewhere safe, like Google Drive or email.`,
       confirmLabel: 'Save',
       onConfirm: async () => {
         setSaving(true);
@@ -365,7 +366,7 @@ export default function SettingsScreen() {
         chevron={false}
         onPress={() =>
           showMessage(
-            `Roads Ahead ${version}`,
+            `${APP_NAME} ${version}`,
             `${ROADS_ATTRIBUTION}\n${COUNTRIES_ATTRIBUTION}\n${READY_ROUTES_ATTRIBUTION}\n${FUEL_PRICES_ATTRIBUTION}`
           )
         }

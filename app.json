@@ -39,17 +39,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Roads Ahead uses your location to record your route.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": false,
-          "isAndroidForegroundServiceEnabled": true,
-          "locationAlwaysAndWhenInUsePermission": "Roads Ahead records your route while you drive, including while you're using Google Maps."
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Roads Ahead shows the photos you took during a trip alongside it.",
           "savePhotosPermission": false,
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": ["photo"]

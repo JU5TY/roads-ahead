@@ -35,6 +35,7 @@ import {
   stroke,
 } from 'pdf-lib';
 
+import { APP_NAME } from './appName.js';
 import { coverSize } from './photoCrop.js';
 import {
   ARROW_EM,
@@ -178,8 +179,8 @@ function photoMatrix(orientation, left, top, width, height) {
 export async function renderPoster({ spec, fonts, photo }) {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
-  doc.setTitle(spec.lines.title.text || 'Roads Ahead poster');
-  doc.setCreator('Roads Ahead');
+  doc.setTitle(spec.lines.title.text || `${APP_NAME} poster`);
+  doc.setCreator(APP_NAME);
   const embedded = {
     light: await doc.embedFont(fonts.light, { subset: true }),
     regular: await doc.embedFont(fonts.regular, { subset: true }),

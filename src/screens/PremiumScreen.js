@@ -70,7 +70,7 @@ function FeatureTile({ icon, title, description }) {
 }
 
 /**
- * Roads Ahead Premium: what it adds and the yearly price. Opens from You and from
+ * Premium: what it adds and the yearly price. Opens from You and from
  * any Premium badge. Payments aren't connected yet, so Sign up says it's coming.
  */
 export default function PremiumScreen() {
