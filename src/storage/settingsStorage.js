@@ -6,6 +6,11 @@ import { Platform } from 'react-native';
 import { onUkPhone } from '../utils/region';
 
 const UNITS_KEY = 'settings.units';
+// Set once the units are settled. That's on the first launch since km came
+// with euros: from the phone (UK phones miles, the rest km), then kept, so a
+// trip abroad can't change them. A choice saved before then meant km with
+// pounds, so it isn't kept.
+const UNITS_SETTLED_KEY = 'settings.unitsSettled';
 
 /**
  * 'metric' | 'imperial': km, L/100 km and euros, or miles, mpg and pounds.
@@ -13,8 +18,17 @@ const UNITS_KEY = 'settings.units';
  */
 export function getUnits() {
   const saved = Storage.getItemSync(UNITS_KEY);
-  if (saved === 'metric' || saved === 'imperial') return saved;
-  return onUkPhone ? 'imperial' : 'metric';
+  if (Storage.getItemSync(UNITS_SETTLED_KEY) && (saved === 'metric' || saved === 'imperial')) return saved;
+  const units = onUkPhone ? 'imperial' : 'metric';
+  try {
+    Storage.setItemSync(UNITS_KEY, units);
+    Storage.setItemSync(UNITS_SETTLED_KEY, 'true');
+    // Prices typed before then were in pounds.
+    if (units === 'metric') Object.values(PRICE_KEYS).forEach((key) => Storage.setItemSync(key, 'null'));
+  } catch (err) {
+    console.warn('[settings] units not saved', err);
+  }
+  return units;
 }
 
 export function setUnits(units) {

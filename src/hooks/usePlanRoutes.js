@@ -1,3 +1,4 @@
+import Storage from 'expo-sqlite/kv-store';
 import { useEffect, useMemo, useState } from 'react';
 
 import { routeDrive } from '../services/routing';
@@ -11,6 +12,30 @@ const memory = new Map();
 // Saved lines, read from storage once per app run (null when there's none).
 const saved = new Map();
 let swept = false;
+
+// Drives Google found no way through (an Iconic Road closed for the winter),
+// by their points' key, with when: for a week they follow the roads' own lines
+// straight away, rather than paying again on every open for the parts before
+// the closed road. Only our own points and a time are kept, nothing of Google's.
+const CLOSED_KEY = 'routes.closed';
+const CLOSED_MS = 7 * 24 * 60 * 60 * 1000;
+
+function readClosed() {
+  try {
+    const closed = JSON.parse(Storage.getItemSync(CLOSED_KEY) ?? '{}');
+    return closed && typeof closed === 'object' ? closed : {};
+  } catch {
+    return {};
+  }
+}
+
+const isClosed = (key) => Date.now() - (readClosed()[key] ?? 0) < CLOSED_MS;
+
+function markClosed(key) {
+  const now = Date.now();
+  const kept = Object.fromEntries(Object.entries(readClosed()).filter(([, at]) => now - at < CLOSED_MS));
+  Storage.setItemAsync(CLOSED_KEY, JSON.stringify({ ...kept, [key]: now })).catch(() => {});
+}
 
 /** A drive's road line: asked for this run, else saved, else null (draw it straight). */
 function lineFor(key) {
@@ -75,11 +100,14 @@ export function usePlanRoutes(plan, picked, ready = true) {
     for (const key of new Set(wanted)) {
       if (memory.has(key)) continue;
       const ask = asks[keys.indexOf(key)];
-      routeDrive(ask.points, { signal: controller.signal })
+      const closed = ask.roads.length && isClosed(key);
+      routeDrive(ask.points, { signal: controller.signal, ...(closed ? { own: ask.roads } : {}) })
         // No way through (an Iconic Road closed for the winter): follow the roads' own lines.
-        .then((result) =>
-          result.noRoute && ask.roads.length ? routeDrive(ask.points, { signal: controller.signal, own: ask.roads }) : result
-        )
+        .then((result) => {
+          if (!result.noRoute || !ask.roads.length || closed) return result;
+          markClosed(key);
+          return routeDrive(ask.points, { signal: controller.signal, own: ask.roads });
+        })
         .then((result) => {
           if (result.cancelled) return;
           if (result.line) {

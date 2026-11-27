@@ -167,12 +167,13 @@ async function askNotificationAccess() {
   }
 }
 
-async function startUpdates() {
+/** Location updates on. `askNotifications` only when a drive starts: never on launch or Resume. */
+async function startUpdates({ askNotifications = false } = {}) {
   if (!(await getLocationAccess()).granted) {
     throw new Error('Location access is needed to record a trip.');
   }
   if (await canTrackInBackground()) {
-    await askNotificationAccess();
+    if (askNotifications) await askNotificationAccess();
     // Started again even when it says it's running: after the app was killed
     // mid-drive the task is still registered, but Android won't restart its
     // service from the background, so nothing would be recorded until it is.
@@ -215,7 +216,7 @@ async function stopUpdates() {
 export async function startDrive({ tripId = null, tripName = null, planDriveId = null } = {}) {
   const existing = await getActiveDrive();
   // Start updates before creating the drive so a failure leaves no empty drive behind.
-  const { background } = await startUpdates();
+  const { background } = await startUpdates({ askNotifications: true });
   const drive = existing ?? (await createDrive({ tripId, tripName, planDriveId }));
   return { drive, background };
 }

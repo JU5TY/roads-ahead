@@ -45,25 +45,34 @@ export async function listPlans() {
     db.getAllAsync('SELECT * FROM plan_drives ORDER BY position'),
     db.getAllAsync('SELECT * FROM plan_stops ORDER BY position'),
   ]);
-  return Promise.all(
-    plans.map(async (row) => {
-      const plan = rowToPlan(row, drives, stops);
-      plan.setOff = await setOffOf(db, plan.drives[0]?.id);
-      return plan;
-    })
+  const listed = plans.map((row) => rowToPlan(row, drives, stops));
+  const setOffs = await setOffsOf(db, listed.map((plan) => plan.drives[0]?.id).filter(Boolean));
+  for (const plan of listed) plan.setOff = setOffs.get(plan.drives[0]?.id) ?? null;
+  return listed;
+}
+
+/**
+ * Where each of `firstDriveIds` (plans' Drive 1) was recorded setting off: a
+ * Map of id -> { latitude, longitude }, without the ones never driven. One
+ * query for them all: the first point of the first drive linked to each.
+ */
+async function setOffsOf(db, firstDriveIds) {
+  if (!firstDriveIds.length) return new Map();
+  const rows = await db.getAllAsync(
+    `SELECT plan_drive_id AS planDriveId, latitude, longitude FROM (
+       SELECT d.plan_drive_id, p.latitude, p.longitude,
+         ROW_NUMBER() OVER (PARTITION BY d.plan_drive_id ORDER BY d.started_at, p.timestamp) AS n
+       FROM drives d JOIN points p ON p.drive_id = d.id
+       WHERE d.plan_drive_id IN (${firstDriveIds.map(() => '?').join(', ')})
+     ) WHERE n = 1`,
+    ...firstDriveIds
   );
+  return new Map(rows.map((r) => [r.planDriveId, { latitude: r.latitude, longitude: r.longitude }]));
 }
 
 /** Where a plan's Drive 1 was recorded setting off, { latitude, longitude }, or null. */
 async function setOffOf(db, firstDriveId) {
-  const first = firstDriveId
-    ? await db.getFirstAsync(
-        `SELECT p.latitude, p.longitude FROM drives d JOIN points p ON p.drive_id = d.id
-         WHERE d.plan_drive_id = ? ORDER BY d.started_at, p.timestamp LIMIT 1`,
-        firstDriveId
-      )
-    : null;
-  return first ? { latitude: first.latitude, longitude: first.longitude } : null;
+  return firstDriveId ? ((await setOffsOf(db, [firstDriveId])).get(firstDriveId) ?? null) : null;
 }
 
 /** One plan with its drives and stops, or null. */

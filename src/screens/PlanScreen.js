@@ -113,7 +113,7 @@ export default function PlanScreen() {
   const [menu, setMenu] = useState(null);
   const [sheet, setSheet] = useState(null); // the last { stop } or { start } menu, kept while it closes
   const [dragging, setDragging] = useState(false); // a stop is being dragged: the page holds still
-  const { here, ready: hereReady } = useHere();
+  const { here, fix, ready: hereReady } = useHere();
   const insets = useSafeAreaInsets();
 
   const reload = useCallback(
@@ -220,7 +220,8 @@ export default function PlanScreen() {
   const lastIndex = plan.drives.length - 1;
   const tripGoesHome = !!mapPlan.drives[lastIndex].stops.at(-1)?.home;
   // What Start drive hands the sat nav, from the plan as saved (not the map's fromHere).
-  const handover = wayStops.length ? planHandover(wayPlan, picked, { here, app: navApp }) : null;
+  // How far from the day's start by the real position (null until known: then it goes to the start first).
+  const handover = wayStops.length ? planHandover(wayPlan, picked, { here: fix, app: navApp }) : null;
 
   // The picked drive's start, stops and finish; on All, where the trip starts,
   // each night's stay (red, as each drive's finish) and where the trip ends.

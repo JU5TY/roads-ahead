@@ -49,20 +49,23 @@ function snap(fix) {
  * the last spot used, so a plan's map draws its saved road lines from the
  * first frame instead of straight lines; `ready` turns true once the real
  * position is known or known to be missing (null for good without location
- * access, which isn't asked for just for this).
+ * access, which isn't asked for just for this). `fix` is the real position,
+ * unsnapped and null until `ready`: for deciding things by distance (how far
+ * from a day's start), where a spot up to SNAP_M away would be wrong.
  */
 export function useHere() {
-  const [state, setState] = useState(() => ({ here: readSpots()[0] ?? null, ready: false }));
+  const [state, setState] = useState(() => ({ here: readSpots()[0] ?? null, fix: null, ready: false }));
   useEffect(() => {
     let cancelled = false;
     getLastPosition().then((fix) => {
       if (cancelled) return;
       const here = fix ? snap(fix) : null;
+      const real = fix ? { latitude: fix.latitude, longitude: fix.longitude } : null;
       // Keep the same object when nothing moved, so maps and routes don't redo their work.
       setState((s) =>
         s.here && here && s.here.latitude === here.latitude && s.here.longitude === here.longitude
-          ? { here: s.here, ready: true }
-          : { here, ready: true }
+          ? { here: s.here, fix: real, ready: true }
+          : { here, fix: real, ready: true }
       );
     });
     return () => {

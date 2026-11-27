@@ -79,7 +79,7 @@ export default function RoadScreen() {
   const [drives, setDrives] = useState(null); // [{ driveId, tripId, title, count, ... }]
   const [summary, setSummary] = useState({ count: 0, first: null, last: null });
   const [plans, setPlans] = useState(null); // the Plan sheet's plans while it's open, else null
-  const { here } = useHere();
+  const { here, ready: hereReady } = useHere();
   const insets = useSafeAreaInsets();
 
   useFocusEffect(
@@ -156,9 +156,10 @@ export default function RoadScreen() {
     try {
       let id = planId;
       if (id == null) {
-        // A new plan named after the road, Day 1 from wherever the phone is.
+        // A new plan named after the road, Day 1 from wherever the phone is
+        // (once known: the last spot could be far away, and the way round is kept).
         const plan = { drives: [{ start: null, stops: [] }] };
-        const stop = roadStop(mapPlanOf(plan, here), 0, road);
+        const stop = roadStop(mapPlanOf(plan, hereReady ? here : null), 0, road);
         id = await createPlan({ name: road.name, drives: [{ stops: [stop] }] });
       } else {
         const plan = await getPlan(id);

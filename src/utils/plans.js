@@ -437,7 +437,6 @@ export function stopsPassed(plan, index, points) {
 const listed = (items) =>
   items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : (items[0] ?? '');
 
-/** What a stop is called on Record: its place name, its Iconic Road's name, or "Dropped pin". */
 /**
  * Where a whole plan goes, as its page's title line: "Brighton → Inverness",
  * "Round trip from Brighton" (set as one, or ending within a kilometre of its
@@ -468,6 +467,7 @@ export function driveRouteName(plan, index, here) {
   return `${from} → ${driveReach(withWayBack(plan, here), index).name ?? 'Dropped pin'}`;
 }
 
+/** What a stop is called on Record: its place name, its Iconic Road's name, or "Dropped pin". */
 export function stopName(stop) {
   if (stop.roadId) return getRoad(stop.roadId)?.name ?? 'Iconic Road';
   return stop.name ?? 'Dropped pin';

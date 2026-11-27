@@ -97,7 +97,8 @@ function VehicleForm({ vehicle, initial, others: othersNow, focusEfficiency, onS
         ...prev,
         make: found.make || prev.make,
         model: found.model || prev.model,
-        fuel: found.fuel,
+        // A lookup that doesn't know the fuel leaves the one chosen.
+        fuel: result.vehicle.fuel ?? prev.fuel,
         mpg: found.mpg != null ? shown(found.mpg, false) : prev.mpg,
       }));
       setDetails(lookupDetails(result.vehicle));

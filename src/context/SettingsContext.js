@@ -4,7 +4,6 @@ import { Appearance } from 'react-native';
 import { getSavedUkFuelPrices, refreshUkFuelPrices } from '../services/fuelPriceService';
 import { hasAnyDrive } from '../storage/driveStorage';
 import * as settingsStorage from '../storage/settingsStorage';
-import { onUkPhone } from '../utils/region';
 
 const SettingsContext = createContext(null);
 
@@ -26,17 +25,16 @@ export function SettingsProvider({ children }) {
     charge: settingsStorage.getPrice('charge'),
   }));
   // The UK's weekly average pump prices, for costing drives (utils/fuel.js):
-  // UK phones only, and only in pounds.
-  const [ukFuelWeeks, setUkFuelWeeks] = useState(() =>
-    onUkPhone ? (getSavedUkFuelPrices()?.weeks ?? null) : null
-  );
+  // only in pounds, which UK phones start on (a UK phone abroad keeps them).
+  const [ukFuelWeeks, setUkFuelWeeks] = useState(() => getSavedUkFuelPrices()?.weeks ?? null);
+  const inPounds = units === 'imperial';
 
   useEffect(() => {
-    if (!onUkPhone) return;
+    if (!inPounds) return;
     refreshUkFuelPrices()
       .then((next) => next && setUkFuelWeeks(next.weeks))
       .catch((err) => console.warn('[fuel] UK prices failed', err));
-  }, []);
+  }, [inPounds]);
 
   // Pin the app (and the maps and system bars) to light or dark, or follow the phone.
   useEffect(() => {
@@ -94,7 +92,7 @@ export function SettingsProvider({ children }) {
         save(settingsStorage.setPrice(kind, next));
       },
       // [[week, petrol pence, diesel pence]], oldest first, or null until fetched
-      // (and always off UK phones, or in euros).
+      // (and always in euros).
       ukFuelWeeks: units === 'imperial' ? ukFuelWeeks : null,
       onboarded,
       finishOnboarding: () => {
