@@ -210,8 +210,9 @@ export default function ShareCard({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 * u }}>
             <View
               style={{
-                borderRadius: 13 * u,
-                borderWidth: photoUri ? 0 : 1 * u,
+                // A 2 px white rim, as on Home; on a photo too, so it stands off a busy sky.
+                borderRadius: 15 * u,
+                borderWidth: 2 * u,
                 borderColor: WHITE,
               }}
             >

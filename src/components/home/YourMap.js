@@ -260,5 +260,6 @@ const makeStyles = (c) => ({
   total: { ...type.total, color: c.text },
   totalUnit: { ...type.totalUnit, color: c.textMuted },
   since: { color: c.textMuted, marginTop: 2 },
-  logo: { borderRadius: 18, borderWidth: 1, borderColor: '#FFFFFF' },
+  // A 2 px white rim, like the number plate's, so it reads as a badge on the dark theme.
+  logo: { borderRadius: 20, borderWidth: 2, borderColor: '#FFFFFF' },
 });
