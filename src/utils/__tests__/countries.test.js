@@ -1,4 +1,5 @@
-import { lineCountryRows } from '../countries';
+import { detectCountries, lineCountryRows, summarizeCountries } from '../countries';
+import { exampleDrives } from '../exampleTrip';
 
 // A straight line between two points, a point every ~1 km or so.
 const line = (from, to, steps = 200) =>
@@ -23,5 +24,14 @@ describe('lineCountryRows', () => {
     const rows = lineCountryRows([line(carlisle, moffat)], [1], { scaleToM: 1000, withDays: false });
     expect(rows.reduce((sum, r) => sum + r.distanceM, 0)).toBeCloseTo(1000);
     expect(rows.every((r) => r.subtitle === null)).toBe(true);
+  });
+});
+
+describe('the example trip', () => {
+  it('drives through England and Scotland, so a first Home shows both', () => {
+    const visits = exampleDrives().flatMap((d) =>
+      detectCountries(d.fixes).map((v) => ({ ...v, startedAt: d.startedAt }))
+    );
+    expect(summarizeCountries(visits).map((c) => c.name)).toEqual(['England', 'Scotland']);
   });
 });

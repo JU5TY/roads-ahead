@@ -20,7 +20,6 @@ import { checkDriveCountries } from '../storage/countryStorage';
 import { checkDriveCrossings } from '../storage/crossingStorage';
 import { checkDrive } from '../storage/roadStorage';
 import { removeExampleTrip } from '../storage/tripStorage';
-import { palettes } from '../theme';
 import { statsWithoutCrossings } from '../utils/crossings';
 import {
   applyFixes,
@@ -53,11 +52,11 @@ const TRACKING_OPTIONS = {
   // Android: a foreground service keeps the process alive while minimised.
   // Because tracking starts while the app is open, this (and iOS's background
   // indicator) works with "While using the app" permission alone; "Allow all
-  // the time" is never needed.
+  // the time" is never needed. No notificationColor: expo-location would fill
+  // the whole notification with it; without one it's Android's own, in the phone's theme.
   foregroundService: {
     notificationTitle: 'Recording your drive',
     notificationBody: 'Tap to see your route',
-    notificationColor: palettes.light.accent,
     killServiceOnDestroy: false,
   },
 };

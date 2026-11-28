@@ -4,6 +4,7 @@
 // so it isn't mistaken for a real drive (Welcome) and is never saved again.
 import Storage from 'expo-sqlite/kv-store';
 
+import { detectCountries } from '../utils/countries';
 import { EXAMPLE_TRIP_NAME, EXAMPLE_TRIP_NOTES, exampleDrives } from '../utils/exampleTrip';
 
 const KEY = 'exampleTrip.id';
@@ -30,13 +31,15 @@ export async function seedExampleTrip(db) {
       );
       Storage.setItemSync(KEY, String(trip.lastInsertRowId));
       for (const drive of drives) {
+        // Its countries go in now: the launch check runs after Home has loaded.
         const row = await db.runAsync(
-          "INSERT INTO drives (trip_id, started_at, ended_at, status, stats, places) VALUES (?, ?, ?, 'completed', ?, ?)",
+          "INSERT INTO drives (trip_id, started_at, ended_at, status, stats, places, countries) VALUES (?, ?, ?, 'completed', ?, ?, ?)",
           trip.lastInsertRowId,
           drive.startedAt,
           drive.endedAt,
           JSON.stringify(drive.stats),
-          JSON.stringify(drive.places)
+          JSON.stringify(drive.places),
+          JSON.stringify(detectCountries(drive.fixes))
         );
         for (let i = 0; i < drive.fixes.length; i += POINTS_PER_INSERT) {
           const batch = drive.fixes.slice(i, i + POINTS_PER_INSERT);
