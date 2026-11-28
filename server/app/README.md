@@ -27,11 +27,11 @@ npx wrangler dev                                               # with a .dev.var
 
 1. **Cloudflare** (free plan). Log in with `npx wrangler login`, then:
    ```sh
-   npx wrangler r2 bucket create poster-pipeline-production
-   npx wrangler r2 bucket lifecycle add poster-pipeline-production expire-14-days --expire-days 14
+   npx wrangler r2 bucket create viameter-prints
+   npx wrangler r2 bucket lifecycle add viameter-prints expire-14-days --expire-days 14
    npm run deploy
    ```
-   The deploy prints the Worker's `workers.dev` address. Put it in `PUBLIC_URL` in `wrangler.toml` and deploy again.
+   It answers at `https://api.viameter.app` (`routes` in `wrangler.toml`; the domain is on the same Cloudflare account, which adds the DNS record and certificate). Its `workers.dev` address is off.
 2. **Stripe:**
    - Turn on receipt emails for successful payments under Settings › Customer emails.
    - Add a webhook endpoint at `<PUBLIC_URL>/stripe/webhook` for `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
@@ -43,4 +43,4 @@ npx wrangler dev                                               # with a .dev.var
    - `ASSET_SECRET`: any long random string.
 5. **The app:** set `EXPO_PUBLIC_SERVER_URL=<PUBLIC_URL>` (fuel prices use it too) and `EXPO_PUBLIC_PRINTING=on` for the build or update. Until both are set, the print page shows but Order says "coming soon".
 
-Test with Stripe's test keys and Prodigi's `sandbox_` key, which never prints, ships or charges, before switching both to live.
+**Test mode is the default, and it's a lock** (`src/printMode.js`): unless `PRINT_LIVE` in `wrangler.toml` is exactly `"yes"`, the Worker refuses a Stripe key that isn't a test key (`sk_test_`/`rk_test_`), so no card is charged, and only calls Prodigi's sandbox host (`api.sandbox.prodigi.com`), which never prints, ships or charges and refuses a live Prodigi key. Without the Stripe and Prodigi keys, printing is off and every order gets "not available". Test with Stripe's test keys and Prodigi's sandbox key; go live only by setting live keys and `PRINT_LIVE = "yes"` together, then deploying.

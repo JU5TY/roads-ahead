@@ -1,7 +1,8 @@
 // Prodigi's print API, version 5: https://www.prodigi.com/print-api/docs/reference/
-// The key decides sandbox or live: sandbox_… keys never print, ship or charge.
-
-const API = 'https://api.prodigi.com/v5';
+// Sandbox and live are separate hosts with their own keys; printMode.js picks
+// the host, so test mode only ever reaches the sandbox, which never prints,
+// ships or charges.
+import { checkProdigiKey, prodigiApi } from './printMode.js';
 
 /**
  * Create and submit the print order: `order` is { id, ref, size }, `recipient` is
@@ -10,8 +11,9 @@ const API = 'https://api.prodigi.com/v5';
  * twice. Returns Prodigi's order id.
  */
 export async function submitPrint(env, order, recipient, assetUrl) {
+  checkProdigiKey(env);
   const sku = order.size === 'A2' ? env.PRODIGI_SKU_A2 : env.PRODIGI_SKU_A3;
-  const res = await fetch(`${API}/orders`, {
+  const res = await fetch(`${prodigiApi(env)}/orders`, {
     method: 'POST',
     headers: {
       'X-API-Key': env.PRODIGI_API_KEY,

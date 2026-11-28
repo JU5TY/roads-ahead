@@ -3,6 +3,8 @@
 // https://docs.stripe.com/api/checkout/sessions/create
 // https://docs.stripe.com/webhooks#verify-manually
 
+import { checkStripeKey } from './printMode.js';
+
 const SIGNATURE_MAX_AGE_S = 5 * 60;
 
 /** Stripe's form encoding for nested values: { a: { b: 1 } } -> "a[b]=1". */
@@ -20,6 +22,7 @@ function formBody(value, prefix, out = new URLSearchParams()) {
 
 /** A Checkout Session from `params`; repeats with the same `idempotencyKey` get the same one. */
 export async function createCheckout(env, params, idempotencyKey) {
+  checkStripeKey(env);
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
     headers: {

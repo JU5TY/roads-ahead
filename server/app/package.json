@@ -1,5 +1,5 @@
 {
-  "name": "road-trip-server",
+  "name": "viameter-server",
   "private": true,
   "type": "module",
   "scripts": {

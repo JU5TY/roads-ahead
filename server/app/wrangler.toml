@@ -1,24 +1,35 @@
-# The app's server (posters, fuel prices), on Cloudflare's free plan. Setup steps are in README.md.
-name = "road-trip-server"
+# The app's server (posters, fuel prices, registration lookups), on Cloudflare's
+# free plan. Setup steps are in README.md.
+name = "viameter-server"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
+# Its own address on the app's domain, so builds and Stripe's return page never
+# depend on a workers.dev name; the workers.dev address is turned off.
+routes = [{ pattern = "api.viameter.app", custom_domain = true }]
+workers_dev = false
 
 [vars]
-# Where this Worker is reached (its workers.dev address is fine): Stripe sends the
-# browser back here, and Prodigi fetches the PDFs from here.
-PUBLIC_URL = "https://road-trip-server.example.workers.dev"
-APP_SCHEME = "roadtrip"
+# Where this Worker is reached: Stripe sends the browser back here, and Prodigi
+# fetches the PDFs from here.
+PUBLIC_URL = "https://api.viameter.app"
+APP_SCHEME = "viameter"
+# The lock on real orders (src/printMode.js): anything but "yes" is test mode,
+# which takes only Stripe test keys and only reaches Prodigi's sandbox, so
+# nothing is charged or printed. Change it to "yes" only to go live.
+PRINT_LIVE = "no"
 # Fine-art prints. Check them in Prodigi's sandbox catalogue before going live.
 PRODIGI_SKU_A3 = "GLOBAL-FAP-A3"
 PRODIGI_SKU_A2 = "GLOBAL-FAP-A2"
 # Express: tracked, and the same £5.90 as untracked Standard (UK price list, Nov 2026).
 PRODIGI_SHIPPING = "Express"
 # Secrets, set with `npx wrangler secret put <NAME>`:
-# STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PRODIGI_API_KEY, ASSET_SECRET
+# STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PRODIGI_API_KEY, ASSET_SECRET (printing);
+# DVLA_API_KEY, DVSA_CLIENT_ID, DVSA_CLIENT_SECRET, DVSA_API_KEY, DVSA_TOKEN_URL,
+# KEEPALIVE_REGISTRATION (registration lookups, see README.md)
 
 [[r2_buckets]]
 binding = "POSTERS"
-bucket_name = "poster-pipeline-production"
+bucket_name = "viameter-prints"
 
 # Registration lookups: 10 a minute from each connection (counted per Cloudflare location).
 [[ratelimits]]

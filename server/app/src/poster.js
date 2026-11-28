@@ -5,6 +5,7 @@
 // (and emails us) if Prodigi can't be reached.
 import { APP_NAME } from '../../../src/utils/appName.js';
 import { SIZES } from '../../../src/utils/posterLayout.js';
+import { checkProdigiKey, checkStripeKey } from './printMode.js';
 import { submitPrint } from './prodigi.js';
 import { json, problem } from './respond.js';
 import { createCheckout, verifiedEvent } from './stripe.js';
@@ -44,6 +45,14 @@ async function assetToken(env, id) {
  * -> { orderId, ref, checkoutUrl }. The price comes from the size, here.
  */
 async function postOrder(request, env, url) {
+  // Off, or keys that don't match the mode: refused before anything is stored.
+  try {
+    checkStripeKey(env);
+    checkProdigiKey(env);
+  } catch (err) {
+    console.warn('[order] refused:', err.message);
+    return problem('Printing is not available yet', 503);
+  }
   const size = SIZES[url.searchParams.get('size')];
   if (!size) return problem('Unknown size');
   const title = (url.searchParams.get('title') ?? '').slice(0, MAX_TITLE);
