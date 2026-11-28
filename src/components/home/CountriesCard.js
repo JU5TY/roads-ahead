@@ -1,63 +1,37 @@
 import { useMemo } from 'react';
-import { Text, View } from 'react-native';
 
-import { useStyles } from '../../hooks/useTheme';
-import { radius, type } from '../../theme';
+import { useSettings } from '../../context/SettingsContext';
 import { summarizeCountries } from '../../utils/countries';
 import { formatMonthYear } from '../../utils/format';
-import Flag from '../countries/Flag';
+import { CountryRows } from '../countries/CountriesSection';
 import SectionHeader from '../ui/SectionHeader';
 
 /**
- * Home's Countries card: the flags of every country you've driven in, like
- * stamps in a passport, three to a row in the order you first drove them, each
- * with its name and that month ("Jan 2026"). The count is in the title.
+ * Home's (and a vehicle's) Countries card: every country you've driven in, in
+ * the order you first drove there, as the same rows as a trip's Countries:
+ * flag, name, "Since Jan 2026" and the distance driven there. The count is in
+ * the title.
  */
 export default function CountriesCard({ trips }) {
-  const styles = useStyles(makeStyles);
-  const countries = useMemo(
-    () =>
-      summarizeCountries(
-        trips
-          .flatMap((t) => t.drives)
-          .sort((a, b) => a.startedAt - b.startedAt)
-          .flatMap((d) => (d.countries ?? []).map((v) => ({ ...v, startedAt: d.startedAt })))
-      ),
-    [trips]
-  );
+  const { units } = useSettings();
+  const rows = useMemo(() => {
+    const drives = trips.flatMap((t) => t.drives).sort((a, b) => a.startedAt - b.startedAt);
+    // Scaled to the miles driven, as on a trip, so the rows add up to the total.
+    const total = drives.reduce((sum, d) => sum + (d.stats.distanceM ?? 0), 0);
+    return summarizeCountries(
+      drives.flatMap((d) => (d.countries ?? []).map((v) => ({ ...v, startedAt: d.startedAt }))),
+      total
+    ).map((country) => ({
+      ...country,
+      subtitle: `Since ${formatMonthYear(country.visits[0].startedAt)}`,
+    }));
+  }, [trips]);
   // Nothing to show until past drives have been checked.
-  if (countries.length === 0) return null;
+  if (rows.length === 0) return null;
   return (
     <>
-      <SectionHeader title="Countries" count={countries.length} />
-      <View style={styles.card}>
-        {countries.map((country) => (
-          <View key={country.code} style={styles.stamp}>
-            <Flag flag={country.flag} width={52} />
-            <Text style={[type.label, styles.name]} numberOfLines={1}>
-              {country.name}
-            </Text>
-            <Text style={[type.small, styles.muted]}>{formatMonthYear(country.visits[0].startedAt)}</Text>
-          </View>
-        ))}
-      </View>
+      <SectionHeader title="Countries" count={rows.length} />
+      <CountryRows rows={rows} units={units} />
     </>
   );
 }
-
-const makeStyles = (c) => ({
-  card: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    rowGap: 18,
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    borderRadius: radius.card,
-    backgroundColor: c.card,
-    ...c.cardShadow,
-  },
-  // Three to a row.
-  stamp: { width: '33.33%', alignItems: 'center', paddingHorizontal: 4 },
-  name: { color: c.text, marginTop: 8 },
-  muted: { color: c.textMuted, marginTop: 1 },
-});
