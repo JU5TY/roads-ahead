@@ -69,8 +69,8 @@ import {
   withWayBack,
 } from '../utils/plans';
 
-// Share sends a roadtrip:// link until the website's links are set up, so it
-// shows on test builds only: none goes out that would stop working.
+// Share sends a viameter.app link, which opens the app only once the website
+// is live, so it shows on test builds only until then.
 const SHARE_PLANS = __DEV__ || Updates.channel !== 'production';
 
 /** Under the timeline: adds to the shown day (Add stop, Add Iconic Road), a row rather than a button. */

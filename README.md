@@ -1,4 +1,4 @@
-# Roads Ahead
+# Viameter
 
 Expo (SDK 58) app that records your drive in the background and stores every trip on the device (SQLite).
 
@@ -196,7 +196,7 @@ Tapping **START TRIP** the first time shows a short explanation, then the system
 
 - Choose **Precise** and **While using the app** (iOS: **Allow While Using App**). "Allow all the time" is **not** needed: tracking starts while the app is open and continues in the background through the Android foreground-service notification or the iOS blue location indicator.
 - If location is turned off or set to approximate, the app explains this and offers a shortcut to Settings.
-- On aggressive battery savers (some Samsung and Xiaomi phones), set Roads Ahead's battery use to **Unrestricted** if routes have gaps.
+- On aggressive battery savers (some Samsung and Xiaomi phones), set Viameter's battery use to **Unrestricted** if routes have gaps.
 
 ### Google Maps key (Android builds only)
 

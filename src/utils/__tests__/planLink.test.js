@@ -1,4 +1,4 @@
-import { decodePlan, encodePlan, planLink } from '../planLink';
+import { decodePlan, encodePlan, planLink, PLAN_WEB_BASE, sharedPlanPath } from '../planLink';
 import { getRoad } from '../iconicRoads';
 
 // As planStorage returns a plan: ids and positions the link leaves behind.
@@ -75,7 +75,23 @@ describe('plan links', () => {
   });
 
   it('makes a link safe to paste anywhere', () => {
-    expect(planLink(scotland)).toMatch(/^roadtrip:\/\/shared\?p=[A-Za-z0-9_-]+$/);
+    expect(planLink(scotland)).toMatch(/^https:\/\/viameter\.app\/p#[A-Za-z0-9_-]+$/);
+  });
+
+  it('opens a website link as the shared plan, however it arrives', () => {
+    const text = encodePlan(scotland);
+    const shared = `/shared?p=${text}`;
+    expect(sharedPlanPath(PLAN_WEB_BASE + text)).toBe(shared);
+    expect(sharedPlanPath(`https://www.viameter.app/p?p=${text}`)).toBe(shared);
+    expect(sharedPlanPath(`/p#${text}`)).toBe(shared);
+    expect(decodePlan(sharedPlanPath(PLAN_WEB_BASE + text).slice('/shared?p='.length))).toEqual(decodePlan(text));
+  });
+
+  it('leaves other links as they came', () => {
+    expect(sharedPlanPath('roadtrip://shared?p=abc')).toBe('roadtrip://shared?p=abc');
+    expect(sharedPlanPath('/plans/3')).toBe('/plans/3');
+    expect(sharedPlanPath('https://viameter.app/premium')).toBe('https://viameter.app/premium');
+    expect(sharedPlanPath('https://example.com/p#abc')).toBe('https://example.com/p#abc');
   });
 
   it('turns down anything it can’t read', () => {

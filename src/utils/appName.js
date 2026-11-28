@@ -3,10 +3,10 @@
 // messages come from app.json's "name" (app.config.js), which must match:
 // a test checks the two.
 
-export const APP_NAME = 'Roads Ahead';
+export const APP_NAME = 'Viameter';
 
-/** "roadsahead": backup files end in it. */
+/** "viameter": backup files end in it. */
 export const APP_WORD = APP_NAME.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-/** "roads-ahead": the start of the files the app saves. */
+/** "viameter": the start of the files the app saves. */
 export const APP_SLUG = APP_NAME.toLowerCase().replace(/[^a-z0-9]+/g, '-');

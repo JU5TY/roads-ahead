@@ -12,8 +12,12 @@ import { getRoad } from './iconicRoads';
 import { getReadyRoute, routePlanDrives } from './readyRoutes';
 
 const VERSION = 1;
-// Where links point for now; becomes the website's https address once there is one.
-export const PLAN_LINK_BASE = 'roadtrip://shared?p=';
+// The website's link for a plan: the plan rides after the #, so it never reaches the server.
+// Older test links (roadtrip://shared?p=…) still open: the app keeps that scheme.
+export const PLAN_WEB_BASE = 'https://viameter.app/p#';
+
+// A website link as it reaches the app: a whole URL or just its path, the plan after # or ?p=.
+const WEB_LINK = /^(?:https:\/\/(?:www\.)?viameter\.app)?\/p\/?(?:#|\?p=)([A-Za-z0-9_-]+)$/;
 
 const round = (n) => Math.round(n * 1e5) / 1e5;
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -155,4 +159,13 @@ export function linkKey(text) {
 }
 
 /** The link to share for a plan. */
-export const planLink = (plan) => PLAN_LINK_BASE + encodePlan(plan);
+export const planLink = (plan) => PLAN_WEB_BASE + encodePlan(plan);
+
+/**
+ * Where a link opened from outside goes: a plan on the website opens the
+ * shared plan, like a roadtrip:// or viameter:// link; anything else is left as it came.
+ */
+export function sharedPlanPath(path) {
+  const match = WEB_LINK.exec(path ?? '');
+  return match ? `/shared?p=${match[1]}` : path;
+}

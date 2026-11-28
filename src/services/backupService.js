@@ -58,7 +58,7 @@ function removeWorkingCopy(name) {
   }
 }
 
-/** "roads-ahead-2026-11-09.roadsahead", dated on this phone's calendar. */
+/** "viameter-2026-11-09.viameter", dated on this phone's calendar. */
 function backupFileName(now = new Date()) {
   const pad = (n) => String(n).padStart(2, '0');
   const day = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;

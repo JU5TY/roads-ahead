@@ -1,16 +1,17 @@
 {
   "expo": {
-    "name": "Roads Ahead",
+    "name": "Viameter",
     "slug": "road-trip",
     "platforms": ["ios", "android"],
-    "scheme": "roadtrip",
+    "scheme": ["viameter", "roadtrip"],
     "version": "1.11.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.justinwoodford.roadtrip"
+      "bundleIdentifier": "com.justinwoodford.roadtrip",
+      "associatedDomains": ["applinks:viameter.app"]
     },
     "android": {
       "package": "com.justinwoodford.roadtrip",
@@ -28,7 +29,15 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "blockedPermissions": ["android.permission.ACCESS_BACKGROUND_LOCATION"]
+      "blockedPermissions": ["android.permission.ACCESS_BACKGROUND_LOCATION"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "viameter.app", "pathPrefix": "/p" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
