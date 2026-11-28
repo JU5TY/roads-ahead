@@ -11,13 +11,13 @@ import { type } from '../../theme';
  * variant 'overline': uppercase 14px, a label over a group of rows or cards in
  *   a list (Trips' month headers, "COMPLETED · 2" on Iconic Roads). 'label' is
  *   the same with less space under it, for the You screen's groups of rows.
- * `count` follows a title in grey ("Countries · 2"). `actionLabel` adds a blue
- * link on the right ("All roads").
+ * A count goes in the subtitle, saying what it counts ("2 on this trip"); only
+ * an overline puts one in its title ("COMPLETED · 2"). `actionLabel` adds a
+ * blue link on the right ("All roads").
  */
 export default function SectionHeader({
   title,
   subtitle,
-  count,
   variant = 'title',
   actionLabel,
   onAction,
@@ -40,7 +40,6 @@ export default function SectionHeader({
           role="heading"
         >
           {isTitle ? title : title.toUpperCase()}
-          {count != null ? <Text style={styles.count}> · {count}</Text> : null}
         </Text>
         {subtitle ? <Text style={[type.label, styles.subtitle]}>{subtitle}</Text> : null}
       </View>
@@ -73,7 +72,6 @@ const makeStyles = (c) => ({
   labelRow: { marginBottom: 4 },
   text: { flexShrink: 1 },
   title: { color: c.text },
-  count: { color: c.textMuted },
   overline: { color: c.text },
   subtitle: { color: c.textMuted, fontFamily: type.body.fontFamily, marginTop: 2 },
   // Android measures letter-spaced custom fonts a little short, which wrapped
