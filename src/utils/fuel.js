@@ -132,11 +132,16 @@ const isDiesel = (vehicle) => vehicle?.fuel === 'diesel';
 /**
  * The { fuel, charge } prices (or null) for a drive driven at `time` in
  * `vehicle`: fuel at the UK's average for that week, else (no figures yet, a
- * drive before them, or not a UK phone in pounds) the price typed on You.
+ * drive before them, or not a UK phone in pounds) the price typed on You, else
+ * the UK's latest, as for a plan (the example trip, from 2000, predates the
+ * figures, which start in June 2003).
  * `prices` and `weeks` are SettingsContext's `prices` and `ukFuelWeeks`.
  */
 export const pricesForDrive = (prices, weeks, time, vehicle) => ({
-  fuel: ukPriceAt(weeks, time, isDiesel(vehicle)) ?? prices.fuel?.price ?? null,
+  fuel:
+    ukPriceAt(weeks, time, isDiesel(vehicle)) ??
+    prices.fuel?.price ??
+    ukPriceAt(weeks, Date.now(), isDiesel(vehicle)),
   charge: prices.charge?.price ?? null,
 });
 

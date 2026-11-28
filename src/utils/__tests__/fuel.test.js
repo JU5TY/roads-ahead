@@ -154,6 +154,13 @@ describe('pricesForDrive and pricesForPlan', () => {
     expect(pricesForDrive(none, null, nov18, {})).toEqual({ fuel: null, charge: null });
   });
 
+  it("costs a drive from before the UK figures at the latest, when nothing's typed", () => {
+    const y2000 = new Date(2000, 0, 1, 9).getTime(); // the example trip
+    expect(pricesForDrive(none, weeks, y2000, {}).fuel).toBe(1.6196);
+    expect(pricesForDrive(none, weeks, y2000, { fuel: 'diesel' }).fuel).toBe(1.9329);
+    expect(pricesForDrive(typed, weeks, y2000, {}).fuel).toBe(1.5);
+  });
+
   it("costs a plan at the typed price, else the UK's latest", () => {
     expect(pricesForPlan(typed, weeks, {}).fuel).toBe(1.5);
     expect(pricesForPlan(none, weeks, {}).fuel).toBe(1.6196);
