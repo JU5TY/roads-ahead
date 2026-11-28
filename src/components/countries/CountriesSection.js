@@ -37,14 +37,14 @@ export function CountryRows({ rows, units }) {
 
 /**
  * "Countries" section: a row per country with its flag, where or when it was
- * driven, and the distance in it. `rows` come from countryRows(); `scope` is
- * "drive" or "trip" for the subtitle ("2 on this drive"). Hidden for one country.
+ * driven, and the distance in it. `rows` come from countryRows(). Just
+ * "Countries" over it, like every heading. Hidden for one country.
  */
-export default function CountriesSection({ rows, units, scope }) {
+export default function CountriesSection({ rows, units }) {
   if (rows.length < 2) return null;
   return (
     <>
-      <SectionHeader title="Countries" subtitle={`${rows.length} on this ${scope}`} />
+      <SectionHeader title="Countries" />
       <CountryRows rows={rows} units={units} />
     </>
   );

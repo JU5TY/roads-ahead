@@ -695,7 +695,7 @@ export default function TripScreen() {
           <Text style={[type.lead, styles.muted, styles.notes]}>{trip.notes}</Text>
         </>
       ) : null}
-      <CountriesSection rows={viewCountries} units={units} scope={selected ? 'drive' : 'trip'} />
+      <CountriesSection rows={viewCountries} units={units} />
       {pointsByDrive ? (
         <ChartsCard
           tracks={

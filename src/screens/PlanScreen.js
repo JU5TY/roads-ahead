@@ -613,7 +613,7 @@ export default function PlanScreen() {
       )}
 
       {/* As a trip's page: its countries, then Details, for All or the picked day. */}
-      <CountriesSection rows={countryRows} units={units} scope={all ? 'trip' : 'day'} />
+      <CountriesSection rows={countryRows} units={units} />
       {shownStops || (shownMetres != null && vehicles != null) ? (
         <DetailsCard>
           {shownStops ? (

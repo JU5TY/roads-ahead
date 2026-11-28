@@ -9,10 +9,10 @@ import SectionHeader from '../ui/SectionHeader';
 /**
  * Home's (and a vehicle's) Countries card: every country you've driven in, in
  * the order you first drove there, as the same rows as a trip's Countries:
- * flag, name, "Since Jan 2026" and the distance driven there. The count is the
- * subtitle, as on a trip: "2 so far" on Home, "2 in this vehicle" with `vehicle`.
+ * flag, name, "Since Jan 2026" and the distance driven there. Just "Countries"
+ * over it: the rows show how many.
  */
-export default function CountriesCard({ trips, vehicle = false }) {
+export default function CountriesCard({ trips }) {
   const { units } = useSettings();
   const rows = useMemo(() => {
     const drives = trips.flatMap((t) => t.drives).sort((a, b) => a.startedAt - b.startedAt);
@@ -30,10 +30,7 @@ export default function CountriesCard({ trips, vehicle = false }) {
   if (rows.length === 0) return null;
   return (
     <>
-      <SectionHeader
-        title="Countries"
-        subtitle={`${rows.length} ${vehicle ? 'in this vehicle' : 'so far'}`}
-      />
+      <SectionHeader title="Countries" />
       <CountryRows rows={rows} units={units} />
     </>
   );

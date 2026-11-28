@@ -222,7 +222,7 @@ export default function VehicleScreen() {
         </View>
 
         <IconicCard roadsDone={roadIds.size} tripsDone={tripsDone} />
-        <CountriesCard trips={trips} vehicle />
+        <CountriesCard trips={trips} />
 
         {drives.length > 0 ? (
           <>
