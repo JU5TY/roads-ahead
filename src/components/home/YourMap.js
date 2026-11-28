@@ -217,9 +217,7 @@ export default function YourMap({ trips, units, scrollY, footer, buttons }) {
               </Text>
               <Text style={[type.bodyLarge, styles.since]}>driven since {firstDriveMonth(trips)}</Text>
             </View>
-            <View style={styles.logo}>
-              <AppLogo size={36} />
-            </View>
+            <AppLogo size={36} themed />
           </>
         )}
       </View>
@@ -260,6 +258,4 @@ const makeStyles = (c) => ({
   total: { ...type.total, color: c.text },
   totalUnit: { ...type.totalUnit, color: c.textMuted },
   since: { color: c.textMuted, marginTop: 2 },
-  // A 2 px white rim, like the number plate's, so it reads as a badge on the dark theme.
-  logo: { borderRadius: 20, borderWidth: 2, borderColor: '#FFFFFF' },
 });

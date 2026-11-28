@@ -30,7 +30,7 @@ export default function WelcomeScreen() {
     >
       <View style={[styles.top, { paddingTop: insets.top + 40 }]}>
         <Halo size={LOGO_SIZE + 40} grow>
-          <AppLogo size={LOGO_SIZE} />
+          <AppLogo size={LOGO_SIZE} themed />
         </Halo>
       </View>
       <View style={styles.body}>
