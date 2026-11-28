@@ -276,7 +276,7 @@ export default function VehicleScreen() {
           ) : null}
           {mileage ? (
             <ListRow
-              icon="conversion_path"
+              icon="123"
               title="Mileage at last MOT"
               // As DVSA has it, not added to the miles driven since.
               value={`${mileage.value.toLocaleString()} ${mileage.unit}`}

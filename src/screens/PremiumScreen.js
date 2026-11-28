@@ -20,7 +20,7 @@ import { onUkPhone } from '../utils/region';
 const FEATURES = [
   ['share', 'Photo sharing', 'Your route and stats on your own photos'],
   ...(onUkPhone ? [['wall_art', 'Photo wall art', 'Your own trip photo on your gallery print']] : []),
-  ['map', 'Satellite maps', 'See every trip from above, hills and all'],
+  ['satellite_alt', 'Satellite maps', 'See every trip from above, hills and all'],
   ['garage', 'More vehicles', 'Every car, each with its own stats'],
   ['save', 'Backup file', 'Keep a copy, or move to any phone'],
   ['download', 'GPX export', 'Your routes in other map apps'],

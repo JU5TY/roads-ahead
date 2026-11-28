@@ -279,7 +279,7 @@ export default function SettingsScreen() {
       <SectionHeader variant="label" title="Driving" />
       {/* The sat nav app planned drives are handed to. */}
       <ListRow
-        icon="map"
+        icon="near_me"
         title="Navigate with"
         value={NAV_APPS[navApp]}
         onPress={() => setPickingNav(true)}
@@ -315,7 +315,7 @@ export default function SettingsScreen() {
       <SectionHeader variant="label" title="App" />
       {/* Changing it clears the prices typed above: they were in the other currency. */}
       <ListRow
-        icon="conversion_path"
+        icon="straighten"
         title="Units"
         value={UNIT_LABELS[units]}
         onPress={() => setPickingUnits(true)}
