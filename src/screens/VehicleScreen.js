@@ -333,15 +333,17 @@ const makeStyles = (c) => ({
     backgroundColor: c.plate,
     ...c.cardShadow,
   },
-  // 18 wide down the left, with a hairline so white and silver paint still show.
-  // Rounded itself rather than clipped by the plate, which would clip its shadow on iOS.
+  // Down the left, 2 in from the plate's edge so a white rim always shows round
+  // it (a black car on the dark theme); the plate's white is its edge on the
+  // right too. Rounded itself rather than clipped by the plate, which would clip
+  // its shadow on iOS. 16 + 2 keeps the 18 the reg is measured from.
   band: {
     alignSelf: 'stretch',
-    width: 18,
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(0,0,0,0.12)',
+    width: 16,
+    marginVertical: 2,
+    marginLeft: 2,
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
   },
   // Its own width, so the plate fits the whole reg (flex: 1 cut it short, flexGrow
   // filled the screen). 102 is the plate's 120 less the band, so the band stays left.
