@@ -28,7 +28,7 @@ import { addVehicle } from '../storage/vehicleStorage';
 import { spacing, type } from '../theme';
 import { distanceParts, formatBreakReminder } from '../utils/format';
 import { COUNTRIES_ATTRIBUTION } from '../utils/countries';
-import { formatChargePrice, formatEfficiency, formatFuelPrice } from '../utils/fuel';
+import { formatChargePrice, formatEfficiency, formatFuelPrice, ukFuelAverages } from '../utils/fuel';
 import { FUEL_PRICES_ATTRIBUTION } from '../utils/fuelPrices';
 import { ROADS_ATTRIBUTION } from '../utils/iconicRoads';
 import { APP_NAME } from '../utils/appName';
@@ -77,11 +77,21 @@ function vehicleSubtitle(v, vehicles, units) {
   ].join(' · ');
 }
 
-/** "£1.46 · set 14 Oct" or "24.5p · set 14 Oct" ("€1.79 · …"); "Not set" until then. */
-function priceValue(saved, format, units) {
-  if (!saved) return 'Not set';
-  const day = new Date(saved.setAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  return `${format(saved.price, units)} · set ${day}`;
+/**
+ * A price row's value: "£1.46 · set 14 Oct" or "24.5p · set 14 Oct" ("€1.79 · …").
+ * Fuel with UK averages (`uk`, from ukFuelAverages): "£1.55 · your price" once
+ * one's typed, else "£1.62 · UK average", or just "UK average" for petrol and
+ * diesel cars. Null when there's no price at all: the row offers Add.
+ */
+function priceValue(saved, format, units, uk = null) {
+  if (saved && uk) return `${format(saved.price, units)} · your price`;
+  if (saved) {
+    const day = new Date(saved.setAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    return `${format(saved.price, units)} · set ${day}`;
+  }
+  if (!uk) return null;
+  const averages = Object.values(uk);
+  return averages.length === 1 ? `${format(averages[0], units)} · UK average` : 'UK average';
 }
 
 /** The "You" tab: preferences and about. Every setting is the same row style. */
@@ -95,6 +105,7 @@ export default function SettingsScreen() {
     setTheme,
     prices,
     setPrice,
+    ukFuelWeeks,
     navApp,
     replayOnboarding,
   } = useSettings();
@@ -112,6 +123,11 @@ export default function SettingsScreen() {
   // Charging price once there's an electric car; fuel price unless every car is electric.
   const hasElectricCar = !!vehicles?.some((v) => v.electric);
   const hasFuelCar = !vehicles?.length || vehicles.some((v) => !v.electric);
+  // This week's UK average for the garage's fuels, when the phone has the figures.
+  const ukFuel = ukFuelAverages(ukFuelWeeks, vehicles ?? []);
+  const fuelValue = priceValue(prices.fuel, formatFuelPrice, units, ukFuel);
+  const chargeValue = priceValue(prices.charge, formatChargePrice, units);
+  const addPrice = <Text style={[type.bodyStrong, styles.addValue]}>Add</Text>;
   // Free: one vehicle in the Garage; Premium: as many as you like.
   const canAddVehicle = premium || !vehicles?.length;
   const [exporting, setExporting] = useState(null); // null | "Exporting trip 3 of 12"
@@ -209,6 +225,7 @@ export default function SettingsScreen() {
         visible={pricing !== null}
         kind={pricing ?? 'fuel'}
         price={prices[pricing]?.price}
+        uk={pricing === 'fuel' ? ukFuel : null}
         onSave={(price) => {
           setPrice(pricing, price);
           setPricing(null);
@@ -268,12 +285,13 @@ export default function SettingsScreen() {
         onPress={() => setPickingNav(true)}
         divider
       />
-      {/* "£1.46 · set 14 Oct": when it was set, so an old price is noticed. */}
+      {/* "£1.62 · UK average", "£1.55 · your price", or "€1.46 · set 14 Oct" (when it
+          was set, so an old price is noticed); Add until there's any. */}
       {hasFuelCar ? (
         <ListRow
           icon="local_gas_station"
           title="Fuel price"
-          value={priceValue(prices.fuel, formatFuelPrice, units)}
+          {...(fuelValue ? { value: fuelValue } : { right: addPrice, chevron: false })}
           onPress={() => setPricing('fuel')}
           divider
         />
@@ -282,7 +300,7 @@ export default function SettingsScreen() {
         <ListRow
           icon="ev_station"
           title="Charging price"
-          value={priceValue(prices.charge, formatChargePrice, units)}
+          {...(chargeValue ? { value: chargeValue } : { right: addPrice, chevron: false })}
           onPress={() => setPricing('charge')}
           divider
         />
@@ -399,6 +417,7 @@ const makeStyles = (c) => ({
   addIcon: { width: 40, alignItems: 'center' },
   vehicleRow: { minHeight: 64 },
   addTitle: { color: c.accent, fontFamily: type.bodyStrong.fontFamily },
+  addValue: { color: c.accent },
   flex: { flex: 1, minWidth: 0 },
   premium: { marginTop: 16 }, // 24 under the title (8 of it inside h1), as on Trips
 });

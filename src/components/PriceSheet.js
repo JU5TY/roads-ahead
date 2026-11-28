@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 
 import { useSettings } from '../context/SettingsContext';
-import { useStyles } from '../hooks/useTheme';
+import { useStyles, useTheme } from '../hooks/useTheme';
 import { radius, spacing, type } from '../theme';
-import { currencySymbol, parseChargePrice, parseFuelPrice } from '../utils/fuel';
+import { currencySymbol, formatFuelPrice, parseChargePrice, parseFuelPrice } from '../utils/fuel';
 import BottomSheet from './ui/BottomSheet';
 import Button from './ui/Button';
+import Icon from './ui/Icon';
 
 // Fuel is priced as the pump shows it, £1.46 a litre; charging as UK tariffs
 // are, 24.5p a kWh. In euros both are as the pump shows them: €1.79, €0.35.
@@ -33,15 +34,40 @@ const KINDS = {
         },
 };
 
+/**
+ * The line under fuel's field when there are UK averages (`uk`, from
+ * ukFuelAverages): what they are, and whether the typed price is used instead.
+ */
+function ukHint(uk, own, units) {
+  const kinds = Object.keys(uk);
+  const one = kinds.length === 1;
+  const figures = one
+    ? formatFuelPrice(uk[kinds[0]], units)
+    : kinds.map((k) => `${k} ${formatFuelPrice(uk[k], units)}`).join(', ');
+  if (own) return one ? `Your price · UK average is ${figures}` : `Your price · UK average: ${figures}`;
+  return one ? 'UK average, updates weekly' : `UK average: ${figures}, updates weekly`;
+}
+
 // Mounted only while open, so it starts from the saved price each time.
-function PriceForm({ kind, price, onSave }) {
+function PriceForm({ kind, price, uk, onSave }) {
   const styles = useStyles(makeStyles);
+  const { c } = useTheme();
   const { units } = useSettings();
   const { label, prefix, suffix, shown, parse } = KINDS[kind](units);
   const [text, setText] = useState(price != null ? shown(price) : '');
   const [tried, setTried] = useState(false);
+  // Fuel in the UK: the field can stay empty (the UK average is used), and
+  // shows that average greyed out when the garage uses one fuel.
+  const averages = kind === 'fuel' ? uk : null;
+  const values = averages ? Object.values(averages) : [];
+  const placeholder = values.length === 1 ? shown(values[0]) : undefined;
+  const empty = text.trim() === '';
   const parsed = parse(text);
-  const save = () => (parsed.error ? setTried(true) : onSave(parsed.price));
+  const save = () => {
+    if (averages && empty) onSave(null);
+    else if (parsed.error) setTried(true);
+    else onSave(parsed.price);
+  };
 
   return (
     <View style={styles.sheet}>
@@ -53,6 +79,8 @@ function PriceForm({ kind, price, onSave }) {
           accessibilityLabel={label}
           value={text}
           onChangeText={setText}
+          placeholder={placeholder}
+          placeholderTextColor={c.textMuted}
           keyboardType="decimal-pad"
           maxLength={6}
           autoFocus
@@ -61,8 +89,17 @@ function PriceForm({ kind, price, onSave }) {
         />
         {suffix ? <Text style={styles.affix}>{suffix}</Text> : null}
       </View>
-      {tried && parsed.error ? <Text style={styles.error}>{parsed.error}</Text> : null}
+      {averages ? (
+        <View style={styles.hint}>
+          <Icon name="autorenew" size={16} color={c.accent} />
+          <Text style={styles.hintText}>{ukHint(averages, price != null, units)}</Text>
+        </View>
+      ) : null}
+      {tried && parsed.error && !(averages && empty) ? <Text style={styles.error}>{parsed.error}</Text> : null}
       <Button label="Save" onPress={save} style={styles.save} />
+      {averages && price != null ? (
+        <Button label="Use the UK average" variant="text" onPress={() => onSave(null)} />
+      ) : null}
     </View>
   );
 }
@@ -71,11 +108,13 @@ function PriceForm({ kind, price, onSave }) {
  * A price on You for plans' cost: `kind` 'fuel' (pounds a litre; "146.9" at
  * the pump reads as pence) or 'charge' (typed in pence a kWh). onSave gets
  * the price in pounds, or in euros (typed as euros) when the units are km.
+ * `uk` (fuel only, from ukFuelAverages) is this week's UK average per fuel: the
+ * field may then be left empty, and onSave(null) goes back to the average.
  */
-export default function PriceSheet({ visible, kind, price, onSave, onClose }) {
+export default function PriceSheet({ visible, kind, price, uk = null, onSave, onClose }) {
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <PriceForm kind={kind} price={price} onSave={onSave} />
+      <PriceForm kind={kind} price={price} uk={uk} onSave={onSave} />
     </BottomSheet>
   );
 }
@@ -94,6 +133,8 @@ const makeStyles = (c) => ({
   },
   affix: { ...type.bodyLarge, color: c.textMuted },
   text: { ...type.bodyLarge, flex: 1, minWidth: 0, padding: 0, color: c.text },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 4 },
+  hintText: { ...type.small, color: c.textMuted, flex: 1 },
   error: { ...type.small, color: c.stop },
   save: { marginTop: spacing.md },
 });

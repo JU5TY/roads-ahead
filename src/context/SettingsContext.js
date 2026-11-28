@@ -86,8 +86,9 @@ export function SettingsProvider({ children }) {
       // { fuel, charge }: each { price, setAt } (pounds or euros a litre / a kWh) or null.
       prices,
       // Remembers when, so an old price is noticed on You.
+      // A null price clears it (fuel then goes back to the UK average, where there is one).
       setPrice: (kind, price) => {
-        const next = { price, setAt: Date.now() };
+        const next = price == null ? null : { price, setAt: Date.now() };
         setPrices((prev) => ({ ...prev, [kind]: next }));
         save(settingsStorage.setPrice(kind, next));
       },

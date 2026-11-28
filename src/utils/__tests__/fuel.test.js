@@ -13,6 +13,7 @@ import {
   parseMpg,
   pricesForDrive,
   pricesForPlan,
+  ukFuelAverages,
 } from '../fuel';
 
 const MILE = 1609.344;
@@ -201,5 +202,27 @@ describe('in km, L/100 km and euros', () => {
     expect(cost).toBeCloseTo(21.12, 1);
     expect(formatDriveCost(cost, false, 'metric')).toBe('~€21 fuel');
     expect(formatCost(0.2, 'metric')).toBe('~€1');
+  });
+});
+
+describe('ukFuelAverages', () => {
+  const weeks = [
+    ['2026-11-16', 167.07, 196.77],
+    ['2026-11-23', 161.96, 193.29],
+  ];
+  const now = Date.parse('2026-11-28T12:00:00Z');
+  const petrolCar = { electric: false, fuel: 'petrol' };
+  const dieselCar = { electric: false, fuel: 'diesel' };
+  const ev = { electric: true, fuel: 'electricity' };
+
+  it("gives this week's average for each fuel the garage uses", () => {
+    expect(ukFuelAverages(weeks, [petrolCar], now)).toEqual({ petrol: 1.6196 });
+    expect(ukFuelAverages(weeks, [dieselCar, ev], now)).toEqual({ diesel: 1.9329 });
+    expect(ukFuelAverages(weeks, [dieselCar, petrolCar], now)).toEqual({ petrol: 1.6196, diesel: 1.9329 });
+  });
+
+  it('is petrol with no cars yet, and null without the figures', () => {
+    expect(ukFuelAverages(weeks, [], now)).toEqual({ petrol: 1.6196 });
+    expect(ukFuelAverages(null, [petrolCar], now)).toBeNull();
   });
 });

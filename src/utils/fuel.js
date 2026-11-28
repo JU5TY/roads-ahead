@@ -145,6 +145,23 @@ export const pricesForDrive = (prices, weeks, time, vehicle) => ({
   charge: prices.charge?.price ?? null,
 });
 
+/**
+ * This week's UK average for each fuel the garage's cars use, for You's Fuel
+ * price: { petrol } (no cars, or petrol only), { diesel }, or both; null without
+ * the figures (not a UK phone in pounds, or not fetched yet).
+ */
+export function ukFuelAverages(weeks, vehicles = [], now = Date.now()) {
+  const cars = vehicles.filter((v) => !v.electric);
+  const kinds = cars.length ? [...new Set(cars.map((v) => (isDiesel(v) ? 'diesel' : 'petrol')))] : ['petrol'];
+  const out = {};
+  for (const kind of ['petrol', 'diesel'].filter((k) => kinds.includes(k))) {
+    const price = ukPriceAt(weeks, now, kind === 'diesel');
+    if (price == null) return null;
+    out[kind] = price;
+  }
+  return out;
+}
+
 /** The { fuel, charge } prices for a plan: the ones typed on You, else the UK's latest fuel price. */
 export const pricesForPlan = (prices, weeks, vehicle) => ({
   fuel: prices.fuel?.price ?? ukPriceAt(weeks, Date.now(), isDiesel(vehicle)),
